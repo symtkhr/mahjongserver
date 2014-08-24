@@ -1,0 +1,291 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Junk Space Client for GUI 4-player</title>
+<script type="text/javascript" src="jquery-1.2.6.js"></script>
+<script type="text/javascript" src="../kappa12/jMah_v130.js"></script>
+<script type="text/javascript" src="recvsock_haifu_jsp.js"></script>
+<style type="text/css">
+body {
+  font-family: arial;
+}
+h2{
+  margin: 3px;
+  padding: 3px;
+  font-size: 30pt;
+}
+h3{
+  margin: 2px;
+  padding: 2px;
+  font-size: 20pt;
+  clear:both;
+}
+h4 {
+  margin: 0px;
+  padding: 0px;
+  clear:both;
+}
+#game {
+  float:left;
+  width: 320px;
+  margin-right: 10px;
+  //margin: 0 auto;  
+}
+#titlebox, #presentation {
+  clear:both;
+  width:100%;
+  display:table;
+  height: 300px;
+}
+#titlebox, #config {
+  background-color: #9d5;
+}
+#presentation, #config {}
+#title {
+  display: table-cell;
+  font-family: arial;
+  text-align: center;
+  width: 100%;
+  vertical-align: middle;
+}
+input.reserve {
+  font-size:150%;
+}
+input.ui, input.yes, input.no {
+  font-size: 16pt;
+  border:black 1px solid;
+  margin: 2px;
+  width: 70px;
+}
+.leftstatus{ float:left;  }
+.rightstatus{ float:right;  }
+#command{
+  height:30pt;
+}
+/*
+#message{
+  background:#ccc; 
+  padding:10px;
+  height: 50px;
+}
+*/
+#user_handset li, .makehand .name, .turn .name{
+  width:100px; 
+  padding:2px; 
+  float:left;  
+  list-style-type:none; 
+}
+.turn .river { 
+  width:200px; 
+  padding:2px; 
+  float:left;
+  list-style-type:none; 
+}
+.river {
+  border: gray 1px solid;
+}
+.discard {
+  text-align: right;
+}
+hr{
+ clear:both;
+ border: 2px solid #932;
+ height: 0;
+ margin: 0;
+ padding: 0;
+}
+
+.handset, #input_column { clear:both; }
+#discard0 li, #dealt li{
+  //padding: 25px 25px;
+  list-style-type: none;
+  float:left;
+  width: 30px;
+  font: bold 40px/40px arial;
+  height:40px;
+  margin: 0 1px 1px 0;
+  text-decoration: none;
+  background:#CCC;
+  border:#222 1px solid;
+  text-align:center;
+  cursor:pointer
+}
+ul, ol{
+  margin-left:.3em;
+  padding-left:1em;
+}
+
+.p{
+  border-collapse: collapse;
+  margin:2px;
+}
+.p th{
+  padding: 3px;
+  text-align: center;
+  vertical-align: middle;
+  font-weight:normal;
+  background-color: #eee;
+  border: 1px solid black;
+}
+.p td{
+  padding: 3px;
+  //background-color: #fff;
+  border: 1px solid black;
+  text-align: right;
+}
+.man { color: #c00; }
+.pin { color: #00f; }
+.sou { color: #080; }
+.nw { white-space: nowrap; }
+
+</style>
+</head>
+
+<body>
+<div id="main">
+<div id="game">
+<div id="header">
+<div class="leftstatus">
+ <h3 id="subtitle"></h3>
+</div><!-- class="leftstatus" -->
+<div class="rightstatus">
+<input type="button" id="show_rule" name="rule_button" value="ルール説明"><br>
+<span id="phase"></span>
+</div>
+</div>
+<div id="titlebox">
+<div id="title">
+<img 
+src="../kappa12/haiga/ton.gif" alt="ton" height=24 width=18><img 
+src="../kappa12/haiga/nan.gif" alt="nan" height=24 width=18><img 
+src="../kappa12/haiga/sha.gif" alt="sha" height=24 width=18><img 
+src="../kappa12/haiga/pei.gif" alt="pei" height=24 width=18><img 
+src="../kappa12/haiga/hak.gif" alt="hak" height=24 width=18><img 
+src="../kappa12/haiga/hat.gif" alt="hat" height=24 width=18><img 
+src="../kappa12/haiga/chu.gif" alt="chu" height=24 width=18><img 
+src="../kappa12/haiga/back.gif" alt="■" height=24 width=18>
+<h2>Junk Space Client for GUI</h2>
+<img 
+src="../kappa12/haiga/1m.gif" alt="1m" height=24 width=18><img 
+src="../kappa12/haiga/2m.gif" alt="2m" height=24 width=18><img 
+src="../kappa12/haiga/3m.gif" alt="3m" height=24 width=18><img 
+src="../kappa12/haiga/4m.gif" alt="4m" height=24 width=18><img 
+src="../kappa12/haiga/5m.gif" alt="5m" height=24 width=18><img 
+src="../kappa12/haiga/6m.gif" alt="6m" height=24 width=18><img 
+src="../kappa12/haiga/7m.gif" alt="7m" height=24 width=18><img 
+src="../kappa12/haiga/8m.gif" alt="8m" height=24 width=18><img 
+src="../kappa12/haiga/9m.gif" alt="9m" height=24 width=18><br>
+<img 
+src="../kappa12/haiga/1p.gif" alt="1p" height=24 width=18><img 
+src="../kappa12/haiga/2p.gif" alt="2p" height=24 width=18><img 
+src="../kappa12/haiga/3p.gif" alt="3p" height=24 width=18><img 
+src="../kappa12/haiga/4p.gif" alt="4p" height=24 width=18><img 
+src="../kappa12/haiga/5p.gif" alt="5p" height=24 width=18><img 
+src="../kappa12/haiga/6p.gif" alt="6p" height=24 width=18><img 
+src="../kappa12/haiga/7p.gif" alt="7p" height=24 width=18><img 
+src="../kappa12/haiga/8p.gif" alt="8p" height=24 width=18><img 
+src="../kappa12/haiga/9p.gif" alt="9p" height=24 width=18><br>
+<img 
+src="../kappa12/haiga/1s.gif" alt="1s" height=24 width=18><img 
+src="../kappa12/haiga/2s.gif" alt="2s" height=24 width=18><img 
+src="../kappa12/haiga/3s.gif" alt="3s" height=24 width=18><img 
+src="../kappa12/haiga/4s.gif" alt="4s" height=24 width=18><img 
+src="../kappa12/haiga/5s.gif" alt="5s" height=24 width=18><img 
+src="../kappa12/haiga/6s.gif" alt="6s" height=24 width=18><img 
+src="../kappa12/haiga/7s.gif" alt="7s" height=24 width=18><img 
+src="../kappa12/haiga/8s.gif" alt="8s" height=24 width=18><img 
+src="../kappa12/haiga/9s.gif" alt="9s" height=24 width=18>
+</div><!-- id="title"-->
+</div><!-- id="titlebox"-->
+<div id="presentation" style="display:none;">
+  <div id="lobby" style="border:1px solid red; height:100%;">
+  </div>
+  <div id="make_hands">
+    <div id="user_handset">
+      <li id="stat_p1"></li>
+      <li id="stat_p2"></li>
+      <li id="stat_p0"></li>
+      <h4>手牌</h4>
+      <div id="handset" style="clear:both; height:60px;"></div>
+    </div>
+    <h4>配牌</h4>
+    <div id="dealt"><ol style="height:120px;"></ol></div><!-- id="dealt"-->
+    <div id="input_column">
+      <input type="button" id="start" name="st_button"  class="ui" value="Set" /> 
+      <input type="button" id="clear" class="ui" value="Clear" />
+      <input type="button" id="sort" class="ui" value="Sort" />
+    </div><!-- id="input_column" -->
+  </div><!-- id="make_hands"-->
+  
+  <div id="discard_tiles" style="clear:both;">
+    <div id="p0" class="turn"><li class="name"></li><li class="river"></li>
+      <div class="handset"></div><hr />
+    </div>
+    <div id="p1" class="turn"><li class="name"></li><li class="river"></li>
+      <div class="handset"></div>
+      <div class="discard"></div><hr />
+    </div>
+    <div id="p2" class="turn"><li class="name"></li><li class="river"></li>
+      <div class="handset"></div>
+      <div class="discard"></div><hr />
+    </div>
+    
+    <h4>打牌候補</h4>
+    <div id="discard0"><ol style="height:120px;"></ol></div>
+    <div style="clear:both;"></div>
+    <div id="askron"> 和了する?
+      <input type="button" class="yes" value="Yes" />
+      <input type="button" class="no"   value="No" />
+    </div>
+    <div id="askcontinue"> 続行する?
+      <input type="button" class="yes" value="Yes" />
+      <input type="button" class="no"   value="No" />
+    </div>
+  </div>
+</div><!-- id="presentation" -->
+
+<div id="ui" style="padding:3px; background:#ccc;">
+  [Server]
+  <span id="connected_srv"></span>
+  <span id="connectForm">(Unconnected)
+    <input id="serverName" type="text" value="localhost:51234" 
+	   style="width:100%; border: solid 1px blue; font-size:150%;">
+    <button id="connection" style="width:100%; font-size:150%;">Connect</button>
+  </span>
+  <br>
+  <span id="loginForm" style="display:none;">
+    [UserName]
+    <input id="loginName" type="text" 
+	   style="width:100%; font-size:150%; border: solid 1px blue;" value="">
+      <button id="login" style="width:100%; font-size:150%;">Login</button>
+  </span>
+</div>
+<div style="both:clear; background-color:#ccc;">
+  <div id="loginState"></div>
+  <div id="message"></div>
+</div>
+<!--div id="message"></div -->
+</div><!-- id="game"-->
+
+<div id="sidebox" style="float:left; width:320px; display:none;">
+ <div id="result"></div>
+</div><!-- id="sidebox"-->
+<div id="ranking" style="float:left;"></div>
+<textarea id="debug" style="float:left; width:400px; height:400px; display:none;"></textarea>
+</div><!-- id="main"-->
+
+<div id="rule" style=" display:none; background:#cccccc; padding:10px; clear:both;">
+  <form method="post" onsubmit="return false;">
+    <input type="button" id="hide_rule" name="rule_button" value="戻る">
+  </form>
+  <h3>[ゲームの進行]</h3>
+  <p>Under constuction</p>
+</div>
+<div style="clear:both; padding-top:2px;">
+<hr>
+Ver 0.70 / 動作確認：Chrome31.0 (on Lubuntu12.04)
+</div>
+</body>

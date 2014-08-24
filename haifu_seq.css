@@ -1,0 +1,65 @@
+img.tate {width: 18px;  height: 24px;}
+img.yoko {width: 24px;  height: 18px;}
+
+div#right_column {float:right; margin-left:10px;}
+#jang_table {background-color:#cff; border-collapse:collapse; border: solid brown 3px;}
+#jang_table tbody td {padding:0;}
+
+#fuoh tbody td {border: solid gray 1px; padding:0;}
+#fuoh {text-align:center; font-size:12pt; margin:0 auto; border-collapse:collapse; border: solid brown 3px;}
+#wangpai {white-space:nowrap; height:24px;}
+#deck {vertical-align:top; text-align:right;}
+#banked {text-align:right; line-height:1.25em; vertical-align: bottom;}
+
+#wind_top,
+#wind_left,
+#wind_right,
+#wind_bottom
+{line-height:1.25em; width:60px; height:40px;}
+
+#call_top    {text-align:center; width:320px; height:28px;}
+#call_bottom {text-align:center; width:320px; height:28px;}
+#call_right  {text-align:center; width:28px; height:320px;}
+#call_left   {text-align:center; width:28px; height:320px;}
+
+#hand_top    {height:28px; width:320px; text-align:right; vertical-align:top;}
+#hand_bottom {height:28px; width:320px; text-align:left;  vertical-align:bottom; white-space:nowrap;}
+#hand_right  {height:320px; width:28px; text-align:right; line-height:2pt; position:relative;}
+#hand_left   {height:320px; width:28px; text-align:left;  line-height:2pt; position:relative;}
+
+
+#inhand_top    {margin-right:1em;}
+#inhand_bottom {margin-left:1em;}
+#inhand_right  {position:absolute; bottom:1em; right:0;}
+#inhand_left   {position:absolute;    top:1em;  left:0;}
+
+#furo_top    {float:left;  height:28px;}
+#furo_bottom {float:right; height:28px;}
+#furo_left   {position:absolute; bottom:0; left:0; width:28px;}
+#furo_right  {position:absolute; top:0;   right:0; width:28px;}
+
+#discard_top0,    
+#discard_top1,
+#discard_top2
+{height:28px; width:115px; text-align:right;  vertical-align:bottom;}
+#discard_bottom0,
+#discard_bottom1,
+#discard_bottom2 
+{height:28px; width:115px; text-align:left;   vertical-align:top;}
+#discard_left0,
+#discard_left1,
+#discard_left2
+{height:115px; width:28px; text-align:center; vertical-align:top; line-height:1pt;}
+#discard_right0,
+#discard_right1,
+#discard_right2 
+{height:115px; width:28px; text-align:center; vertical-align:bottom; line-height:1px;}
+
+button#one_step,
+button#reset_step,
+button#auto_step
+{font-size:120%;}
+
+#sel_haifu_edit {height:300px; width: 300px; background-color:#fdf; display:none;  border: solid gray 1px;}
+#sel_haifu      {height:300px; width: 300px; background-color:#ffd; overflow:auto; border: solid gray 1px;}
+#sel_haifu span:hover {background-color: #ccf;  cursor: pointer;}

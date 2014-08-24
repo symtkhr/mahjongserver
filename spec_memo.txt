@@ -1,0 +1,63 @@
+<8/24>
+雀荘・ソケットのクラス化
+
+[クラス構成]
+クラス：プレイヤ
+プロパティ：識別ID/名前/風/点/手牌/副露牌/捨牌/フラグ(立直・一発・聴牌・振聴・鳴き待ち)/鳴き予約
+メソッド：摸牌する/打牌する/立直する/鳴けるか判定する/鳴きを予約する/鳴きを実行する/牌譜に記録する
+
+クラス：雀卓
+プロパティ：山牌/手番/プレイヤ
+メソッド：配牌する/手番を回す/同時鳴きを制御する/牌譜を読む/クライアントの入力を受け付ける
+
+クラス：ソケット
+プロパティ：接続ソケット
+メソッド：起動/送付/ハンドシェイク接続/メッセージ生成
+
+クラス：雀荘
+プロパティ：入室者/雀卓/ソケット
+メソッド：面子の追加/面子の削除
+
+<8/20>
+ログイン時の動作
+user ページ開
+srv-cli 接続開始
+user 名前入れ
+cli 送付 { name:名前 type:login }
+srv 名簿作成
+srv 送付 { id:ID }
+cli 接続断
+cli 画面遷移
+cli 送付 { id:ID type:history }
+srv 名簿参照 existing_playerまたはJP追加
+
+
+When the clientA sends:
+{ sb: "init", h:"", size:0 }
+the server returns to clientA by
+{ haifu: "0DEAL_xxxxxx;1DEAL_xxxx..." }
+
+When the clientA sends:
+{ h:"", size:15 }
+the server returns to clientA by
+{ haifu: "0DEAL_xxxxx; ... ;3DRAW_xx" }
+
+When the clientA sends:
+{ h:"3DISC_xx", size:15 }
+the server return to all by
+{ haifu:"3DISC_xx" }
+the server return to clientB by
+{ haifu:"0DRAW_xx" }
+the server return to clientA,C,D by
+{ haifu:"0DRAW_00" }
+
+CliA送 srv返toCliA toCliB toCliC toCliD 
+初  配  配  配  配
+    配  配  配  配
+    配  配  配  配
+    配  配  配  配
+    摸x 摸0 摸0 摸0          
+打  打  打  打  打
+    摸0 摸x 摸0 摸0          
+吃  吃  吃  吃  吃 
+
