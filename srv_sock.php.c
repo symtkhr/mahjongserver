@@ -3,10 +3,13 @@
 define("DEBUG", true);
 
 require_once("srv_jang0602.php.c");
-//require_once("testcase1.php.c");
-$jang_cond = new JongTable;
-$jang_cond->jp = array();
-$jang_cond->haifu = array();
+if(DEBUG) {
+  require_once("testcase1.php.c");
+ } else {
+  $jang_cond = new JongTable;
+  $jang_cond->jp = array();
+  $jang_cond->haifu = array();
+ }
 $socks = new SocketHandler;
 $socks->start_server();
 
@@ -122,7 +125,7 @@ class SocketHandler{
       // TODO: token が重複しているかどうかの確認
       $msg = $this->mask(json_encode(array('type'=>'login', 'token'=>$token)));
       @socket_write($sock, $msg, strlen($msg));
-      $this->meibo[$token] = $sock;
+      $this->meibo[$token] = true;
       $new_jp = new JangPlayer;
       $new_jp->token = $token;
       $new_jp->name = $got_msg->name;
@@ -137,6 +140,20 @@ class SocketHandler{
       return false;
     
     }
+    if($got_msg->sb === "debug") {
+      $tokens = array();
+      foreach($jang_cond->jp as $jp) {
+	array_push($tokens, $jp->token);
+      }
+      $pack = array('type'=>'debug', 'tokens'=>implode(";",$tokens));
+      $msg = $this->mask(json_encode($pack));
+      @socket_write($sock, $msg, strlen($msg));
+
+      foreach($tokens as $token) $this->meibo[$token] = true;
+
+      return true;
+    }
+
     $player = $got_msg->player * 1;
     if(isset($meibo[$player]) && @$this->existing_changed[$player] != $sock){
       $this->existing_changed[$player] = $sock;

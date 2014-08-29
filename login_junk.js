@@ -52,8 +52,8 @@ $(document).ready(function(){
     websocket.onmessage = function(ev) {
       var msg = JSON.parse(ev.data); //PHP sends Json data
       var type = msg.type; //message type
-      if(msg.type ==="login") {
-	location.href = "recvsock_haifu.html?" + msg.token;
+      if (msg.type ==="login") {
+	location.href = "room_junk.html?" + msg.token;
       }
       return 0;
     };

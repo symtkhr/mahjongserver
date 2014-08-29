@@ -8,17 +8,47 @@
 iframe { width:400px; height:500px; }
 </style>
 <script>
+<!--
+var websock = function() {
+$("#open_token").click(function(){
+    var wsUri = "ws://localhost:9000"; 	
+    var websocket = new WebSocket(wsUri); 
 
+    
+    websocket.onopen = function(ev) {
+       $("#open_token").html("Debugging...");
+       var msg = { sb:"debug" };
+       websocket.send(JSON.stringify(msg));
+    }
+    websocket.onmessage = function(ev) {
+      var msg = JSON.parse(ev.data); //PHP sends Json data
+      var type = msg.type; //message type
+      if (type === "debug") {
+        if(!msg.tokens){
+	   alert("Nobody in the room"); return;
+        }
+        var id_list = msg.tokens.split(";");
+	alert(id_list);
+	for (var i=0; i < id_list.length; i++){
+	$("#user0" +  (i + 1) + "_frame").attr(
+	   "src", "room_junk.html?" + id_list[i] );
+	}
+      }
+   }
+});
+};
+$(document).ready(websock);
+
+-->
 </script>
 <title>牌譜レシーバ * 4</title>
 </head>
 <body>
-  <button id="init_step">初期化</button>(効きません)
-  <button id="set_step">途中参加</button><br>
-  <iframe src="./junkspace17.html"></iframe>
-  <iframe src="./junkspace17.html"></iframe>
-  <iframe src="./junkspace17.html"></iframe>
-  <iframe src="./junkspace17.html"></iframe>
+  <button id="open_token">OpenTokenForDebug</button><br>
+  <iframe src="./login_junk.html" id="user01_frame"></iframe>
+  <iframe src="./login_junk.html" id="user02_frame"></iframe>
+  <iframe src="./login_junk.html" id="user03_frame"></iframe>
+  <iframe src="./login_junk.html" id="user04_frame"></iframe>
 
 <p>
   与えられた牌譜に従って場況表示するツールです。<br>

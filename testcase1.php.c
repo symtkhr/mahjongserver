@@ -120,6 +120,7 @@ function load_haifu_v($haifu, $is_shown = false) {
       $JpInstance[$player] = new JangPlayer;
       $JpInstance[$player]->wind = $player;
       $JpInstance[$player]->name = $news[$player];
+      $JpInstance[$player]->token = rand(0, 0xffff);
 
       for($i = 0; $i < 13; $i++)
 	array_push($JpInstance[$player]->tehai, hexdec(substr($target, $i*2, 2)));
