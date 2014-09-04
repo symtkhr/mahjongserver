@@ -10,8 +10,8 @@ $(document).ready(function(){
     
     websocket.onopen = function(ev) {
       $('#sel_haifu').append('<span>Connected!</span>');
-      var name = "";
       /*
+      var name = "";
       for(var i = 0; i < 2 + Math.random() * 2; i++) {
 	var c = String.fromCharCode(Math.random() * 0x52 + 0x3041);
 	if(c.match(/[ぁぃぅぇぉゃゅょっゎ]/) && i==0) continue;
