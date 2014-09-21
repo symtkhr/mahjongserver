@@ -1,3 +1,47 @@
+<9/21>
+サーバの局遷移実装完了。
+クライアント側をテストする上でほしいもの。
+サーバ可動途中でdebug_mode_s()に入れたり抜けたりできるやつ。
+
+<9/11>
+実装開始。
+
+<9/10>
+データ構造検討完了。
+島版jspaceを参照しながら2時間程度悩む。
+
+<9/8>
+要整理: 以下の使分けと相互変換
+$this->jpの配列index, 
+$this->jp->wind, 
+$this->turn 
+
+<9/5>
+srv_sockrecv_handler():
+全体動作
+case PHASE_INIT:
+cli {sb: "init", }
+
+case PHASE_GAME:
+srv {wind:x, name:"xxxx", point:<int>, is_yourself:<bool>}
+srv {haifu:"xDEAL_xxxx", }
+cli {h:"xDISC_xx"}
+srv {haifu:"xDISC_xx;xDRAW_xx", }
+ :   :
+cli {h:"DECLF"}
+srv {haifu:"xDECLF;xHAND_xxxxxx"}
+
+case PHASE_PAYMENT:
+cli {sb:"calc",p:"xx_xx_xx"}
+srv {type:"approval",p:"xx_xx_xx"}
+cli {sb:"approval",ans:true}
+
+case PHASE_CONTINUE:
+srv {type:"approval",next:"xx_xx"}
+cli {sb:"approval",ans:true}
+
+
+
 <9/4>
 
 
@@ -11,7 +55,7 @@ Client側の表示はごまかしている。
 和了者確定の場合、
 
 srv:"%uHAND_{%02x}*13"の牌譜送付
-cli:和了者の点数計算,"0CALC_3_40"などを送付
+cli:和了者の点数計算,{sb:pay, p:"52_13_26"}などを送付(供託含まず)
 srv:点数を振り分けて全員に表示
 cli:全員が承認を送付
 (srv:連荘伺い)

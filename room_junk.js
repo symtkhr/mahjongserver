@@ -24,7 +24,7 @@ $(document).ready(function(){
     
     var get_stats = function(){
       jang_cond.haifu = [];
-      var msg = { "size": 0, "h": "", sb:"history"};
+      var msg = { "size": 0, "h": "", q:"history"};
       if(getRequest()) msg["player"] = getRequest().shift();
       websocket.send(JSON.stringify(msg));
     };
@@ -33,13 +33,13 @@ $(document).ready(function(){
 
     $('#init_step').click(function(){
 	jang_cond.haifu = [];
-	var msg = { "size": 0, "h":"", "sb":"init" };
+	var msg = { "size": 0, "h":"", "q":"init" };
 	if(getRequest()) msg["player"] = getRequest().shift();
 	websocket.send(JSON.stringify(msg));
       });
 
     $("#join").click(function() {
-	var msg = { "sb":"login", 
+	var msg = { "q":"login", 
 		    "name": $("#login_name").val(), 
 		    "pass":$("#passwd").val() };
 	if(getRequest()) msg["player"] = getRequest().shift();

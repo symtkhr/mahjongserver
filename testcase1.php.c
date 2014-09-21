@@ -16,6 +16,7 @@ $fouth = array(
 "2DISC_19",
 "3DRAW_5b",
 "3DISC_04",
+
 );
 
 /*
@@ -75,8 +76,12 @@ if($unit_test) {
 }
 //var_dump($test_case);
 
+$jang_cond = new JongTable;
+$jang_cond->aspect = 2;
+for($i=0; $i<4;$i++) $jang_cond->jp[$i] = new JangPlayer;
+
 foreach($test_case as $i=>$cmds) {
-    $jang_cond = new JongTable;
+    $jang_cond->init_members();
     if($unit_test) $jang_cond->is_loading = true;
     load_haifu_v($fouth, $i==0);
     if($unit_test) $jang_cond->is_loading = false;
@@ -88,10 +93,12 @@ foreach($test_case as $i=>$cmds) {
     echo "\n";
 }
 //$jang_cond->haifu = $fouth;
-var_dump($jang_cond->haifu);
-
+//var_dump($jang_cond->haifu);
+//var_dump($jang_cond->jp);
 if($unit_test)
  cmd_debug();
+
+
 
 function load_haifu_v($haifu, $is_shown = false) {
   global $jang_cond;
@@ -108,7 +115,8 @@ function load_haifu_v($haifu, $is_shown = false) {
       continue;
     }
 
-    $player = $ref[1] * 1;
+    $wind = $ref[1] * 1;
+    $playerIndex = ($wind + $jang_cond->aspect) % 4;
     $op = $ref[2];
     $target = $ref[3];
     if($is_shown)
@@ -117,23 +125,26 @@ function load_haifu_v($haifu, $is_shown = false) {
     switch($op){
 
     case "DEAL":
-      $JpInstance[$player] = new JangPlayer;
-      $JpInstance[$player]->wind = $player;
-      $JpInstance[$player]->name = $news[$player];
-      $JpInstance[$player]->token = rand(0, 0xffff);
+      //$playerIndex = $wind;
+      //$playerIndex = ($jang_cond->aspect + $wind) % 4;
+      //$JpInstance[$playerIndex] = new JangPlayer;
+      //$jang_cond->init_members();
+      //$JpInstance[$playerIndex]->wind = $wind;
+      $JpInstance[$playerIndex]->name = $news[$wind];
+      $JpInstance[$playerIndex]->token = rand(0, 0xffff);
 
       for($i = 0; $i < 13; $i++)
-	array_push($JpInstance[$player]->tehai, hexdec(substr($target, $i*2, 2)));
-      $JpInstance[$player]->tempaihan();
+	array_push($JpInstance[$playerIndex]->tehai, hexdec(substr($target, $i*2, 2)));
+      $JpInstance[$playerIndex]->tempaihan();
       $jang_cond->make_haifu($step);
       break;
 
     case "DRAW":
       for($i = 0; $i < 4; $i++) 
-	if($i != $player && $JpInstance[$i]->bit_naki > 0)
-	  $jang_cond->eval_command($i . "DECL0_0");
-      $jang_cond->turn = $player;
-      $JpInstance[$player]->draw_tile(hexdec($target));
+	if($i != $playerIndex && $JpInstance[$i]->bit_naki > 0)
+	  $jang_cond->eval_command($i . "DECL0_0", $i);
+      $jang_cond->turn = $playerIndex;
+      $JpInstance[$playerIndex]->draw_tile(hexdec($target));
       $jang_cond->make_haifu($step);
       break;
 
@@ -142,15 +153,15 @@ function load_haifu_v($haifu, $is_shown = false) {
     case "DECLK":
     case "DECLF":
       for($i = 0; $i < 4; $i++) 
-	if($i != $player && $JpInstance[$i]->bit_naki > 0)
-	  $jang_cond->eval_command($i . "DECL0_0");
+	if($i != $playerIndex && $JpInstance[$i]->bit_naki > 0)
+	  $jang_cond->eval_command($i . "DECL0_0", $i);
     /* through */
             
     default:
-      $jang_cond->eval_command($step);       
+      $jang_cond->eval_command($step, $playerIndex);
       break;
     }
-
+    //break;
       
   }
 
