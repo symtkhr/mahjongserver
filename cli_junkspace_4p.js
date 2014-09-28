@@ -43,6 +43,8 @@ var JangPlayer = function(){
   this.name;
   this.wind;
   this.pt;
+  this.operable = false;
+  this.pos = -1;
   this.tehai = [];
   this.tehai_furo = [];
   this.typfuro = [];
@@ -363,7 +365,7 @@ var JangPlayer = function(){
 
   ////// [[Show Cutting Notice]] //////
   this.show_naki_form = function(){
-    if( this.bit_naki == 0 ) return ""; 
+    if( this.bit_naki == 0 || !this.operable) return ""; 
     
     var menu_all = ["DECLC","DECLP","DECLK","DECLF"];
     var menu = [];
@@ -390,6 +392,7 @@ var JangPlayer = function(){
     var mai = [];
     var cmd_sort = "";
     var mes = "";
+    if(!this.operable) return "";
 
     if (!this.is_reach) {
       var is_menzen = true;
@@ -398,7 +401,8 @@ var JangPlayer = function(){
 	is_menzen =false;
       }
       //alert(is_menzen);
-      if(is_menzen) mes += ' <input type="checkbox" id="reach' + this.wind + '">R';
+      if(is_menzen)
+	mes += ' <input type="checkbox" id="reach' + this.wind + '">R';
 
     }
     // Check Tsumo Flag
@@ -498,7 +502,7 @@ var JangPlayer = function(){
   this.dump_stat = function(turn, haifu){
     var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", 
 		  "DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"打"};
-    op = haifu.replace(/[^A-Z]/g,"");
+    var op = haifu.replace(/[^A-Z]/g,"");
 
     var this_pos = posname[this.pos];
     var is_horizon = (this.pos == ePos.left  || this.pos == ePos.right);
@@ -515,7 +519,7 @@ var JangPlayer = function(){
     var wind2name = ["東","南", "西", "北"];
 
     // Table info
-    $("#wind_" + this_pos).html(wind2name[this.wind]);
+    $("#wind_" + this_pos).html(wind2name[this.wind] + this.name + this.pt);
     var obj = $("#wind_" + this_pos + ", #hand_" + this_pos + ", #call_" + this_pos);
     obj.css("background-color", turn == this.wind ? "green":"")
        .css("color", turn == this.wind ? "white":"black");
@@ -771,9 +775,30 @@ var JangTable = function(){
     }
   }
 
+  this.change_position = function() {
+    var JpInstance = this.jp;
+    var myself = -1;
+    for (var i = 0; i < JpInstance.length; i++) {
+      if (!JpInstance[i].operable) continue;
+      myself = i;
+      break;
+    }
+    JpInstance[myself].pos = ePos.bottom;
+    JpInstance[(myself + 1) % 4].pos = ePos.right;
+    JpInstance[(myself + 2) % 4].pos = ePos.top;
+    JpInstance[(myself + 3) % 4].pos = ePos.left;
+    /*
+      for (var i = 0; i < JpInstance.length; i++) {
+      JpInstance[i].dump_stat(jang_cond.turn, "");
+      }*/
+  };
+    
+
+
   ////// [[Processing Commands]] //////
   this.eval_command = function(haifu){
-    var reg = haifu.match(/^([0-3x])(D[A-Z0]+)_([0-9a-f]+)$/);
+    if(!haifu) return;
+    var reg = haifu.match(/^([0-3x])([A-Z0]+)_([0-9a-f]+)$/);
     if(!reg) return alert("Invalid format:" + reg);
     var qplayer = reg[1] * 1;
     var op = reg[2];
@@ -784,11 +809,8 @@ var JangTable = function(){
 
     switch(op){
     case "DEAL":
-      JpInstance[qplayer] = new JangPlayer;
-      JpInstance[qplayer].wind = qplayer;
-      JpInstance[qplayer].pos  = qplayer;
-      JpInstance[qplayer].name = news[qplayer];
-
+      //JpInstance[qplayer].pos  = qplayer;
+      this.change_position();
       for(var i = 0; i < 13; i++)
 	JpInstance[qplayer].tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
       JpInstance[qplayer].tempaihan();
@@ -856,6 +878,12 @@ var JangTable = function(){
     }
     if(op === "DECLK") this.lingshang--; // [todo: needs after kong flag? 
     break;
+
+    case "HAND":
+      JpInstance[qplayer].tehai = [];
+      for(var i = 0; i < qtarget.length / 2; i++)
+	JpInstance[qplayer].tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
+      break;
 
     default:
       return alert("invalid command");

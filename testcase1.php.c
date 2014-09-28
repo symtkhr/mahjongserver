@@ -77,11 +77,18 @@ if($unit_test) {
 //var_dump($test_case);
 
 $jang_cond = new JongTable;
-$jang_cond->aspect = 2;
-for($i=0; $i<4;$i++) $jang_cond->jp[$i] = new JangPlayer;
+$jang_cond->init_members();
+$jang_cond->aspect = 7;
+$bandaid_name = array("Spr","Sum","Aut","Win");
+for($i=0; $i<4;$i++){
+  $jang_cond->jp[$i] = new JangPlayer;
+  $jang_cond->jp[$i]->name = $bandaid_name[$i];
+  $jang_cond->jp[$i]->token = rand(0, 0xffff);
+ }
+$jang_cond->jp_size = 4;
 
 foreach($test_case as $i=>$cmds) {
-    $jang_cond->init_members();
+    $jang_cond->init_aspects();
     if($unit_test) $jang_cond->is_loading = true;
     load_haifu_v($fouth, $i==0);
     if($unit_test) $jang_cond->is_loading = false;
@@ -96,15 +103,13 @@ foreach($test_case as $i=>$cmds) {
 //var_dump($jang_cond->haifu);
 //var_dump($jang_cond->jp);
 if($unit_test)
- cmd_debug();
+   cmd_debug();
 
 
 
 function load_haifu_v($haifu, $is_shown = false) {
   global $jang_cond;
   $JpInstance =& $jang_cond->jp;
-
-  $news = array("T","N","S","P");
 
   foreach($haifu as $step){
     $reg = preg_match("/^([0-3])(D[A-Z]+)_([0-9a-f]+)$/",trim($step),$ref);
@@ -130,8 +135,6 @@ function load_haifu_v($haifu, $is_shown = false) {
       //$JpInstance[$playerIndex] = new JangPlayer;
       //$jang_cond->init_members();
       //$JpInstance[$playerIndex]->wind = $wind;
-      $JpInstance[$playerIndex]->name = $news[$wind];
-      $JpInstance[$playerIndex]->token = rand(0, 0xffff);
 
       for($i = 0; $i < 13; $i++)
 	array_push($JpInstance[$playerIndex]->tehai, hexdec(substr($target, $i*2, 2)));

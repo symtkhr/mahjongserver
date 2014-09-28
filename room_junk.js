@@ -7,9 +7,11 @@ $(document).ready(function(){
     //create a new WebSocket object.
     var wsUri = "ws://localhost:9000"; 	
     var websocket = new WebSocket(wsUri); 
+    var id = parseInt(getRequest().shift());
+    $("#sel_haifu").append(id + "(=" + id.toString(16) + ")\n");
     
     websocket.onopen = function(ev) {
-      $('#sel_haifu').append('<span>Connected!</span>');
+      $('#sel_haifu').append("<span>Connected!</span>\n");
       /*
       var name = "";
       for(var i = 0; i < 2 + Math.random() * 2; i++) {
@@ -25,7 +27,7 @@ $(document).ready(function(){
     var get_stats = function(){
       jang_cond.haifu = [];
       var msg = { "size": 0, "h": "", q:"history"};
-      if(getRequest()) msg["player"] = getRequest().shift();
+      if(getRequest()) msg["id"] = getRequest().shift();
       websocket.send(JSON.stringify(msg));
     };
 
@@ -34,7 +36,7 @@ $(document).ready(function(){
     $('#init_step').click(function(){
 	jang_cond.haifu = [];
 	var msg = { "size": 0, "h":"", "q":"init" };
-	if(getRequest()) msg["player"] = getRequest().shift();
+	if(getRequest()) msg["id"] = getRequest().shift();
 	websocket.send(JSON.stringify(msg));
       });
 
@@ -42,15 +44,50 @@ $(document).ready(function(){
 	var msg = { "q":"login", 
 		    "name": $("#login_name").val(), 
 		    "pass":$("#passwd").val() };
-	if(getRequest()) msg["player"] = getRequest().shift();
+	if(getRequest()) msg["id"] = getRequest().shift();
 	websocket.send(JSON.stringify(msg));
       });
-    
+
     //#### Message received from server?
     websocket.onmessage = function(ev) {
       var msg = JSON.parse(ev.data); //PHP sends Json data
       var type = msg.type; //message type
-      if (msg.haifu) {
+      var JpInstance = jang_cond.jp;
+      switch (type) {
+      case "player":
+	var qplayer = msg.wind;
+	JpInstance[qplayer] = new JangPlayer;
+	JpInstance[qplayer].wind = qplayer;
+	JpInstance[qplayer].name = msg.name;
+	JpInstance[qplayer].pt = msg.point;
+
+	//alert(msg.name);
+	if (msg.is_yourself) {
+	  JpInstance[qplayer].operable = true;
+	}
+
+	$("#sel_haifu").append(msg.name 
+			       + "_" +  msg.wind + "_" + msg.point
+			       + "_" + msg.is_yourself + "\n");
+	break;
+      case "aspect":
+	var strwind = ["T","N","S","P"];
+	var str_fuwo = strwind[parseInt(msg.aspect / 4)] + (msg.aspect % 4 + 1);
+	str_fuwo += " " + (msg.hon);
+	$("#aspect").html(str_fuwo);
+	break;
+
+      case "approval":
+	$("#approval").show();
+	$("#approval").click(function(){ 
+	    var msg = { "q": "approval" };
+ 	  if(getRequest()) msg["id"] = getRequest().shift();
+            websocket.send(JSON.stringify(msg));
+	    $(this).hide();
+	  });
+	break;
+
+      case  "haifu":
 	$("#sel_haifu").append("====\n" + msg.haifu.split(";").join("\n"));
       
 	var got_haifu = msg.haifu.split(";");
@@ -62,17 +99,18 @@ $(document).ready(function(){
 	for (var i = 0; i < JpInstance.length; i++) {
 	  JpInstance[i].dump_stat(jang_cond.turn, newest_haifu);
 	}
+
+	jang_cond.dump_wangpai();
+	jang_cond.check_extra();
+	$("#step").html(jang_cond.haifu.length);
       }
-      jang_cond.dump_wangpai();
-      jang_cond.check_extra();
-      $("#step").html(jang_cond.haifu.length);
       
       $(".inhand").click(function(){
 	  var haifu = $(this).attr("id").split("hand_").join("DISC_");
 	  if ($("#reach" + haifu.substr(0,1)).attr("checked")) 
 	    haifu = haifu.split("DISC_").join("DISCR_");
-	  var msg = { "size": jang_cond.haifu.length, "h":haifu };
-	  if(getRequest()) msg["player"] = getRequest().shift();
+	  var msg = { "size": jang_cond.haifu.length, "h":haifu, "q":"haifu" };
+	  if(getRequest()) msg["id"] = getRequest().shift();
 	  websocket.send(JSON.stringify(msg));
       });
 
@@ -80,8 +118,8 @@ $(document).ready(function(){
 	  var JpInstance = jang_cond.jp;
 	  var haifu = $(this).attr("id");
 	  var msg = { "size": jang_cond.haifu.length, 
-		      "h":haifu };
-	  if(getRequest()) msg["player"] = getRequest().shift();
+		      "h":haifu, "q":"haifu"};
+	  if(getRequest()) msg["id"] = getRequest().shift();
 
 	  // declare through
 	  if(haifu.match(/^[0-3]DECL0/)) {

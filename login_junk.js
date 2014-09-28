@@ -53,7 +53,7 @@ $(document).ready(function(){
       var msg = JSON.parse(ev.data); //PHP sends Json data
       var type = msg.type; //message type
       if (msg.type ==="login") {
-	location.href = "room_junk.html?" + msg.token;
+	location.href = "room_junk.html?" + msg.id;
       }
       return 0;
     };

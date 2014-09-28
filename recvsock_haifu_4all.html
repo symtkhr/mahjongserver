@@ -5,7 +5,7 @@
 <script type="text/javascript" src="jquery-1.2.6.js"></script>
 <link rel="stylesheet" type="text/css" href="haifu_seq.css">
 <style>
-iframe { width:400px; height:500px; }
+iframe { width:400px; height:625px; }
 </style>
 <script>
 <!--
@@ -17,7 +17,7 @@ $("#open_token").click(function(){
     
     websocket.onopen = function(ev) {
        $("#open_token").html("Debugging...");
-       var msg = { sb:"debug" };
+       var msg = { q:"debug", pindex:3 };
        websocket.send(JSON.stringify(msg));
     }
     websocket.onmessage = function(ev) {
@@ -36,6 +36,41 @@ $("#open_token").click(function(){
       }
    }
 });
+
+var send_msg = function() {
+    var wsUri = "ws://localhost:9000"; 	
+    var websocket = new WebSocket(wsUri); 
+   
+    websocket.onopen = function(ev) {
+       var msg = {"q":""};
+       var eqs = $("#sock_msg").val().split(" ");
+       for(var i in eqs) {
+         var vals = eqs[i].split("=");
+         msg[vals[0]] = vals[1];
+       }
+       alert(msg.q);
+       websocket.send(JSON.stringify(msg));
+    }
+};
+
+$("#sock_send").click(send_msg);
+
+$("#sock_msg").keydown(function(e){ 
+//alert("OK");
+ if(e.keyCode != 0x0d) return;
+ $(this).val();
+ $(this).val("");
+ send_msg();
+ 
+/*
+ if(e.keyCode == 0x5a) w = $("#user01_frame")                             .focus();
+ if(e.keyCode == 0x58) w = $("#user02_frame")[0].contentWindow.document;
+ if(e.keyCode == 0x43) w = $("#user03_frame").find("#approval").focus();
+ $("#approval", w).focus();
+*/
+});
+
+
 };
 $(document).ready(websock);
 
@@ -44,7 +79,11 @@ $(document).ready(websock);
 <title>牌譜レシーバ * 4</title>
 </head>
 <body>
-  <button id="open_token">OpenTokenForDebug</button><br>
+  <button id="open_token">OpenTokenForDebug</button>
+  <input type="textbox" id="sock_msg" value="">
+  <button id="sock_send">Send</button>
+
+<br>
   <iframe src="./login_junk.html" id="user01_frame"></iframe>
   <iframe src="./login_junk.html" id="user02_frame"></iframe>
   <iframe src="./login_junk.html" id="user03_frame"></iframe>
@@ -54,7 +93,7 @@ $(document).ready(websock);
   与えられた牌譜に従って場況表示するツールです。<br>
   このツールはJunkSpaceクライアント動作試験に用いることを意図して作ったため、牌譜ツールとして実用的なものではありません。<br>
   要修正：例のテスト項目のクリア
-  要追加：ログイン, 時間制限, クリック拡大, 点計算
+  要追加：時間制限, クリック拡大, 点計算
 </p>
 
 <hr>

@@ -65,8 +65,8 @@ function haifu_make_secret($haifu, $wind) {
 //////////////////////////////////////////////
 class JangPlayer {
   var $name;
-  var $wind;
-  var $pt;
+  var $wind = -1;
+  var $pt = 0;
   var $tehai = array();
   var $tehai_furo = array();
   var $typfuro = array();
@@ -498,9 +498,12 @@ class JangPlayer {
     $str_flag .= $this->rsv_naki["type"] > 0 ? 
       "[rsv".$this->rsv_naki["type"]."]" : "";
 
-    printf(      "<%04x> %s | %s\n", $this->token, $str_te, $mes);
-    printf( "%1s:%03d%1s %s | %s\n", 
-	    $str_news[$this->wind], $this->pt,
+    printf(      "%1s:<%04x> %s | %s\n", 
+		 $str_news[$this->wind],
+		 $this->token, $str_te, $mes);
+    printf( "%3s:%03d%1s %s | %s\n", 
+	    $this->name,
+	    $this->pt,
 	    $is_order ? "*" : " ", $num_te, $str_flag);
 
     echo "   [";
@@ -519,6 +522,7 @@ class JongTable {
   var $yamahai = array();
   var $turn = 0;
   var $jp = array();
+  var $jp_size = 0;
   var $aspect = 0;
   var $honba = 0;
   var $haifu = array();
@@ -526,12 +530,18 @@ class JongTable {
   var $is_unittest;
   var $pause_since;
 
+
   function dump_stat() {
     printf("asp=%d-%d;\n", $this->aspect, $this->honba);
     foreach($this->jp as $i=>$jp) $jp->dump_stat($i == $this->turn);
   }
 
   function init_members() {
+    for($i = 0; $i < 4; $i++)  $this->jp[$i] = new JangPlayer;
+    $this->init_aspects();
+  }
+
+  function init_aspects() {
     $this->yamahai = array();
     $this->turn = $this->aspect % 4;
     $this->haifu = array();
@@ -541,6 +551,7 @@ class JongTable {
       $this->jp[$i]->init_members($wind);
     }
   }
+
 
   function commit_payment() {
     foreach($this->jp as &$jp){
@@ -802,9 +813,26 @@ class JongTable {
   }
 
   */
+  function add_player($name, $id) {
+    if (4 <= $this->jp_size) return alert("This table is full");
+    if (count($this->jp) < 4) $this->init_members();
+    $order = rand(0, 4 - 1 - $this->jp_size);
+    for ($i = 0; $i < 4; $i++) {
+      if (0 < $this->jp[$i]->token) continue;
+      if ($order == 0) {
+	$this->jp[$i]->name = $name;
+	$this->jp[$i]->token = $id;
+	$this->jp_size++;
+	break; 
+      }
+      $order--;
+    }
+  }
 
   function start_game() {   
     if(count($this->jp) != 4) return alert("Lack of member");
+
+    return;
 
     /* wind shuffle */
     $tk = array();
@@ -839,7 +867,7 @@ class JongTable {
     }
     */
     //全メンバの変数をリセットすべき?
-    $this->init_members();
+    $this->init_aspects();
     //  Shuffling tiles
     for($i=0; $i<136; $i++)
       $this->yamahai[$i] = $i + 1; 
@@ -1046,7 +1074,8 @@ class JongTable {
     $this->pause_since = microtime(true);
     $target = array_shift($this->yamahai);
     $JpInstance[$this->turn]->draw_tile($target);
-    $this->make_haifu(sprintf("%dDRAW_%02x", $this->turn, $target));
+    $this->make_haifu(sprintf("%dDRAW_%02x", 
+			      $JpInstance[$this->turn]->wind, $target));
   }
 
 
