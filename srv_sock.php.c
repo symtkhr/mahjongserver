@@ -27,7 +27,9 @@ function debug_mode_s($argv) {
 
   $socks = new SocketHandler;
   $socks->jang_tables[0] = $jang_cond;
-  $socks->jang_tables[0]->init_members();
+  $socks->is_debug = true;
+  $socks->init_members();
+  //$socks->jang_tables[0]->init_members();
   while(1) {
     if(0 < count($sock_unit_test)) 
       $std = array_shift($sock_unit_test);

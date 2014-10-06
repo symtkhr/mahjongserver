@@ -1092,15 +1092,21 @@ class JongTable {
 
     if($nakare == $playerIndex) return false;
 
-    for($i = 0; $i < 4; $i++){
+    $ret = false;
+
+    for($i = 0; $i < 4; $i++) {
       if($i == $nakare || $i == $playerIndex) continue;
-      if($naki_type < $JpInstance[$i]->bit_naki) return true;
-      if($naki_type == RONG && ($JpInstance[$i]->bit_naki & $BIT_RON)) return true;
+      if(($naki_type < $JpInstance[$i]->bit_naki) || 
+	 ($naki_type == RONG && ($JpInstance[$i]->bit_naki & $BIT_RON)))
+	{
+	  $ret = true;
+	  continue;
+	}
       if($naki_type == 0) continue;
       $JpInstance[$i]->bit_naki = 0;
       $JpInstance[$i]->rsv_naki["type"] = 0;
     }
-    return false;
+    return $ret;
   }
 
   function check_timeout(){

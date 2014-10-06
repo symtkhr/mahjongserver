@@ -66,7 +66,7 @@ if($unit_test) {
 		     array("1DECL0_0", "2DECL0_0", "0DECL0_0"), //¨ (ŽŸ„)
 		     array("2DECL0_0", "0DECL0_0", "1DECL0_0"), //¨ (ŽŸ„)
 		     array("2DECL0_0", "1DECL0_0", "0DECL0_0"), //¨ (ŽŸ„)
-
+                     array(),
 		     );
   array_push($fouth,"DECK_".str_repeat("44", count($test_case)));
   // $test_case = array(array());
@@ -95,7 +95,9 @@ foreach($test_case as $i=>$cmds) {
     printf("%02d: ", $i + 1);
     foreach($cmds as $cmd){
       echo "<".$cmd.">";
-      $jang_cond->eval_command($cmd);
+      $wind = substr($cmd, 0, 1) * 1;
+      $playerIndex = ($wind + $jang_cond->aspect) % 4;
+      $jang_cond->eval_command($cmd, $playerIndex);
     }
     echo "\n";
 }
