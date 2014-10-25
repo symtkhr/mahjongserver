@@ -314,11 +314,13 @@ class SocketHandler{
       return;
 
     case "calc":
-      $point = explode("_", $msg->p);
-      $jang_cond->reserve_payment($playerIndex, $point);
+      $point = $msg->p;
+      $wind = $msg->wind;
+      $pt = $jang_cond->reserve_payment($playerIndex, $wind, $point);
+      if(!$pt) return;
       $json_obj = array("type"=>"approval", 
-			'point'=> $msg->p, 
 			'next'=> $jang_cond->aspect);
+      $json_obj["point"] = $pt;
       foreach($jang_cond->jp as $jp)
 	$this->send_message($json_obj, $jp->token); 
     
@@ -381,13 +383,11 @@ class SocketHandler{
       
       }
 
-      /* send updated haifu to all */
+      // send updated haifu to all
       $send_mes = array();
       for ($i = $pre_size; $i < count($jang_cond->haifu); $i++){
 	array_push($send_mes, $jang_cond->haifu[$i]);
       }
-
-      echo "sendtoall\n";
 
       for ($j = 0; $j < 4; $j++) {
 	$s_haifu = array();
@@ -401,6 +401,14 @@ class SocketHandler{
       }
       $jang_cond->dump_stat();
 
+      if($jang_cond->is_ryukyoku) {
+	$pt = $jang_cond->reserve_payment_ryukyoku();
+	$json_obj = array("type"=>"approval", 
+			  'next'=> $jang_cond->aspect);
+	$json_obj["point"] = $pt;
+	foreach($jang_cond->jp as $jp)
+	  $this->send_message($json_obj, $jp->token); 
+      }
       return;
       break;
     }

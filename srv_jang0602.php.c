@@ -48,8 +48,9 @@ function  cmd_debug() {
       list($key,$val) = explode("=", $argvj);
       $_GET[$key] = $val;
     }
-    $jang_cond->eval_command($_GET["h"]);
-    for($i = 0; $i < 4; $i++) $jang_cond->jp[$i]->dump_stat($jang_cond->turn);
+    $jang_cond->eval_command($_GET["h"], $_GET["idx"] * 1);
+    $jang_cond->dump_stat();
+    //for($i = 0; $i < 4; $i++) $jang_cond->jp[$i]->dump_stat($jang_cond->turn);
   }
 }
 
@@ -77,6 +78,7 @@ class JangPlayer {
   var $is_tempai = false;
   var $is_furiten = false;
   var $is_hora = false;
+  var $is_kaihua = false;
   var $bit_naki = 0;
   var $rsv_naki = array("type"=>0, "target"=>array());
   var $rsv_pay = 0;
@@ -95,6 +97,7 @@ class JangPlayer {
     $this->is_tempai = false;
     $this->is_furiten = false;
     $this->is_hora = false;
+    $this->is_kaihua = false;
     $this->bit_naki = 0;
     $this->rsv_naki = array("type"=>0, "target"=>array());
   }
@@ -110,6 +113,7 @@ class JangPlayer {
 
   function discard($turnwind, $target, $is_call_reach, $is_loading=false){
     if($turnwind != $this->wind) return false;
+
     $tehai = $this->tehai;
 
     // validiation check for $target (no need if the load haifu)
@@ -140,7 +144,7 @@ class JangPlayer {
     //(no call if the load haifu)
     //if(!$is_loading)
     //  $this->make_haifu($is_valid_call ? "DISCR":"DISC", $target);
-    return true;
+    return ($is_call_reach) ? "DISCR" : "DISC";
   }
 
   function declare_reach(){
@@ -156,7 +160,7 @@ class JangPlayer {
     return true;
   }
 
-  function nakihan($turnwind, $sutehai){
+  function nakihan($turnwind, $sutehai, $is_only_rong = false){
     if($this->wind == $turnwind) return;
     $BIT_RON = 8;
     $BIT_KAN = 4;
@@ -178,7 +182,8 @@ class JangPlayer {
       $hands_check = new FinCheck;
       if ( $hands_check->agari_hantei($test_hand) ) $this->bit_naki |= $BIT_RON;
     }
-    
+    if($is_only_rong) return;
+
     // Check Kong/Pong Flag
     if(!$this->is_reach ){
       if( $mai[$sutenum] == 3 ) $this->bit_naki |= $BIT_KAN | $BIT_PON;
@@ -250,8 +255,8 @@ class JangPlayer {
 
     if($typefuro == DMK){
       $gaito = array();
-      $furohai = 4 * ceil(hexdec($nakihai) / 4);
-      for($i=0; $i<4; $i++) array_push($gaito, $furohai-$i); 
+      $furohai = 4 * ceil($nakihai / 4);
+      for($i=0; $i<4; $i++) array_push($gaito, $furohai - $i); 
     } else {
       $gaito = array($nakihai);
       for($i=0; $i<2; $i++) array_push($gaito, $target[$i]); 
@@ -293,14 +298,16 @@ class JangPlayer {
   function declare_kong($target, $is_me){
 
     $tehai = $this->tehai;
-    $nakihai = id2num(hexdec($target));
+    $nakihai = id2num($target);
     //var_dump($target);
 
     $gaito = array();
     foreach($this->tehai as $i=>$id){ 
+      echo id2num($id)." ";
       if( id2num($id) == $nakihai ){ array_push($gaito, $id); }
     }
-    
+    echo count($gaito);
+
     // DaiMingKong
     if( count($gaito)==3 && !$is_me){
       $this->set_reservation(DMK, $gaito);
@@ -466,8 +473,8 @@ class JangPlayer {
     $cmd = array(
 		 "dummycommand",
 		 "1m","2m","3m","4m","5m","6m","7m","8m","9m",
-		 "1s","2s","3s","4s","5s","6s","7s","8s","9s",
 		 "1p","2p","3p","4p","5p","6p","7p","8p","9p",
+		 "1s","2s","3s","4s","5s","6s","7s","8s","9s",
 		 "to","na","sh","pe","hk","ht","ch");
     
     foreach ($this->tehai as $i=>$id){
@@ -479,8 +486,8 @@ class JangPlayer {
       $str_te .= " / ";
       $num_te .= " / ";
       foreach($furo as $id){
-	if($this->typfuro[$i] == ANKAN) $str_te .="##";
-	else 
+	//if($this->typfuro[$i] == ANKAN) $str_te .="##";
+	//else 
 	  $str_te .= ($id == 0) ? "" : sprintf("%s",  $cmd[id2num($id)]);
 	$num_te .= ($id == 0) ? "" : sprintf("%02x", $id);
       }
@@ -488,12 +495,13 @@ class JangPlayer {
     $mes  = ($this->bit_naki)      ? $this->show_naki_form() : "";
     $mes .= ($is_order) ? $this->show_decl_form() : "";
 
-    $str_flag  = $this->is_reach   ? "[rch]" : "";
-    $str_flag .= $this->is_1patsu  ? "[1pt]" : "";
-    $str_flag .= $this->is_tempai  ? "[tmp]" : "";
-    $str_flag .= $this->is_furiten ? "[fri]" : "";
-    $str_flag .= $this->is_hora    ? "[fin]" : "";
-    $str_flag .= $this->approval   ? "[app]" : "";
+    $str_flag  = $this->is_reach     ? "[rch]" : "";
+    $str_flag .= $this->is_1patsu    ? "[1pt]" : "";
+    $str_flag .= $this->is_tempai    ? "[tmp]" : "";
+    $str_flag .= $this->is_furiten   ? "[fri]" : "";
+    $str_flag .= $this->is_hora      ? "[fin]" : "";
+    $str_flag .= $this->is_ringshang ? "[rin]" : "";
+    $str_flag .= $this->approval     ? "[app]" : "";
     if($this->rsv_pay != 0) $str_flag .= "[rsvp".$this->rsv_pay."]";
     $str_flag .= $this->rsv_naki["type"] > 0 ? 
       "[rsv".$this->rsv_naki["type"]."]" : "";
@@ -520,19 +528,25 @@ class JangPlayer {
 /////////////////////////////////////////////////////////////////////////////
 class JongTable {
   var $yamahai = array();
+  var $wangpai = array();
   var $turn = 0;
   var $jp = array();
   var $jp_size = 0;
   var $aspect = 0;
+  var $dora = 0;
   var $honba = 0;
   var $haifu = array();
   var $is_loading;
   var $is_unittest;
   var $pause_since;
-
+  var $is_ryukyoku = false;
+  var $lingshang = 4;
 
   function dump_stat() {
-    printf("asp=%d-%d;\n", $this->aspect, $this->honba);
+    printf("asp=%d-%d; ", $this->aspect, $this->honba);
+    printf("yama=%d; ", count($this->yamahai));
+    printf("dora=%s; ", implode(" ", $this->wangpai));
+    echo "\n";
     foreach($this->jp as $i=>$jp) $jp->dump_stat($i == $this->turn);
   }
 
@@ -543,9 +557,13 @@ class JongTable {
 
   function init_aspects() {
     $this->yamahai = array();
+    $this->wangpai = array();
     $this->turn = $this->aspect % 4;
     $this->haifu = array();
+    $this->is_ryukyoku = false;
     $this->pause_since = 0;
+    $this->lingshang = 4;
+    $this->dora = 0;
     for($i = 0; $i < count($this->jp); $i++) {
       $wind = ($i + 4 - $this->turn) % 4;
       $this->jp[$i]->init_members($wind);
@@ -555,26 +573,65 @@ class JongTable {
 
   function commit_payment() {
     foreach($this->jp as &$jp){
-      $jp->pt += $jp->rsv_pay;  
-      $jp->rsv_pay = 0;
+      for($i=0; $i < 3; $i++)
+	$jp->pt += $jp->rsv_pay[$i];  
+      $jp->rsv_pay = array(0,0,0);
     }
   }
 
-  function reserve_payment($player, $payments) {
-    foreach ($this->jp as &$jp) $jp->rsv_pay = 0;
+  function reserve_payment($player, $wind, $payments) {
     echo "(".$player."declared finish!)\n";
-    if (!$this->jp[$player]->is_hora) return alert("Not finshed!");
-    $this->jp[$player]->rsv_pay = $payments[0];
+    if (($this->jp[$player]->wind != $wind) || (!$this->jp[$player]->is_hora))
+      return alert("Not finshed!");
+    foreach ($this->jp as &$jp) $jp->rsv_pay = array(0, 0, 0);
+    $this->jp[$player]->rsv_pay[0] = $payments[0] / 100;
+    $this->jp[$player]->rsv_pay[1] = $this->honba * 3;
     
     if($this->turn != $player) {
       /* case: RONG */
-      $this->jp[$this->turn] -> rsv_pay = -$payments[0];
+      $this->jp[$this->turn]->rsv_pay[0] = -$payments[0] / 100;
+      $this->jp[$this->turn]->rsv_pay[1] = -$this->honba * 3;
     } else {
       /* case: TSUMO */
-      for ($i = 0; $i < 4; $i++)
-	$this->jp[$i]->rsv_pay = ($this->jp[$i]->wind == 0) ? 
-	  -$payments[2] : -$payments[1];
+      for ($i = 0; $i < 4; $i++) {
+	if ($i == $player) continue;
+	$this->jp[$i]->rsv_pay[0] = 
+	  (($this->jp[$i]->wind == 0) ? -$payments[2] : -$payments[1]) / 100;
+	$this->jp[$i]->rsv_pay[1] = -$this->honba;
+      }
     }
+
+    // case: common_get
+    for ($i = 0; $i < 4; $i++) {
+      if ($i == $player) continue;
+      if ($this->jp[$i]->is_reach) { 
+	$this->jp[$i]->rsv_pay[2] = -10;
+	$this->jp[$player]->rsv_pay[2] += 10;
+      }
+    }
+    $ret_array = array();
+    for ($i = 0;  $i <4; $i++)
+      $ret_array = array_merge($ret_array, $this->jp[$i]->rsv_pay);
+    return $ret_array;
+  }
+
+  function reserve_payment_ryukyoku() {
+    foreach ($this->jp as &$jp) $jp->rsv_pay = array(0, 0, 0);
+    $win = 0;
+    for($i = 0; $i < 4; $i++) {
+      if($this->jp[$i]->is_tempai) $win++;
+      if($this->jp[$i]->is_reach) $this->jp[$i]->rsv_pay[2] = -10;
+    }
+    
+    $gain = array(0, 30, 15, 10, 0);
+    for($i = 0; $i < 4; $i++)
+      $this->jp[$i]->rsv_pay[1] = 
+	($this->jp[$i]->is_tempai) ? $gain[$win]: -$gain[4 - $win];
+
+    $ret_array = array();
+    for ($i = 0;  $i < 4; $i++)
+      $ret_array = array_merge($ret_array, $this->jp[$i]->rsv_pay);
+    return $ret_array;
   }
 
   function commit_continue() {
@@ -852,7 +909,7 @@ class JongTable {
 
   }
 
-  function deal_tiles(){
+  function deal_tiles($TSUMIKOMI = false){
     //$news = array("T","N","S","P");
     /*
     $fp = fopen("haifu.dat", 'w');
@@ -866,21 +923,25 @@ class JongTable {
       break;
     }
     */
-    //全メンバの変数をリセットすべき?
-    $this->init_aspects();
-    //  Shuffling tiles
-    for($i=0; $i<136; $i++)
-      $this->yamahai[$i] = $i + 1; 
-    
-    for($i=0; $i<300; $i++) {
-      $r1 = rand(0, 136);
-      $r2 = rand(0, 136);
-      if($r1 > $r2)
-	list($r1, $r2) = array($r2, $r1); 
-      for($j=0; $j < abs($r2 - $r1); $j++) { 
-        list($this->yamahai[$r1 + $j], $this->yamahai[$j]) = 
-          array($this->yamahai[$j], $this->yamahai[$r1 + $j]); 
+    if(!$TSUMIKOMI) {
+      //全メンバの変数をリセットすべき?
+      $this->init_aspects();
+      //  Shuffling tiles
+      for($i=0; $i<136; $i++)
+	$this->yamahai[$i] = $i + 1; 
+      
+      for($i=0; $i<300; $i++) {
+	$r1 = rand(0, 136);
+	$r2 = rand(0, 136);
+	if($r1 > $r2)
+	  list($r1, $r2) = array($r2, $r1); 
+	for($j=0; $j < abs($r2 - $r1); $j++) { 
+	  list($this->yamahai[$r1 + $j], $this->yamahai[$j]) = 
+	    array($this->yamahai[$j], $this->yamahai[$r1 + $j]); 
+	}
       }
+      for($i = 0; $i < 14; $i++) 
+	$this->wangpai[$i] = array_shift($this->yamahai);
     }
 
     $JpInstance =& $this->jp;    
@@ -897,14 +958,23 @@ class JongTable {
       $str_haifu = $JpInstance[$i]->wind . "DEAL_";
       foreach($JpInstance[$i]->tehai as $id) $str_haifu .= sprintf("%02x", $id);
       $this->make_haifu($str_haifu);
-      //$JpInstance[$i]->make_haifu("DEAL", $JpInstance[$i]->tehai);
     }
+
+    $this->open_dora();
     $tile = array_shift($this->yamahai);  // 1st Drawing
     array_push($JpInstance[$this->turn]->tehai, $tile);
-    //$JpInstance[0]->make_haifu("DRAW", $tile);
-    $this->make_haifu(sprintf("0DRAW_%02x", $tile));
 
+    $this->make_haifu(sprintf("0DRAW_%02x", $tile));
     $this->save_jokyo();
+  }
+
+  function open_dora() {
+    while ($this->dora - 1 < 4 - $this->lingshang) {
+      $this->make_haifu(sprintf("xDORA_%02x", $this->wangpai[$this->dora]));
+      echo "DORA = ".$this->wangpai[$this->dora]."\n\n\n";
+      print_r($this->wangpai);
+      $this->dora++;
+    }
   }
 
   function make_haifu($str_haifu) {
@@ -920,8 +990,19 @@ class JongTable {
 
   function make_haifu_hand($player) {
     $tehai = $this->jp[$player]->tehai;
+    $tsumohai = array_pop($tehai);
     sort($tehai); 
-    $str_haifu = $player . "HAND_";
+    array_push($tehai, $tsumohai);
+    $wind = $this->jp[$player]->wind;
+
+    if ($this->jp[$player]->is_reach) {
+      $str_haifu = sprintf("%1dDORA_", $wind);
+	for ($i = 0; $i < $this->dora; $i++) {
+	  $str_haifu .= sprintf("%02x", $this->wangpai[$this->dora + $i]);
+	}
+      $this->make_haifu($str_haifu);
+    }
+    $str_haifu = sprintf("%1dHAND_", $wind);
     foreach($tehai as $id) $str_haifu .= sprintf("%02x", $id);
     $this->make_haifu($str_haifu);
   }
@@ -941,13 +1022,13 @@ class JongTable {
   ////// [[Processing Commands]] //////
   function eval_command($haifu, $playerIndex = -1){
     $reg = preg_match("/^([0-3])(D[A-Z0]+)_([0-9a-f]+)$/", trim($haifu), $ref);
-    if($reg != 1) return alert("Invalid format");
+    if($reg != 1) return alert($haifu.":Invalid format");
     $qwind = $ref[1] * 1;
     $op = $ref[2];
     $qtarget = $ref[3];
 
     $JpInstance =& $this->jp;
-
+    
     if($JpInstance[$playerIndex]->wind != $qwind) 
       return alert("haifu_wind_mismatch");
 
@@ -959,12 +1040,19 @@ class JongTable {
 	if($JpInstance[$i]->bit_naki > 0) return alert("waiting for rag");
       $turn = $this->turn;
       $target = hexdec($qtarget);
-      $is_valid = $JpInstance[$turn]->discard($qwind, $target, $op==="DISCR");
-      if(!$is_valid) return alert("invalid target");
-      $this->make_haifu($haifu); // todo: warning DISCR with no reach right
+      $op_rev = $JpInstance[$turn]->discard($qwind, $target, 
+			$op === "DISCR" && count($this->yamahai) >= 4);
+      if(!$op_rev) return alert($haifu.":invalid target");
+      $haifu = sprintf("%d%s_%s", $qwind, $op_rev, $qtarget);
+      $this->make_haifu($haifu);
 
       $turnwind = $JpInstance[$turn]->wind;
-      for($i = 0; $i < 4; $i++) $JpInstance[$i]->nakihan($turnwind, $target);
+      if($JpInstance[$turn]->is_kaihua) {
+	$JpInstance[$turn]->is_kaihua = false;
+	$this->open_dora();
+      }
+      for($i = 0; $i < 4; $i++) 
+	$JpInstance[$i]->nakihan($turnwind, $target, count($this->yamahai) <= 0);
       $this->turn_to_next();
       break;
 
@@ -975,16 +1063,18 @@ class JongTable {
     case "DECLF":
       if($playerIndex == $this->turn) {
 	if($op === "DECLF") {
-	  if(!$JpInstance[$playerIndex]->declare_hora(true)) return alert("Invalid declare");
-	  //echo"TSUMO"; 
+	  if(!$JpInstance[$playerIndex]->declare_hora(true)) 
+	    return alert("Invalid declare");
 	  $this->make_haifu($haifu);
 	  $this->make_haifu_hand($this->turn);
 	}
 	if($op === "DECLK") {
-	  $naki_type = $JpInstance[$playerIndex]->declare_kong($qtarget, true);
-	  if(!$naki_type) return alert("Invalid declare"); 
-	  //$naki_type = ANKAN; // [todo: consider KAKAN
+	  if(count($this->yamahai) <= 0) return alert("Invalid to kong last draw");
+	  $naki_type = $JpInstance[$playerIndex]->declare_kong(
+			     hexdec($qtarget), true);
+	  if(!$naki_type) return alert("Invalid to declare"); 
 	  $this->make_haifu($haifu);
+	  $this->make_haifu("END");
 	}
       } else {
 	// specify the stolen tile
@@ -995,7 +1085,7 @@ class JongTable {
 
 	// declaration reserve
 	$ret = $JpInstance[$playerIndex]->declaration_reserve($op, $qtarget, $nakihai);
-	if(!$ret) return alert("Invalid declare");
+	if(!$ret) return alert("Invalid declaration");
 
 	// the case there is any other stealer with higher priority
 	// (no call if load haifu)
@@ -1041,19 +1131,34 @@ class JongTable {
       //if($op !== "DECLK") break;
       
       // changkan flag (no call if the haifu load)
-      if($naki_type == ANKAN || $naki_type == KAKAN) {
+      if($naki_type == KAKAN) {
 	// if(!$is_stolen) {
 	$BIT_RON = 8;
 	$target = hexdec($qtarget);
 	$turnwind = $JpInstance[$playerIndex]->wind; // player who called kong 
-	for($i = 0; $i < 4; $i++) $JpInstance[$i]->nakihan($turnwind, $target);
-	for($i = 0; $i < 4; $i++) if($JpInstance[$i]->bit_naki & $BIT_RON) break 2;
+	for($i = 0; $i < 4; $i++) $JpInstance[$i]->nakihan($turnwind, $target, true);
+	$is_wait_changkong = false;
+	for($i = 0; $i < 4; $i++) 
+	  if($JpInstance[$i]->bit_naki & $BIT_RON) { 
+	    $JpInstance[$i]->bit_naki = $BIT_RON;
+	    echo"<<Flag Changkong>>";
+	    $is_wait_changkong = true;
+	  } else { 
+	    $JpInstance[$i]->bit_naki = 0;
+	  }
+	if($is_wait_changkong) break;
       }
       
-      // ringshang (no call if the haifu load)
-      if($naki_type == ANKAN || $naki_type == KAKAN || $naki_type == DMK) 
-	 $JpInstance[$this->turn]->draw_tile(array_pop($this->yamahai));
-      
+      // lingshang (no call if the haifu load)
+      if($naki_type == ANKAN || $naki_type == KAKAN || $naki_type == DMK) { 
+	$target = array_shift($this->yamahai);
+	$JpInstance[$this->turn]->draw_tile($target);
+	$this->make_haifu(sprintf("%dDRAW_%02x", 
+				  $JpInstance[$this->turn]->wind, $target));
+	$this->lingshang--;
+	$JpInstance[$this->turn]->is_kaihua = true;
+	if($naki_type == ANKAN) $this->open_dora();
+      }
       break;
 
     default:
@@ -1064,13 +1169,12 @@ class JongTable {
 
   function turn_to_next(){
     $JpInstance =& $this->jp;
-
     for($i = 0; $i < 4; $i++) if($JpInstance[$i]->bit_naki > 0) return;
-    $this->turn = ($this->turn + 1) % 4;
-    if( count($this->yamahai) < 14 ){ 
+    if( count($this->yamahai) <= 0){ 
       $this->end_kyoku();
       return;
     } 
+    $this->turn = ($this->turn + 1) % 4;
     $this->pause_since = microtime(true);
     $target = array_shift($this->yamahai);
     $JpInstance[$this->turn]->draw_tile($target);
@@ -1150,6 +1254,11 @@ class JongTable {
   
   ////// [[End]] //////
   function end_kyoku(){
+    for($i = 0; $i < 4; $i++) {
+      if($this->jp[$i]->is_tempai) $this->make_haifu_hand($i);
+    }
+    $this->make_haifu("END");
+    $this->is_ryukyoku = true;
     return;
     $player_hoju = $this->turn;
     //$player_hora = $this->my_turn;

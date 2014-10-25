@@ -2,6 +2,7 @@
 var jang_cond = new JangTable;
 var gPsgID = 0;  
 var gStep = 0;
+var gRtime = 5;
 
 $(document).ready(function(){
     //create a new WebSocket object.
@@ -71,6 +72,7 @@ $(document).ready(function(){
 			       + "_" + msg.is_yourself + "\n");
 	break;
       case "aspect":
+	jang_cond.aspect = msg.aspect;
 	var strwind = ["T","N","S","P"];
 	var str_fuwo = strwind[parseInt(msg.aspect / 4)] + (msg.aspect % 4 + 1);
 	str_fuwo += " " + (msg.hon);
@@ -78,11 +80,18 @@ $(document).ready(function(){
 	break;
 
       case "approval":
-	$("#approval").show();
+	if(msg.point) {
+	  var res = (msg.point).join("/");
+	  //alert(msg.point);
+	} else 
+	  var res = "";
+	$("#operation").html(res  + "<br>" + (msg.next) +
+			     '<button id="approval">OK</button>');
 	$("#approval").click(function(){ 
 	    var msg = { "q": "approval" };
- 	  if(getRequest()) msg["id"] = getRequest().shift();
+	    if(getRequest()) msg["id"] = getRequest().shift();
             websocket.send(JSON.stringify(msg));
+	    jang_cond = new JangTable;
 	    $(this).hide();
 	  });
 	break;
@@ -100,18 +109,84 @@ $(document).ready(function(){
 	  JpInstance[i].dump_stat(jang_cond.turn, newest_haifu);
 	}
 
+	while (jang_cond.msgstock.length > 0) {
+	  var msg = jang_cond.msgstock.shift();
+	  if(getRequest()) msg["id"] = getRequest().shift();
+	  websocket.send(JSON.stringify(msg));
+	}
+
+	var startCount = function() {
+	  gRtime = 5;
+	  clearInterval(gPsgID);
+	  gPsgID = setInterval(function() {
+	      $("#count").html(gRtime.toString(10));
+	      gRtime--; 
+	      if (gRtime >= 0) return;
+	      
+	      clearInterval(gPsgID);
+	      var obj = ($(".ex_selected").length != 1) ? 
+		$(".inhand:last") : $(".ex_selected");
+	      
+	      var haifu = obj.attr("id").split("hand_").join("DISC_");
+	      if ($("#reach" + haifu.substr(0,1)).attr("checked")) 
+		haifu = haifu.split("DISC_").join("DISCR_");
+	      var msg = { "size": jang_cond.haifu.length, "h":haifu, "q":"haifu" };
+	      if(getRequest()) msg["id"] = getRequest().shift();
+	      websocket.send(JSON.stringify(msg));
+	      $("#operation").html("おまちください");
+	      
+	    },1000);
+	};
+
+	//consider rong or rag
+	if(jang_cond.jp[jang_cond.turn].operable && !jang_cond.is_rag
+	   && !jang_cond.is_end) 
+	  startCount();
+
 	jang_cond.dump_wangpai();
-	jang_cond.check_extra();
+	jang_cond.check_extra(); // for debug
 	$("#step").html(jang_cond.haifu.length);
       }
       
-      $(".inhand").click(function(){
-	  var haifu = $(this).attr("id").split("hand_").join("DISC_");
+      $(".inhand, #rc").click(function(){
+	  if(!$(this).hasClass("ex_selected") && $(this).hasClass("inhand")) {
+	    $(".inhand").removeClass("ex_selected").css("border","none");
+	    $("#rc").html($(this).clone().attr("id","_").attr("class","")
+			  .css("height","80px").css("width","60px"));
+	    $(this).addClass("ex_selected").css("border","2px solid red");
+	    return;
+	  }
+	  if($(".ex_selected").length != 1) return;
+
+	  clearInterval(gPsgID);
+	  var haifu = $(".ex_selected").attr("id").split("hand_").join("DISC_");
 	  if ($("#reach" + haifu.substr(0,1)).attr("checked")) 
 	    haifu = haifu.split("DISC_").join("DISCR_");
 	  var msg = { "size": jang_cond.haifu.length, "h":haifu, "q":"haifu" };
 	  if(getRequest()) msg["id"] = getRequest().shift();
 	  websocket.send(JSON.stringify(msg));
+	  $("#operation").html("おまちください");
+      });
+
+      $("#move_l, #move_r").click(function(){
+	  if($(".ex_selected").length == 0) {
+	    var obj = $(".inhand:last");
+	  } else {
+	    var parent = $(".ex_selected").parent().attr("id");
+	    //alert(parent);
+	    if($(this).attr("id") === "move_l") {
+	      var obj = $(".ex_selected").prev();
+	      if (!obj.hasClass("inhand")) var obj = $(".inhand:last");
+	    } else { 
+	      var obj = $(".ex_selected").next();
+	      if (!obj.hasClass("inhand")) var obj = $(".inhand:first");
+	    }
+	  }
+
+	  $(".inhand").removeClass("ex_selected").css("border","none");
+	  $("#rc").html(obj.clone().attr("id","").attr("class","")
+			.css("height","80px").css("width","60px"));
+	  obj.addClass("ex_selected").css("border","2px solid red");
       });
 
       $(".decl").click(function(){
@@ -146,7 +221,7 @@ $(document).ready(function(){
 	  var nakihai = JpInstance[nakare].sutehai[pos_discard];
 	  var player = haifu.substr(0,1);
 	  var targets = JpInstance[player].find_target(id2num(nakihai), haifu.substr(1));
-	  switch(haifu.substr(1)) {
+	  switch(haifu.substr(1).split("_").shift()) {
 	  case "DECLF":
 	    msg.h += "_0";
 	    websocket.send(JSON.stringify(msg));
@@ -176,7 +251,11 @@ $(document).ready(function(){
 	      alert(targets);
 	    }
 	    break;
+	  default:
+	    $(this).append("/"+haifu);
+	    break;
 	  }
+
 
       });
 
@@ -208,3 +287,5 @@ var getRequest = function(){
     return false;
   }
 }
+
+

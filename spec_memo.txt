@@ -1,3 +1,50 @@
+<10/24>
+
+
+<10/21>
+タイマ実装完了
+問題点:
+*srv/cli:ラグ中のUI表示,自摸和後のUI
+*srv:親和了後に局遷移しない場合がある
+*srv:ログイン制御
+*srv/cli:振聴
+*srv:立直中の暗かん
+*srv:二家和制御/頭跳ね
+*srv:途中流局
+*srv:終局制御(切れない,宣言できない)
+*srv/cli:切断処理
+
+*srv:うらどら・かんどら＃
+*srv:自摸和のとき理牌しない＃
+*srv:終巡制御＃(#立直できない, #聴牌料授受, #加暗かんできない, #鳴けないただしロンは可)
+
+
+<10/14>
+点数計算実装完了
+
+<10/12>
+クライアントの画面設計再構成
+点数計算時の動作詳細
+[和了の場合]
+cli {h:"DECLF"}
+srv {haifu:"xDECLF;xHAND_xxxxxx;DORA:xxxx;END"} // 単ロン時
+srv {haifu:"xDECLF;xHAND_xxxxxx;haifu:"xDECLF;xHAND_xxxxxx;DORA:xxxx;END"}//Wロン時
+cli_jq:和了形とどらを画面表示
+cli {q:"calc",p:"xx_xx_xx"} 
+// ENDがきたら自動で返す(jsで手役のみ計算。暫定措置)
+srv {type:"approval",point: [p0_hand,p0_hon,p0_com,p1_hand..., p3_com], next:3_1 }
+// 計算結果に本場と供託を加味する。Wロンの場合は別途考慮。
+cli_jq 点計算・授受・次局を画面表示
+cli {sb:"approval",ans:true}
+
+[流局の場合のソケット部]
+cli {h:"DISC_xx"}
+srv {haifu:"xDISC_xx;xHAND_xxxxx;END"}
+srv {type:"approval",point: [p0_hand,p0_hon(=0),p0_com,p1_hand..., p3_com], next:3_1 }
+cli {sb:"approval",ans:true}
+
+鯖からもらえる情報が少ないような気がしないでもない。
+
 <10/3>
 下記デバッグ完了。
 ツモったときにq=Calcで全員マイナスされる。
