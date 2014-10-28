@@ -53,6 +53,11 @@ $(document).ready(function(){
     websocket.onmessage = function(ev) {
       var msg = JSON.parse(ev.data); //PHP sends Json data
       var type = msg.type; //message type
+
+      for(var i in msg) 
+	$("#sel_haifu").append(i + ":" + msg[i] + "/");
+      $("#sel_haifu").append("\n");
+
       var JpInstance = jang_cond.jp;
       switch (type) {
       case "player":
@@ -66,10 +71,6 @@ $(document).ready(function(){
 	if (msg.is_yourself) {
 	  JpInstance[qplayer].operable = true;
 	}
-
-	$("#sel_haifu").append(msg.name 
-			       + "_" +  msg.wind + "_" + msg.point
-			       + "_" + msg.is_yourself + "\n");
 	break;
       case "aspect":
 	jang_cond.aspect = msg.aspect;
@@ -97,7 +98,7 @@ $(document).ready(function(){
 	break;
 
       case  "haifu":
-	$("#sel_haifu").append("====\n" + msg.haifu.split(";").join("\n"));
+	//$("#sel_haifu").append("====\n" + msg.haifu.split(";").join("\n"));
       
 	var got_haifu = msg.haifu.split(";");
 	for (var i=0; i < got_haifu.length; i++){
@@ -140,12 +141,16 @@ $(document).ready(function(){
 
 	//consider rong or rag
 	if(jang_cond.jp[jang_cond.turn].operable && !jang_cond.is_rag
-	   && !jang_cond.is_end) 
+	    && !jang_cond.is_end
+	   ) 
 	  startCount();
 
 	jang_cond.dump_wangpai();
 	jang_cond.check_extra(); // for debug
 	$("#step").html(jang_cond.haifu.length);
+
+	if (jang_cond.is_end) return;
+	//if (jang_cond.is_end) alert("true");
       }
       
       $(".inhand, #rc").click(function(){
@@ -190,6 +195,7 @@ $(document).ready(function(){
       });
 
       $(".decl").click(function(){
+	  clearInterval(gPsgID);
 	  var JpInstance = jang_cond.jp;
 	  var haifu = $(this).attr("id");
 	  var msg = { "size": jang_cond.haifu.length, 

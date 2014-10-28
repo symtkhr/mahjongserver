@@ -1,25 +1,157 @@
 <?
 require_once("srv_jang0602.php.c");
 
-// テストケース: 
+// テストケース<1>: 複合鳴きフラグ 
 $fouth = array(
 "0DEAL_060b0a10111226303a444d4f58",
 "1DEAL_010203131c1e24292c3c3d3e4c",
 "2DEAL_080c3132333f41475d62687273",
+//"2DEAL_080c0d3132333f41475d62687a",
 "3DEAL_0407152d2e3539454e50566a6f",
 "0DRAW_34",
 "0DISC_26",
 "1DRAW_5e",
-"1DISC_4c",
+/*"1DISC_4c",
 "2DRAW_19",
-//*
+//
 "2DISC_19",
 "3DRAW_5b",
 "3DISC_04",
-
+*/
 );
 
-$fouth_s = array(
+// テストケース<2>: 終巡制御
+$fouthv = array(
+ /*sending 0:*/ "0DEAL_01070c1b1c1e21233449667e86",
+ /*sending 1:*/ "1DEAL_151725262e303340415a61646e",
+ /*sending 2:*/ "2DEAL_0d0e1f2b2f323b4254575f637a",
+ /*sending 3:*/ "3DEAL_08121a31354546476a6c747d81",
+ /*sending 4:*/ "xDORA_55",
+ /*sending 5:*/ "0DRAW_88",
+ /*sending 6:*/ "0DISC_49",
+ /*sending 7:*/ "1DRAW_27",
+ /*sending 8:*/ "1DISC_6e",
+ /*sending 9:*/ "2DRAW_19",
+ /*sending 10:*/ "2DISC_7a",
+ /*sending 11:*/ "3DRAW_7b",
+ /*sending 12:*/ "3DISC_7b",
+ /*sending 13:*/ "0DRAW_3d",
+ /*sending 14:*/ "0DISC_66",
+ /*sending 15:*/ "1DRAW_51",
+ /*sending 16:*/ "1DISC_51",
+ /*sending 17:*/ "2DRAW_06",
+ /*sending 18:*/ "2DISC_06",
+ /*sending 19:*/ "3DRAW_75",
+ /*sending 20:*/ "3DISC_75",
+ /*sending 21:*/ "0DRAW_48",
+ /*sending 22:*/ "0DISC_48",
+ /*sending 23:*/ "1DRAW_82",
+ /*sending 24:*/ "1DISC_82",
+ /*sending 25:*/ "2DRAW_7f",
+ /*sending 26:*/ "2DISC_7f",
+ /*sending 27:*/ "3DRAW_4b",
+ /*sending 28:*/ "3DISC_7d",
+ /*sending 29:*/ "0DRAW_6f",
+ /*sending 30:*/ "0DISC_3d",
+ /*sending 31:*/ "1DRAW_36",
+ /*sending 32:*/ "1DISC_30",
+ /*sending 33:*/ "2DRAW_80",
+ /*sending 34:*/ "2DISC_80",
+ /*sending 35:*/ "3DRAW_85",
+ /*sending 36:*/ "3DISC_85",
+ /*sending 37:*/ "0DECLP_8688",
+ /*sending 38:*/ "0DISC_7e",
+ /*sending 39:*/ "1DRAW_0b",
+ /*sending 40:*/ "1DISC_0b",
+ /*sending 41:*/ "2DRAW_28",
+ /*sending 42:*/ "2DISC_28",
+ /*sending 43:*/ "3DRAW_7c",
+ /*sending 44:*/ "3DISC_7c",
+ /*sending 45:*/ "0DRAW_18",
+ /*sending 46:*/ "0DISC_6f",
+ /*sending 47:*/ "1DRAW_13",
+ /*sending 48:*/ "1DISC_13",
+ /*sending 49:*/ "2DRAW_71",
+ /*sending 50:*/ "2DISC_71",
+ /*sending 51:*/ "3DRAW_78",
+ /*sending 52:*/ "3DISC_74",
+ /*sending 53:*/ "0DRAW_62",
+ /*sending 54:*/ "0DISC_62",
+ /*sending 55:*/ "1DRAW_2c",
+ /*sending 56:*/ "1DISC_64",
+ /*sending 57:*/ "2DRAW_77",
+ /*sending 58:*/ "2DISC_77",
+ /*sending 59:*/ "3DRAW_79",
+ /*sending 60:*/ "3DISC_79",
+ /*sending 61:*/ "0DRAW_3e",
+ /*sending 62:*/ "0DISC_3e",
+ /*sending 63:*/ "1DRAW_38",
+ /*sending 64:*/ "1DISC_61",
+ /*sending 65:*/ "2DRAW_83",
+ /*sending 66:*/ "2DISC_83",
+ /*sending 67:*/ "3DRAW_56",
+ /*sending 68:*/ "3DISC_4b",
+ /*sending 69:*/ "0DRAW_70",
+ /*sending 70:*/ "0DISC_70",
+ /*sending 71:*/ "1DRAW_0a",
+ /*sending 72:*/ "1DISC_0a",
+ /*sending 73:*/ "2DRAW_16",
+ /*sending 74:*/ "2DISC_42",
+ /*sending 75:*/ "3DRAW_1d",
+ /*sending 76:*/ "3DISC_81",
+ /*sending 77:*/ "0DRAW_4d",
+ /*sending 78:*/ "0DISC_4d",
+ /*sending 79:*/ "1DRAW_73",
+ /*sending 80:*/ "1DISC_73",
+ /*sending 81:*/ "2DRAW_09",
+ /*sending 82:*/ "2DISC_3b",
+ /*sending 83:*/ "3DRAW_20",
+ /*sending 84:*/ "3DISC_78",
+ /*sending 85:*/ "0DRAW_5b",
+ /*sending 86:*/ "0DISC_34",
+ /*sending 87:*/ "1DRAW_04",
+ /*sending 88:*/ "1DISC_04",
+ /*sending 89:*/ "2DRAW_72",
+ /*sending 90:*/ "2DISC_72",
+ /*sending 91:*/ "3DRAW_60",
+ /*sending 92:*/ "3DISC_08",
+ /*sending 93:*/ "0DRAW_4a",
+ /*sending 94:*/ "0DISC_4a",
+ /*sending 95:*/ "1DRAW_0f",
+ /*sending 96:*/ "1DISC_0f",
+ /*sending 97:*/ "2DRAW_76",
+ /*sending 98:*/ "2DISC_76",
+ /*sending 99:*/ "3DRAW_4f",
+ /*sending 100:*/ "3DISC_6c",
+ /*sending 101:*/ "0DRAW_6b",
+ /*sending 102:*/ "0DISC_6b",
+ /*sending 103:*/ "1DRAW_3c",
+ /*sending 104:*/ "1DISC_5a",
+ /*sending 105:*/ "2DECLC_5457",
+ /*sending 106:*/ "2DISC_09",
+ /*sending 107:*/ "3DRAW_67",
+ /*sending 108:*/ "3DISC_6a",
+ /*sending 109:*/ "0DRAW_3a",
+ /*sending 110:*/ "0DISC_3a",
+ /*sending 111:*/ "1DRAW_39",
+ /*sending 112:*/ "1DISC_17",
+ /*sending 113:*/ "2DRAW_84",
+ /*sending 114:*/ "2DISC_84",
+ /*sending 115:*/ "3DRAW_24",
+ /*sending 116:*/ "3DISC_20",
+ /*sending 117:*/ "0DECLC_1c21",
+ /*sending 118:*/ "0DISC_5b",
+ /*sending 119:*/ "1DRAW_14",
+ /*sending 120:*/ "1DISC_14",
+ /*sending 121:*/ "2DRAW_03",
+ /*sending 122:*/ "2DISC_03",
+ /*sending 123:*/ "3DRAW_59",
+ /*sending 124:*/ "3DISC_67",
+ /*sending 125:*/ "0DRAW_22",
+	      );
+
+// テストケース<3>: 二家搶槓
+$foutht = array(
 "0DEAL_0c121426333e454d4f506b6f88",
 "1DEAL_0407133b4a5460626471747d7f",
 "2DEAL_1632383a3f4046525c5d697284",
@@ -82,7 +214,7 @@ $fouth_s = array(
 "0DISC_06",
 "1DRAW_23",
 "1DISC_23",
-      "2DRAW_13",
+//      "2DRAW_13",
 /*
 "2DRAW_7b",
 "2DISC_7b",
@@ -173,59 +305,51 @@ if($unit_test) {
 		     array("2DECL0_0", "1DECL0_0", "0DECL0_0"), //→ (次巡)
                      array(),
 		     );
-  array_push($fouth,"DECK_".str_repeat("44", count($test_case)));
-  // $test_case = array(array());
+  //array_push($fouth,"DECK_".str_repeat("44", count($test_case)));
+
  } else {
   array_push($fouth,"DECK_4444");
   $test_case = array(array());
 }
 //var_dump($test_case);
 
+//テスト条件
 $jang_cond = new JongTable;
 $jang_cond->init_members();
 $jang_cond->aspect = 0;
+$jang_cond->jp_size = 4;
 $bandaid_name = array("Spr","Sum","Aut","Win");
-for($i=0; $i<4;$i++){
+$bandaid_pt = array(-10,0,0,0);
+for($i = 0; $i < 4; $i++){
   $jang_cond->jp[$i] = new JangPlayer;
   $jang_cond->jp[$i]->name = $bandaid_name[$i];
   $jang_cond->jp[$i]->token = rand(0, 0xffff);
+  $jang_cond->jp[$i]->pt = $bandaid_pt[$i];
  }
-$jang_cond->jp_size = 4;
 
-if(0) {
+if(1) {
   $jang_cond->init_aspects();
-  load_haifu_s($fouth, $i==0);
-  //cmd_debug();
-  //var_dump($jang_cond->yamahai);
-  //exit;
- } else
+  load_haifu_s($fouth);
+  make_random_haifu();
 
-if(0) {
+ } else {
+  $last_haifu = end($fouth);
+  if($unit_test) $jang_cond->is_loading = true;
 
-  foreach($test_case as $i=>$cmds) {
+  foreach($test_case as $i => $cmds) {
     $jang_cond->init_aspects();
-    if($unit_test) $jang_cond->is_loading = true;
-    load_haifu_v($fouth, $i==0);
-    if($unit_test) $jang_cond->is_loading = false;
+    $foutg = array_merge($fouth, array("TEST"), $cmds);
+    load_haifu_s($foutg);
+    if (count($cmds) == 0) continue;
     printf("%02d: ", $i + 1);
-    foreach($cmds as $cmd){
-      echo "<".$cmd.">";
-      $wind = substr($cmd, 0, 1) * 1;
-      $playerIndex = ($wind + $jang_cond->aspect) % 4;
-      $jang_cond->eval_command($cmd, $playerIndex);
-    }
+    $n = array_search($last_haifu, $jang_cond->haifu);
+    echo $jang_cond->haifu[$n + 1] . "\t<-\t";
+    echo implode(" / ", $cmds);
+
     echo "\n";
   }
-} else {
-  $jang_cond->init_aspects();
-  load_haifu_s($fouth, $i==0);
-  print_r($jang_cond->yamahai);
-
-  make_random_haifu();
 }
-//$jang_cond->haifu = $fouth;
-//var_dump($jang_cond->haifu);
-//var_dump($jang_cond->jp);
+
 if($unit_test)
    cmd_debug();
 
@@ -236,7 +360,7 @@ function make_random_haifu() {
     $jang_cond->start_game();
     $jang_cond->deal_tiles();
   }
-  for($loop = 0; $loop < 136 - 13 * 5 - 10; $loop++) {
+  for($loop = 0; $loop < 0/*< 136 - 13 * 5 - 30*/; $loop++) {
     $turn = $jang_cond->turn;
     $wind = $jang_cond->jp[$turn]->wind;
     $tehai = $jang_cond->jp[$turn]->tehai;
@@ -261,7 +385,7 @@ function load_haifu_v($haifu, $is_shown = false) {
     $reg = preg_match("/^([0-3x])(D[A-Z]+)_([0-9a-f]+)$/",trim($step),$ref);
     if($reg != 1) { 
       if(preg_match("/^DECK_([0-9a-f]+)$/", $step, $ref))
-	for($i=0; $i < strlen($ref[1]); $i+=2)
+      for($i=0; $i < strlen($ref[1]); $i+=2)
 	  array_push($jang_cond->yamahai, hexdec(substr($ref[1], $i, 2)));
       continue;
     }
@@ -331,6 +455,7 @@ function load_haifu_v($haifu, $is_shown = false) {
 function load_haifu_s($haifu, $is_shown = false) {
   global $jang_cond;
   $jp =& $jang_cond->jp;
+  $is_test = false;
 
   foreach($haifu as $step){
     $reg = preg_match("/^([0-3x])(D[A-Z]+)_([0-9a-f]+)$/",trim($step),$ref);
@@ -363,7 +488,7 @@ function load_haifu_s($haifu, $is_shown = false) {
     }
     $pre_id = $id;
   }
-  if(count($jang_cond->yamahai) != 136) {
+  if(count($jang_cond->yamahai) + count($jang_cond->wangpai) != 136) {
     sort($jang_cond->yamahai);
     print_r($jang_cond->yamahai);
     exit("Invalid haifu\n");
@@ -377,7 +502,8 @@ function load_haifu_s($haifu, $is_shown = false) {
   $jang_cond->deal_tiles(true);
 
   foreach($haifu as $step){
-    $reg = preg_match("/^([0-3x])(D[A-Z]+)_([0-9a-f]+)$/",trim($step),$ref);
+    if($step==="TEST") $is_test = true;
+    $reg = preg_match("/^([0-3x])(D[A-Z0]+)_([0-9a-f]+)$/",trim($step),$ref);
     if($reg != 1) continue;
 
     $wind = $ref[1] * 1;
@@ -388,7 +514,7 @@ function load_haifu_s($haifu, $is_shown = false) {
     switch($op){
     case "DRAW":
       for($i = 0; $i < 4; $i++) 
-	if($jp[$i]->bit_naki > 0)
+	if($jp[$i]->bit_naki > 0 && !$is_test)
 	  $jang_cond->eval_command($jp[$i]->wind . "DECL0_0", $i);
       break;
     case "DECLC":
@@ -396,11 +522,12 @@ function load_haifu_s($haifu, $is_shown = false) {
     case "DECLK":
     case "DECLF":
       for($i = 0; $i < 4; $i++) 
-	if($i != $playerIndex && $jp[$i]->bit_naki > 0)
+	if($i != $playerIndex && $jp[$i]->bit_naki > 0 && !$is_test)
 	  $jang_cond->eval_command($jp[$i]->wind . "DECL0_0", $i);
     /* through */
     case "DISC":
     case "DISCR":
+    case "DECL0":
       $jang_cond->eval_command($step, $playerIndex);
       break;
     case "DEAL":

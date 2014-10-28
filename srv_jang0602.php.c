@@ -79,6 +79,7 @@ class JangPlayer {
   var $is_furiten = false;
   var $is_hora = false;
   var $is_kaihua = false;
+  var $is_tenho = true;
   var $bit_naki = 0;
   var $rsv_naki = array("type"=>0, "target"=>array());
   var $rsv_pay = 0;
@@ -98,6 +99,7 @@ class JangPlayer {
     $this->is_furiten = false;
     $this->is_hora = false;
     $this->is_kaihua = false;
+    $this->is_tenho = true;
     $this->bit_naki = 0;
     $this->rsv_naki = array("type"=>0, "target"=>array());
   }
@@ -141,6 +143,7 @@ class JangPlayer {
     else if($is_call_reach){
       $is_valid_call = $this->declare_reach();
     }
+    $this->is_tenho = false;
     //(no call if the load haifu)
     //if(!$is_loading)
     //  $this->make_haifu($is_valid_call ? "DISCR":"DISC", $target);
@@ -205,7 +208,9 @@ class JangPlayer {
   function tempaihan(){
     $hands_check = new FinCheck;
     $this->is_tempai = ( $hands_check->tenpai_hantei($this->tehai) );
-    if($this->is_tempai) {
+    if(!$this->is_tempai) {
+      $this->is_tenho = false;
+    } else {
       foreach($this->sutehai as $sutehai){
 	if($this->is_furiten) break;
 	foreach($this->is_tempai as $machi){
@@ -303,10 +308,10 @@ class JangPlayer {
 
     $gaito = array();
     foreach($this->tehai as $i=>$id){ 
-      echo id2num($id)." ";
+      //echo id2num($id)." ";
       if( id2num($id) == $nakihai ){ array_push($gaito, $id); }
     }
-    echo count($gaito);
+    //echo count($gaito);
 
     // DaiMingKong
     if( count($gaito)==3 && !$is_me){
@@ -495,14 +500,16 @@ class JangPlayer {
     $mes  = ($this->bit_naki)      ? $this->show_naki_form() : "";
     $mes .= ($is_order) ? $this->show_decl_form() : "";
 
-    $str_flag  = $this->is_reach     ? "[rch]" : "";
-    $str_flag .= $this->is_1patsu    ? "[1pt]" : "";
-    $str_flag .= $this->is_tempai    ? "[tmp]" : "";
-    $str_flag .= $this->is_furiten   ? "[fri]" : "";
-    $str_flag .= $this->is_hora      ? "[fin]" : "";
-    $str_flag .= $this->is_ringshang ? "[rin]" : "";
-    $str_flag .= $this->approval     ? "[app]" : "";
-    if($this->rsv_pay != 0) $str_flag .= "[rsvp".$this->rsv_pay."]";
+    $str_flag  = $this->is_reach   ? "[rch]" : "";
+    $str_flag .= $this->is_1patsu  ? "[1pt]" : "";
+    $str_flag .= $this->is_tempai  ? "[tmp]" : "";
+    $str_flag .= $this->is_furiten ? "[fri]" : "";
+    $str_flag .= $this->is_hora    ? "[fin]" : "";
+    $str_flag .= $this->is_kaihua  ? "[rin]" : "";
+    $str_flag .= $this->is_tenho   ? "[prf]" : "";
+    $str_flag .= $this->approval   ? "[app]" : "";
+    for($i = 0; $i < 3; $i++)
+      if($this->rsv_pay[$i] != 0) $str_flag .= "[rsvp".$this->rsv_pay[$i]."]";
     $str_flag .= $this->rsv_naki["type"] > 0 ? 
       "[rsv".$this->rsv_naki["type"]."]" : "";
 
@@ -540,7 +547,9 @@ class JongTable {
   var $is_unittest;
   var $pause_since;
   var $is_ryukyoku = false;
+  var $is_end = false;
   var $lingshang = 4;
+  var $banked = 0;
 
   function dump_stat() {
     printf("asp=%d-%d; ", $this->aspect, $this->honba);
@@ -561,6 +570,7 @@ class JongTable {
     $this->turn = $this->aspect % 4;
     $this->haifu = array();
     $this->is_ryukyoku = false;
+    $this->is_end = false;
     $this->pause_since = 0;
     $this->lingshang = 4;
     $this->dora = 0;
@@ -586,6 +596,8 @@ class JongTable {
     foreach ($this->jp as &$jp) $jp->rsv_pay = array(0, 0, 0);
     $this->jp[$player]->rsv_pay[0] = $payments[0] / 100;
     $this->jp[$player]->rsv_pay[1] = $this->honba * 3;
+    $this->jp[$player]->rsv_pay[2] = $this->banked;
+    $this->banked = 0;
     
     if($this->turn != $player) {
       /* case: RONG */
@@ -610,7 +622,7 @@ class JongTable {
       }
     }
     $ret_array = array();
-    for ($i = 0;  $i <4; $i++)
+    for ($i = 0;  $i < 4; $i++)
       $ret_array = array_merge($ret_array, $this->jp[$i]->rsv_pay);
     return $ret_array;
   }
@@ -620,7 +632,10 @@ class JongTable {
     $win = 0;
     for($i = 0; $i < 4; $i++) {
       if($this->jp[$i]->is_tempai) $win++;
-      if($this->jp[$i]->is_reach) $this->jp[$i]->rsv_pay[2] = -10;
+      if($this->jp[$i]->is_reach) {
+	$this->jp[$i]->rsv_pay[2] = -10;
+	$this->banked += 10;
+      }
     }
     
     $gain = array(0, 30, 15, 10, 0);
@@ -631,18 +646,24 @@ class JongTable {
     $ret_array = array();
     for ($i = 0;  $i < 4; $i++)
       $ret_array = array_merge($ret_array, $this->jp[$i]->rsv_pay);
+
     return $ret_array;
   }
 
   function commit_continue() {
+    $this->honba++;
     for ($i = 0; $i < 4; $i++) {
-      if($this->jp[$i]->wind == 0 && $this->jp[$i]->is_hora) {
-	$this->honba++;
-	return;
-      }
+      if ($this->jp[$i]->wind != 0) continue;
+      $is_renchang = $this->jp[$i]->is_hora;
+      $is_renchang |= ($this->is_ryukyoku && $this->jp[$i]->is_tempai);
+      if(!$is_renchang) continue;
+      // todo:和了・聴牌やめ
+
+      $this->deal_tiles();
+      return;
     }
     $this->aspect++;
-    $this->honba = 0;
+    if (!$this->is_ryukyoku) $this->honba = 0;
     if ($this->check_finish_table()) return alert("GAMEOVER");
     $this->deal_tiles();
   }
@@ -950,11 +971,10 @@ class JongTable {
     for($i = 0; $i < 4; $i++){
       for($j = 0; $j < 13; $j++)
 	$JpInstance[$i]->tehai[$j] = array_shift($this->yamahai);
-      unset($JpInstance[$i]->tehai[13]);
-    }
-    
-    for($i = 0; $i < 4; $i++){
+
       sort($JpInstance[$i]->tehai); 
+      $JpInstance[$i]->tempaihan();
+
       $str_haifu = $JpInstance[$i]->wind . "DEAL_";
       foreach($JpInstance[$i]->tehai as $id) $str_haifu .= sprintf("%02x", $id);
       $this->make_haifu($str_haifu);
@@ -971,15 +991,15 @@ class JongTable {
   function open_dora() {
     while ($this->dora - 1 < 4 - $this->lingshang) {
       $this->make_haifu(sprintf("xDORA_%02x", $this->wangpai[$this->dora]));
-      echo "DORA = ".$this->wangpai[$this->dora]."\n\n\n";
-      print_r($this->wangpai);
+      //echo "DORA = ".$this->wangpai[$this->dora]."\n\n\n";
+      //print_r($this->wangpai);
       $this->dora++;
     }
   }
 
   function make_haifu($str_haifu) {
-    if($this->is_loading || $this->is_unittest) return;
-    if(1) { // for debugging
+    if($this->is_loading || $this->is_unittest) {} 
+    else {
       $fp = fopen("haifu.dat","a+");
       echo "[".$str_haifu."]";
       fputs($fp, $str_haifu."\n");
@@ -1021,6 +1041,7 @@ class JongTable {
 
   ////// [[Processing Commands]] //////
   function eval_command($haifu, $playerIndex = -1){
+    if($this->is_end) return alert("already end");
     $reg = preg_match("/^([0-3])(D[A-Z0]+)_([0-9a-f]+)$/", trim($haifu), $ref);
     if($reg != 1) return alert($haifu.":Invalid format");
     $qwind = $ref[1] * 1;
@@ -1067,6 +1088,8 @@ class JongTable {
 	    return alert("Invalid declare");
 	  $this->make_haifu($haifu);
 	  $this->make_haifu_hand($this->turn);
+	  $this->make_haifu("END");
+	  $this->is_end = true;
 	}
 	if($op === "DECLK") {
 	  if(count($this->yamahai) <= 0) return alert("Invalid to kong last draw");
@@ -1074,7 +1097,6 @@ class JongTable {
 			     hexdec($qtarget), true);
 	  if(!$naki_type) return alert("Invalid to declare"); 
 	  $this->make_haifu($haifu);
-	  $this->make_haifu("END");
 	}
       } else {
 	// specify the stolen tile
@@ -1106,6 +1128,7 @@ class JongTable {
 	  if($naki_type == RONG) {
 	    $JpInstance[$i]->is_hora = true;
 	    $this->make_haifu_hand($i);
+	    $this->is_end = true;
 	    continue;
 	  } else {
 	    $this->turn = $i;
@@ -1113,19 +1136,24 @@ class JongTable {
 	  }
 	}
 
+	if($this->is_end) {
+	  $this->make_haifu("END");
+	  break;
+	}
 
-	// the case there is no stealer (no need if the haifu load)
 	// todo: consider Changkong through
 	if(!$is_stolen){
 	  $this->turn_to_next();
 	  break;
 	}
       }
+
       // all flags are canceled
       for($i = 0; $i < 4; $i++){
 	$JpInstance[$i]->bit_naki = 0;
 	$JpInstance[$i]->rsv_naki = array("type"=>0, "target"=>array());
 	$JpInstance[$i]->is_1patsu = false;
+	$JpInstance[$i]->is_tenho = false;
       }
       
       //if($op !== "DECLK") break;

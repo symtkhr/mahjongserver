@@ -935,7 +935,7 @@ var JangTable = function(){
   ////// [[Processing Commands]] //////
   this.eval_command = function(haifu){
     if(!haifu) return;
-    if(haifu == "END") { this.is_end = true; return; }
+    if(haifu === "END") { this.is_end = true; return; }
     var reg = haifu.match(/^([0-3x])([A-Z0]+)_([0-9a-f]+)$/);
     if(!reg) return alert("Invalid format:" + reg);
     var qplayer = reg[1] * 1;
