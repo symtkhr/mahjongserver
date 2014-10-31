@@ -85,6 +85,8 @@ class JangPlayer {
   var $rsv_pay = 0;
   var $token;
   var $approval;
+  var $is_houki = false;
+  var $is_nagashi = true;//todo:流局時判定でもいいのでは?
 
   function init_members($wind) {
     $this->wind = $wind;
@@ -100,6 +102,8 @@ class JangPlayer {
     $this->is_hora = false;
     $this->is_kaihua = false;
     $this->is_tenho = true;
+    $this->is_houki = false;
+    $this->is_nagashi = true;
     $this->bit_naki = 0;
     $this->rsv_naki = array("type"=>0, "target"=>array());
   }
@@ -108,7 +112,7 @@ class JangPlayer {
     if(count($this->tehai) % 3 != 1) exit("tahai or shohai");
     array_push($this->tehai, $tile);
     //(no call if the load haifu)
-    if(!$this->is_reach) $this->furiten = false;
+    if(!$this->is_reach) $this->is_furiten = false;
     //    if(!$is_loading)
     //  $this->make_haifu("DRAW", $tile);
   }
@@ -131,6 +135,8 @@ class JangPlayer {
     array_push($this->sutehai, $target);
     array_push($this->sutehai_type, 0);
     
+    if(!is_yao(id2num($target))) $this->is_nagashi = false;
+
     // tempai check (no need if the load haifu)
     $this->tempaihan();
 
@@ -142,6 +148,7 @@ class JangPlayer {
     // apply reach
     else if($is_call_reach){
       $is_valid_call = $this->declare_reach();
+      if(!$this->is_tempai) $this->is_houki = true;
     }
     $this->is_tenho = false;
     //(no call if the load haifu)
@@ -165,13 +172,16 @@ class JangPlayer {
 
   function nakihan($turnwind, $sutehai, $is_only_rong = false){
     if($this->wind == $turnwind) return;
+
+    $this->bit_naki = 0;
+    if($this->is_houki) return;
+
     $BIT_RON = 8;
     $BIT_KAN = 4;
     $BIT_PON = 2;
     $BIT_CHI = 1;
 
     $mai = array();
-    $this->bit_naki = 0;
     $sutenum = id2num($sutehai);
 
     // Get the number of tiles
@@ -224,18 +234,26 @@ class JangPlayer {
 
   function declaration_reserve($decl, $q, $disc, $is_me=false){
     $BIT_RON = 8;
+    $BIT_KAN = 4;
+    $BIT_PON = 2;
+    $BIT_CHI = 1;
+
     switch($decl) {
     case "DECL0":
-      if($this->bit_naki & $BIT_RON) $this->furiten = true;
+      if($this->bit_naki & $BIT_RON) $this->is_furiten = true;
       $this->bit_naki = 0;
       return true;
     case "DECLC":
+      if (!($this->bit_naki & $BIT_CHI)) return false;
       return $this->declare_chi($disc, $q); //, $naki_type);
     case "DECLP":
+      if (!($this->bit_naki & $BIT_PON)) return false;
       return $this->declare_pong($disc, $q);
     case "DECLK":
+      if (!($this->bit_naki & $BIT_KAN)) return false;
       return $this->declare_kong($disc, false); //($is_me ? $q : $disc, $is_me);
     case "DECLF":
+      if (!($this->bit_naki & $BIT_RON)) return false;
       return $this->declare_hora($is_me);
     }
     return false;
@@ -252,10 +270,6 @@ class JangPlayer {
     $target = $this->rsv_naki["target"];
     $typefuro = $this->rsv_naki["type"];
 
-    //if(!$is_loading) {
-    //  $declid = array("0","C","P","K","K","K","F");
-    //  $this->make_haifu("DECL".$declid[$typefuro], $target);
-    //}
     array_push($this->typfuro, $typefuro);
 
     if($typefuro == DMK){
@@ -265,7 +279,6 @@ class JangPlayer {
     } else {
       $gaito = array($nakihai);
       for($i=0; $i<2; $i++) array_push($gaito, $target[$i]); 
-      //array_push($gaito, 0);
     }
     $this->tehai = array_diff($this->tehai, $gaito);
 	
@@ -296,7 +309,12 @@ class JangPlayer {
       return true;
     }
     // Rong
-    $this->set_reservation(RONG, null);
+    if($this->is_furiten) {
+      $this->is_houki = true;
+      $this->bit_naki = 0;
+    } else {
+      $this->set_reservation(RONG, null);
+    }
     return true;
   }
 
@@ -502,12 +520,15 @@ class JangPlayer {
 
     $str_flag  = $this->is_reach   ? "[rch]" : "";
     $str_flag .= $this->is_1patsu  ? "[1pt]" : "";
-    $str_flag .= $this->is_tempai  ? "[tmp]" : "";
+    $str_flag .= $this->is_tempai  ? "[tmp".implode("/",$this->is_tempai)."]" : "";
     $str_flag .= $this->is_furiten ? "[fri]" : "";
     $str_flag .= $this->is_hora    ? "[fin]" : "";
     $str_flag .= $this->is_kaihua  ? "[rin]" : "";
     $str_flag .= $this->is_tenho   ? "[prf]" : "";
     $str_flag .= $this->approval   ? "[app]" : "";
+    $str_flag .= $this->is_houki   ? "[dis]" : "";
+    $str_flag .= $this->is_nagashi ? "[ngs]" : "";
+
     for($i = 0; $i < 3; $i++)
       if($this->rsv_pay[$i] != 0) $str_flag .= "[rsvp".$this->rsv_pay[$i]."]";
     $str_flag .= $this->rsv_naki["type"] > 0 ? 
@@ -555,12 +576,14 @@ class JongTable {
     printf("asp=%d-%d; ", $this->aspect, $this->honba);
     printf("yama=%d; ", count($this->yamahai));
     printf("dora=%s; ", implode(" ", $this->wangpai));
+    printf("banked=%d; ", $this->banked);
     echo "\n";
     foreach($this->jp as $i=>$jp) $jp->dump_stat($i == $this->turn);
   }
 
   function init_members() {
     for($i = 0; $i < 4; $i++)  $this->jp[$i] = new JangPlayer;
+    $this->banked = 0;
     $this->init_aspects();
   }
 
@@ -583,8 +606,10 @@ class JongTable {
 
   function commit_payment() {
     foreach($this->jp as &$jp){
+      echo ($jp->pt) . "##";
       for($i=0; $i < 3; $i++)
-	$jp->pt += $jp->rsv_pay[$i];  
+	$jp->pt += $jp->rsv_pay[$i];
+      print_r($jp->rsv_pay);
       $jp->rsv_pay = array(0,0,0);
     }
   }
@@ -629,6 +654,17 @@ class JongTable {
 
   function reserve_payment_ryukyoku() {
     foreach ($this->jp as &$jp) $jp->rsv_pay = array(0, 0, 0);
+    foreach ($this->jp as $i => $jp) {
+      if($jp->is_nagashi){
+	$pay_nagashi = true;
+	$jp->rsv_pay[0] += ($jp->wind != 0) ? 80 : 120;
+	for($j=0; $j<4; $j++) {
+	  if($j == $i) continue; 
+	  $this->jp[$j]->rsv_pay[0] += 
+	    ($jp->wind == 0 || $jp[$i]->wind == 0) ? -40 : -20;
+	}
+      }
+    }
     $win = 0;
     for($i = 0; $i < 4; $i++) {
       if($this->jp[$i]->is_tempai) $win++;
@@ -637,19 +673,19 @@ class JongTable {
 	$this->banked += 10;
       }
     }
-    
-    $gain = array(0, 30, 15, 10, 0);
-    for($i = 0; $i < 4; $i++)
-      $this->jp[$i]->rsv_pay[1] = 
-	($this->jp[$i]->is_tempai) ? $gain[$win]: -$gain[4 - $win];
-
+    if(!$pay_nagashi) {  
+      $gain = array(0, 30, 15, 10, 0);
+      for($i = 0; $i < 4; $i++)
+	$this->jp[$i]->rsv_pay[1] = 
+	  ($this->jp[$i]->is_tempai) ? $gain[$win]: -$gain[4 - $win];
+    }
     $ret_array = array();
     for ($i = 0;  $i < 4; $i++)
       $ret_array = array_merge($ret_array, $this->jp[$i]->rsv_pay);
-
+    
     return $ret_array;
   }
-
+  
   function commit_continue() {
     $this->honba++;
     for ($i = 0; $i < 4; $i++) {
@@ -657,7 +693,7 @@ class JongTable {
       $is_renchang = $this->jp[$i]->is_hora;
       $is_renchang |= ($this->is_ryukyoku && $this->jp[$i]->is_tempai);
       if(!$is_renchang) continue;
-      // todo:和了・聴牌やめ
+      // todo:和了・聴牌やめ・流し満貫の連荘
 
       $this->deal_tiles();
       return;
@@ -1083,6 +1119,7 @@ class JongTable {
     case "DECLK":
     case "DECLF":
       if($playerIndex == $this->turn) {
+	if($JpInstance[$playerIndex]->is_houki) break;
 	if($op === "DECLF") {
 	  if(!$JpInstance[$playerIndex]->declare_hora(true)) 
 	    return alert("Invalid declare");
@@ -1127,10 +1164,15 @@ class JongTable {
 
 	  if($naki_type == RONG) {
 	    $JpInstance[$i]->is_hora = true;
+	    //通らず対策
+	    if ($JpInstance[$this->turn]->is_1patsu && 
+		$JpInstance[$this->turn]->is_reach) 
+	      $JpInstance[$this->turn]->is_reach = false;
 	    $this->make_haifu_hand($i);
 	    $this->is_end = true;
 	    continue;
 	  } else {
+	    $JpInstance[$this->turn]->is_nagashi = false; 
 	    $this->turn = $i;
 	    break;
 	  }
@@ -1442,6 +1484,13 @@ function read_comment(){
 
 function id2num($id){
   return 1 + floor(($id-1)/4);
+}
+
+function is_yao($num) {
+  if($num > 27) return true;
+  if($num % 9 == 0) return true;
+  if($num % 9 == 1) return true;
+  return false;
 }
 
 function alert($message) {

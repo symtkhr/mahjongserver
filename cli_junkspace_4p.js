@@ -449,7 +449,7 @@ var JangPlayer = function(){
       });
     }
   };
-
+};
   /*
   this.make_haifu = function(op, target){
     fp = fopen("haifu.dat","a+");
@@ -464,93 +464,6 @@ var JangPlayer = function(){
   }
   */
 
-  ////// [[Show Cutting Notice]] //////
-  this.show_naki_form = function(){
-    if( this.bit_naki == 0 || !this.operable) return; 
-    
-    var menu_all = ["DECLC","DECLP","DECLK","DECLF"];
-    var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", 
-		  "DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"打"};
-    var menu = [];
-
-    for(var i = 0; i < menu_all.length; i++){
-      if((this.bit_naki >> i) & 0x01) // Check each bit
-        menu.push(menu_all[i]);
-    }
-    if(menu.length == 0) return;
-    
-    var mes = "<button id='" +  this.wind + "DECL0' class='decl op'>逸</button> ";
-
-    for(i = 0; i < menu.length; i++) {
-      mes += "<button id='" + this.wind + menu[i] + "' class='decl op'>";
-      mes += op2str[menu[i]] + "</button> ";
-    }
-    $("#operation").html(mes);
-  }
-
-  ////// [[Show Declaration Notice]] //////
-  this.show_decl_form = function(){
-    var menu = [];
-    var mai = [];
-    var cmd_sort = "";
-    var mes =  '';//'<button id="discard" class="op">打</button>';
-
-    if(!this.operable) return;
-
-    mes += '<button id="move_l" class="op">&lt;&lt;</button>';
-    mes += '<div id="rc" class="op"></div>';
-    mes += '<button id="move_r" class="op">&gt;&gt;</button>';
-
-    if (!this.is_reach) {
-      var is_menzen = true;
-      for(var i = 0; i < this.furo_from.length; i++) {
-	if(this.furo_from[i] == 0) continue;
-	is_menzen = false;
-      }
-      //alert(is_menzen);
-      if(is_menzen) {
-	mes += '<label class="reach_opt op">';
-	mes += '<input type="checkbox" id="reach' + this.wind + '">立</label>';
-      }
-    }
-    
-    // Check Tsumo Flag
-    if(this.tempai_target.length > 0){
-      if(0 <= this.tempai_target.index(id2num(this.tehai[this.tehai.length -1])))
-	menu.push("F");
-    }
-    for(var j = 0; j <= 34; j++) mai[j] = 0;
-    // Get the number of tiles
-    for(var j = 0; j < 14; j++) if(this.tehai[j] > 0) mai[id2num(this.tehai[j])]++;
-    // Check AnKan Flag
-    for(var i = 0; i < mai.length; i++)
-      if(mai[i] == 4 && i > 0)  menu.push("K_" + (i * 4).toStrByteHex());
-
-    // Check KaKan Flag
-    for(var i in this.tehai_furo){
-      var furo = this.tehai_furo[i];
-      var nakihai1 = id2num(furo[0]);
-      if(nakihai1 == undefined) break;
-      var nakihai2 = id2num(furo[1]);
-      if(nakihai1 == nakihai2 && mai[nakihai1] > 0 && nakihai1 > 0){
-	  menu.push("K_" + furo[0].toStrByteHex());
-      }
-    }
-    //if(menu.length == 0) return mes;
-
-    for(var j = 0; j < menu.length; j++) {
-      mes += "<button id='" + this.wind + "DECL" + menu[j] + "' ";
-      mes += "class='decl op'>";
-      mes += menu[j].substr(0, 1);
-      //mes += menu[j];
-      mes += id2num("0x" + menu[j].split("_").pop());
-      mes += "</button> ";
-    }  
-
-    mes += '<span id="count"></span>';
-
-    $("#operation").html(mes);
-  }
   /*
   ////// [[Show Situation Notice]] //////
   this.dump_stat_cli = function(turn){
@@ -609,68 +522,161 @@ var JangPlayer = function(){
     $("#mes").append(printf);
   } 
   */
- ////// [[Show Situation Notice]] //////
-  this.dump_stat = function(turn, haifu){
+
+var Layout = function() {
+  ////// [[Show Cutting Notice]] //////
+  this.show_naki_form = function(){
+    var jp = jang_cond.jp[qplayer];
+    if( jp.bit_naki == 0 || !jp.operable) return; 
+    
+    var menu_all = ["DECLC","DECLP","DECLK","DECLF"];
     var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", 
 		  "DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"打"};
-    var op = haifu.replace(/[^A-Z]/g,"");
+    var menu = [];
 
-    var this_pos = posname[this.pos];
-    var is_horizon = (this.pos == ePos.left  || this.pos == ePos.right);
-    var is_reverse = (this.pos == ePos.right || this.pos == ePos.top);
+    for(var i = 0; i < menu_all.length; i++){
+      if((jp.bit_naki >> i) & 0x01) // Check each bit
+        menu.push(menu_all[i]);
+    }
+    if(menu.length == 0) return;
+    
+    var mes = "<button id='" +  jp.wind + "DECL0' class='decl op'>逸</button> ";
+
+    for(i = 0; i < menu.length; i++) {
+      mes += "<button id='" + jp.wind + menu[i] + "' class='decl op'>";
+      mes += op2str[menu[i]] + "</button> ";
+    }
+    $("#operation").html(mes);
+  }
+
+  ////// [[Show Declaration Notice]] //////
+  this.show_decl_form = function(){
+    var jp = jang_cond.jp[qplayer];
+    var menu = [];
+    var mai = [];
+    var cmd_sort = "";
+    var mes =  '';//'<button id="discard" class="op">打</button>';
+
+    if(!jp.operable) return;
+
+    mes += '<button id="move_l" class="op">&lt;&lt;</button>';
+    mes += '<div id="rc" class="op"></div>';
+    mes += '<button id="move_r" class="op">&gt;&gt;</button>';
+
+    if (!jp.is_reach) {
+      var is_menzen = true;
+      for(var i = 0; i < jp.furo_from.length; i++) {
+	if(jp.furo_from[i] == 0) continue;
+	is_menzen = false;
+      }
+      //alert(is_menzen);
+      if(is_menzen) {
+	mes += '<label class="reach_opt op">';
+	mes += '<input type="checkbox" id="reach' + jp.wind + '">立</label>';
+      }
+    }
+    
+    // Check Tsumo Flag
+    if(jp.tempai_target.length > 0){
+      if(0 <= jp.tempai_target.index(id2num(jp.tehai[jp.tehai.length -1])))
+	menu.push("F");
+    }
+    for(var j = 0; j <= 34; j++) mai[j] = 0;
+    // Get the number of tiles
+    for(var j = 0; j < 14; j++) if(jp.tehai[j] > 0) mai[id2num(jp.tehai[j])]++;
+    // Check AnKan Flag
+    for(var i = 0; i < mai.length; i++)
+      if(mai[i] == 4 && i > 0)  menu.push("K_" + (i * 4).toStrByteHex());
+
+    // Check KaKan Flag
+    for(var i in jp.tehai_furo){
+      var furo = jp.tehai_furo[i];
+      var nakihai1 = id2num(furo[0]);
+      if(nakihai1 == undefined) break;
+      var nakihai2 = id2num(furo[1]);
+      if(nakihai1 == nakihai2 && mai[nakihai1] > 0 && nakihai1 > 0){
+	  menu.push("K_" + furo[0].toStrByteHex());
+      }
+    }
+    //if(menu.length == 0) return mes;
+
+    for(var j = 0; j < menu.length; j++) {
+      mes += "<button id='" + jp.wind + "DECL" + menu[j] + "' ";
+      mes += "class='decl op'>";
+      mes += menu[j].substr(0, 1);
+      //mes += menu[j];
+      mes += id2num("0x" + menu[j].split("_").pop());
+      mes += "</button> ";
+    }  
+
+    mes += '<span id="count"></span>';
+
+    $("#operation").html(mes);
+  }
+
+  var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", 
+		"DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"打"};
+  var imgpath = function(id, is_reach) {
+    if(typeof is_reach === "undefined") is_reach = false;
+    var is_yoko = (is_horizon && !is_reach) || (!is_horizon && is_reach);
+    var cmd0 =  cmd[id2num(id)];
+    if(is_yoko) cmd0 = "trans/" + cmd0 + "-";
+    return  "../kappa12/haiga/" + cmd0 + ".gif";
+  };
+  var wind2name = ["東","南", "西", "北"];  
+
+
+ ////// [[Show Situation Notice]] //////
+  this.dump_stat = function(turn, haifu){
+    var jp = jang_cond.jp[qplayer];
+    var op = haifu.replace(/[^A-Z]/g,"");
+    var this_pos = posname[jp.pos];
+    var is_horizon = (jp.pos == ePos.left  || jp.pos == ePos.right);
+    var is_reverse = (jp.pos == ePos.right || jp.pos == ePos.top);
     var sp = is_horizon ? "<br>" : " ";//"&#32;";
 
-    var imgpath = function(id, is_reach) {
-      if(typeof is_reach === "undefined") is_reach = false;
-      var is_yoko = (is_horizon && !is_reach) || (!is_horizon && is_reach);
-      var cmd0 =  cmd[id2num(id)];
-      if(is_yoko) cmd0 = "trans/" + cmd0 + "-";
-      return  "../kappa12/haiga/" + cmd0 + ".gif";
-    };
-    var wind2name = ["東","南", "西", "北"];
-
     // Table info
-    $("#wind_" + this_pos).html(wind2name[this.wind] + "<br>" + this.name + "<br>" + this.pt);
+    $("#wind_" + this_pos).html(wind2name[jp.wind] + "<br>" + jp.name + "<br>" + jp.pt);
     var obj = $("#wind_" + this_pos + ", #hand_" + this_pos);
-    obj.css("background-color", turn == this.wind ? "green":"")
-    .css("color", turn == this.wind ? "white":"black");
-    if(this.is_hora) obj.css("background-color","yellow").css("color", "black");
+    obj.css("background-color", turn == jp.wind ? "green":"")
+    .css("color", turn == jp.wind ? "white":"black");
+    if(jp.is_hora) obj.css("background-color","yellow").css("color", "black");
 
-    if(this.operable) {
+    if(jp.operable) {
       $("#operation").html('<button id="approval">OK</button>');
       if(op !== "HAND") {
-	if(this.bit_naki) 
+	if(jp.bit_naki) 
 	  this.show_naki_form();
-	else if(turn == this.wind)
+	else if(turn == jp.wind)
 	  this.show_decl_form();
       }
     }
     var str_flag = "";
-    if(this.is_reach) {
+    if(jp.is_reach) {
       var path = is_horizon ? "trans/reach-" : "reach";
       path = "../kappa12/haiga/" + path + ".png";
       str_flag += '<img src="' + path + '">';
     }
-    str_flag += this.is_1patsu  ? "[即]" : "";
-    str_flag += this.is_furiten ? "[振]" : "";
-    str_flag += this.tempai_target.length > 0  ? "[聴]" : "";
-    str_flag += this.is_hora    ? "和了" : "";
+    str_flag += jp.is_1patsu  ? "[即]" : "";
+    str_flag += jp.is_furiten ? "[振]" : "";
+    str_flag += jp.tempai_target.length > 0  ? "[聴]" : "";
+    str_flag += jp.is_hora    ? "和了" : "";
     
     $("#call_" + this_pos).html(str_flag);
-    if(this.wind == turn && op !== "DECLF" && op !== "HAND") { 
+    if(jp.wind == turn && op !== "DECLF" && op !== "HAND") { 
       $("#call_" + this_pos).append(" " + op2str[op]);
     }
 
     // Display hand
     var objarr = [];
 
-    for (var i = 0; i < this.tehai.length; i++) {
-      if ((this.wind == turn) && (i == this.tehai.length - 1) &&
+    for (var i = 0; i < jp.tehai.length; i++) {
+      if ((jp.wind == turn) && (i == jp.tehai.length - 1) &&
 	  (op === "DRAW" || op === "HAND")) objarr.push(sp);
-      var id = this.tehai[i];
+      var id = jp.tehai[i];
       var attr = { "src" : imgpath(id),
-		   "class" : (this.wind == turn) ? "inhand" : "",
-		   "id"  : this.wind + "hand_" + id.toStrByteHex() };
+		   "class" : (jp.wind == turn) ? "inhand" : "",
+		   "id"  : jp.wind + "hand_" + id.toStrByteHex() };
       objarr.push($("<img>").attr(attr));
     }
 
@@ -683,18 +689,18 @@ var JangPlayer = function(){
     }
 
     var objarr = [];
-    for(var i = this.tehai_furo.length - 1; i >= 0; i--) {
-      var furo = this.tehai_furo[i];
+    for(var i = jp.tehai_furo.length - 1; i >= 0; i--) {
+      var furo = jp.tehai_furo[i];
       objarr.push(sp);
       for(var j = 0; j < furo.length; j++){
 	var id = furo[j];
-	if(this.typfuro[i] == ANKAN){
+	if(jp.typfuro[i] == ANKAN){
 	  var path0 = (j==1 || j==2) ? imgpath(0) : imgpath(id);
 	} else if(furo.length == 4) {
-	  var path0 = (j == 3 && this.furo_from[i] == 3) || 
-	    (j != 2 && j + 1 == this.furo_from[i]) ? imgpath(id, true) : imgpath(id);
+	  var path0 = (j == 3 && jp.furo_from[i] == 3) || 
+	    (j != 2 && j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
 	} else{
-	  var path0 = (j + 1 == this.furo_from[i]) ? imgpath(id, true) : imgpath(id);
+	  var path0 = (j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
 	}
 	if(id == undefined) alert(i + "/" + j);
 	var attr = { "src" : path0, 
@@ -712,11 +718,11 @@ var JangPlayer = function(){
     }
     var j = 0;
     var objarr = [];
-    for(var i = 0; i < this.sutehai.length; i++) {
-      var id = this.sutehai[i];
+    for(var i = 0; i < jp.sutehai.length; i++) {
+      var id = jp.sutehai[i];
       if(id == 0) continue;
 
-      switch(this.sutehai_type[i]){
+      switch(jp.sutehai_type[i]){
       case 1: 
 	var attr = { "src" : imgpath(id), "id" : "disc_" + id.toStrByteHex(), "style" : "opacity:.4;" };
 	break;

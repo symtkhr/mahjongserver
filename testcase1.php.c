@@ -10,18 +10,18 @@ $fouth = array(
 "3DEAL_0407152d2e3539454e50566a6f",
 "0DRAW_34",
 "0DISC_26",
-"1DRAW_5e",
-/*"1DISC_4c",
+//"1DRAW_5e",
+"1DISC_4c",
 "2DRAW_19",
 //
 "2DISC_19",
 "3DRAW_5b",
 "3DISC_04",
-*/
+//*/
 );
 
 // テストケース<2>: 終巡制御
-$fouthv = array(
+$fouths = array(
  /*sending 0:*/ "0DEAL_01070c1b1c1e21233449667e86",
  /*sending 1:*/ "1DEAL_151725262e303340415a61646e",
  /*sending 2:*/ "2DEAL_0d0e1f2b2f323b4254575f637a",
@@ -151,7 +151,7 @@ $fouthv = array(
 	      );
 
 // テストケース<3>: 二家搶槓
-$foutht = array(
+$fouth = array(
 "0DEAL_0c121426333e454d4f506b6f88",
 "1DEAL_0407133b4a5460626471747d7f",
 "2DEAL_1632383a3f4046525c5d697284",
@@ -215,7 +215,7 @@ $foutht = array(
 "1DRAW_23",
 "1DISC_23",
 //      "2DRAW_13",
-/*
+
 "2DRAW_7b",
 "2DISC_7b",
 "3DRAW_3d",
@@ -229,7 +229,7 @@ $foutht = array(
 "3DECLC_5156",
 "3DISC_05",
 "0DRAW_31",
-/*
+//*
 "0DECLK_31",
 
 "0DRAW_0b",
@@ -246,7 +246,7 @@ $foutht = array(
 "xDORA_28",
 "1DRAW_68",
 "1DISC_64",
-"2DRAW_61",
+/*"2DRAW_61",
 "2DISC_61",
 "3DRAW_78",
 "3DISC_78",
@@ -319,7 +319,7 @@ $jang_cond->init_members();
 $jang_cond->aspect = 0;
 $jang_cond->jp_size = 4;
 $bandaid_name = array("Spr","Sum","Aut","Win");
-$bandaid_pt = array(-10,0,0,0);
+$bandaid_pt = array(0,0,0,0);
 for($i = 0; $i < 4; $i++){
   $jang_cond->jp[$i] = new JangPlayer;
   $jang_cond->jp[$i]->name = $bandaid_name[$i];
@@ -360,7 +360,7 @@ function make_random_haifu() {
     $jang_cond->start_game();
     $jang_cond->deal_tiles();
   }
-  for($loop = 0; $loop < 0/*< 136 - 13 * 5 - 30*/; $loop++) {
+  for($loop = 0; $loop < 14/*< 136 - 13 * 5 - 30*/; $loop++) {
     $turn = $jang_cond->turn;
     $wind = $jang_cond->jp[$turn]->wind;
     $tehai = $jang_cond->jp[$turn]->tehai;
@@ -501,7 +501,7 @@ function load_haifu_s($haifu, $is_shown = false) {
 
   $jang_cond->deal_tiles(true);
 
-  foreach($haifu as $step){
+  foreach($haifu as $i_st => $step){
     if($step==="TEST") $is_test = true;
     $reg = preg_match("/^([0-3x])(D[A-Z0]+)_([0-9a-f]+)$/",trim($step),$ref);
     if($reg != 1) continue;
@@ -535,6 +535,7 @@ function load_haifu_s($haifu, $is_shown = false) {
     default:
       break;
     }
+    //if($i_st > 5) break;
   }
 
 }
