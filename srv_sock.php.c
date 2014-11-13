@@ -1,15 +1,16 @@
 <?php
-
-  //define("DEBUG", true);
+define("DEBUG", false);
 
 require_once("srv_jang0602.php.c");
-if(DEBUG) {
+if(DEBUG || true) {
   require_once("testcase1.php.c");
  } else {
   $jang_cond = new JongTable;
   $jang_cond->init_members();
   //$jang_cond->haifu = array();
  }
+foreach($jang_cond->jp as $jp)
+echo( $jp->token). "\n"; 
 
 if(isset($argv[1]) && $argv[1] === "DEBUSOCK") debug_mode_s($argv);
 
@@ -27,7 +28,7 @@ function debug_mode_s($argv) {
 
   $socks = new SocketHandler;
   $socks->jang_tables[0] = $jang_cond;
-  $socks->is_debug = true;
+  $socks->is_in_unit_test = true;
   $socks->init_members();
   //$socks->jang_tables[0]->init_members();
   while(1) {
@@ -43,15 +44,17 @@ function debug_mode_s($argv) {
     }
     $socks->srv_sockrecv_handler((object)$mes, 0);
     $table_inst = $socks->jang_tables[0];
-    echo "\n";
-    //var_dump($table_inst);
+    if(DEBUG) {
+      echo "\n";
+      var_dump($table_inst);
+    }
     $table_inst->dump_stat();
     //foreach($table_inst->jp as $jp) $jp->dump_stat($table_inst->turn);
   }
 }
 
 $socks = new SocketHandler;
-$socks->is_debug = true;
+$socks->is_in_unit_test = true;
 $socks->start_server();
 
 class SocketHandler{
@@ -60,9 +63,10 @@ class SocketHandler{
   var $existing_changed = array();
   var $meibo = array();
   var $jang_tables = array();
-  var $host = 'logcalhost'; //host
+  var $host = 'localhost'; //host
   var $port = '9000'; //port
-  var $is_debug = false;
+  var $users = array();
+  var $is_in_unit_test = false;
 
   function init_members() {
     $tableInstance = new JongTable;
@@ -71,7 +75,7 @@ class SocketHandler{
       $table->init_members();
       array_push($this->jang_tables, $table);
     }
-    if($this->is_debug) {
+    if($this->is_in_unit_test) {
       global $jang_cond;
       $this->jang_tables[0] = $jang_cond;
       var_dump($this->jang_tables[0]);
@@ -113,6 +117,21 @@ class SocketHandler{
 	if($this->check_incoming_data($sock)) continue;
 	$this->check_disconnected_client($sock);
       }
+      continue;
+
+      //check all timers flag
+      foreach($this->jang_tables as &$table) {
+	$size = count($table->haifu);
+	if(!$table->check_timeout(true)) continue;
+	//以下,惜しい!
+	foreach($table->jp as $i => $JpInst) 
+        {
+	  $id = $JpInst->token;
+	  $this->users[$id]["status"] = sprintf("TABLE_%04x", 0);
+	  $msg = array( "q"=>"history", "id" => $id, "size" => $size );
+	  $this->srv_sockrecv_handler((object)$msg, $this->users[$id]["sock"]);	
+	}
+      }
     }
     socket_close($this->srv_sock);
   }
@@ -144,8 +163,8 @@ class SocketHandler{
       {
 	$received_text = $this->unmask($buf); //unmask data
 	$got_msg = json_decode($received_text); //json decode 
-	if(DEBUG) {
-	  echo "<<Incomming Data>>";
+	if(DEBUG || true) {
+	  echo "<<Incoming Data>>";
 	  var_dump($got_msg);
 	}
 	$this->handle_incoming_data($got_msg, $sock);
@@ -164,17 +183,44 @@ class SocketHandler{
     socket_getpeername($sock, $ip);
     unset($this->cli_socks[$found_socket]);
     
+    $uid = -1;
+    foreach($this->users as $id => $user) {
+      if ($user["sock"] != $sock) continue;
+      $uid = $id;
+      break;
+    }
+
+    echo $uid." is disconnected";
+
+    if(isset($this->users[$uid])) {
+
+      list($place, $num) = explode("_", $this->users[$uid]["status"], 2);
+      if ($place === "TABLE") {
+	$num += 0;
+	foreach($this->jang_tables[$num]->jp as &$jp) {
+	  if($jp->token != $uid) continue;
+	  $jp->is_connected = false;
+	  $response = array('type' => 'disconnect', "wind" => $jp->wind);
+	  $this->send_message($response);
+	  break;
+	}
+	var_dump($jp);
+      } else {
+	unset($this->users[$id]);
+      }
+    }
+
     //notify all users about disconnected connection
     $response = array('type'=>'system', 
-		      'message'=>$ip.' disconnected');
+		      'message'=>$ip.' disconnected',);
     $this->send_message($response);
   }
 
 
   function send_message($obj, $id = -1)
   {
-    if(DEBUG) {
-      echo "to ".$id.": ";
+    if(DEBUG || true) {
+      echo "<<to ".$id.">>\n";
       var_dump($obj);
     }
     $msg = $this->mask(json_encode($obj));
@@ -281,15 +327,19 @@ class SocketHandler{
       $rmsg = $this->mask(json_encode(array('type'=>'login', 'id'=>$token)));
       @socket_write($sock, $rmsg, strlen($rmsg));    
       $jang_cond->add_player($msg->name, $token);
-      echo "<<".($jang_cond->jp_size) ." gatherring...\n";
+      if(DEBUG)
+	echo "<<".($jang_cond->jp_size) ." gatherring...\n";
 
+      $this->users[$token]["status"] = sprintf("RESERVE_%04x", 0);
       if($jang_cond->jp_size < 4) return;
-      var_dump($jang_cond->jp);
+      if(DEBUG)
+	var_dump($jang_cond->jp);
       $jang_cond->deal_tiles();
 
       foreach($jang_cond->jp as $i => $JpInst) 
       {
 	$id = $JpInst->token;
+	$this->users[$id]["status"] = sprintf("TABLE_%04x", 0);
 	$msg = array( "q"=>"history", "id" => $id );
 	$this->srv_sockrecv_handler((object)$msg, $this->users[$id]["sock"]);	
       }
@@ -304,23 +354,18 @@ class SocketHandler{
       $rmsg = $this->mask(json_encode($pack));
       @socket_write($sock, $rmsg, strlen($rmsg));
 
-      //foreach($tokens as $token) $this->meibo[$token] = true;
-
       return;
       
-    case "init":
-      //$jang_cond->start_game();
-      $jang_cond->deal_tiles();
-      return;
-
     case "calc":
       $point = $msg->p;
       $wind = $msg->wind;
       $pt = $jang_cond->reserve_payment($playerIndex, $wind, $point);
       if(!$pt) return;
-      $json_obj = array("type"=>"approval", 
-			'next'=> $jang_cond->aspect);
-      $json_obj["point"] = $pt;
+      $json_obj = array('type' => 'layout',
+			"op" => "payment", 
+			'next' => $jang_cond->aspect,
+			'point' => $pt);
+      //$json_obj["point"] = $pt;
       foreach($jang_cond->jp as $jp)
 	$this->send_message($json_obj, $jp->token); 
     
@@ -345,36 +390,95 @@ class SocketHandler{
       if (!isset($msg->size)) $msg->size = 0;
       $id = $msg->id;
       $this->users[$id]["sock"] = $sock;
+      $jang_cond->jp[$playerIndex]->is_connected = true;
+
       if ($jang_cond->jp_size < 4) return;
 
-      $send_mes = array();
+      $send_mes = array("type" => "table", 
+			"q" => "renew",
+			"aspect" => $jang_cond->aspect,
+			"honba" => $jang_cond->honba,
+			"banked" => $jang_cond->banked
+			);
+      $this->send_message((object)$send_mes, $id);
+
       foreach($jang_cond->jp as $i => $JpInst) 
       {
+	$send_mes = array();
 	$send_mes["type"] = "player";
-	$send_mes["wind"]  = $JpInst->wind;
-	$send_mes["point"] = $JpInst->pt;
-	$send_mes["name"]  = $JpInst->name;
-	$send_mes["is_yourself"] = ($i == $playerIndex);
+	$send_mes["q"]    = "renew";
+	$send_mes["wind"] = $JpInst->wind;
+	$send_mes["pt"]   = $JpInst->pt;
+	$send_mes["name"] = $JpInst->name;
+	$send_mes["operable"] = ($i == $playerIndex);
 	$this->send_message((object)$send_mes, $id);
       }
-      $send_mes = array("type"=>"aspect", 
-			"aspect"=>$jang_cond->aspect, "hon"=>$jang_cond->honba);
-      $this->send_message((object)$send_mes, $id);
+      
+      $this->send_updated_haifu($pre_size, $playerIndex);
+      return;
       $send_mes = array();
       /* 以下, case "haifu"とほぼ同内容 */
       for($i = $msg->size; $i < count($jang_cond->haifu); $i++)
       {
 	$haifu = $jang_cond->haifu[$i];  
-	echo "\n sending " . $i . ": " . $haifu;
+	if(DEBUG)
+	  echo "\n sending " . $i . ": " . $haifu;
 	$haifu = haifu_make_secret($haifu, $jang_cond->jp[$playerIndex]->wind);
-	echo "(" . $haifu .")";
+	if(DEBUG)
+	  echo "(" . $haifu .")";
 	array_push($send_mes, $haifu);
       }
 
-      $json_obj = array('type'=>"haifu", 'haifu' => implode(";", $send_mes));
-      $this->send_message($json_obj, $id); 
-      return;
+      $jp = &$jang_cond->jp[$playerIndex];
 
+      if(1) {
+	$json_obj = array('type'=>"haifu", 
+			  'haifu' => implode(";", $send_mes));
+	$this->send_message($json_obj, $id); 
+	
+	if(DEBUG) {
+	  $json_obj = $this->jang_tables[0];
+	  var_dump($json_obj);
+	}
+	
+	$json_obj = array("type" => "layout", 
+			  "op" => $jp->show_naki_form(true), 
+			  "time" => 10);
+	if (($j == $jang_cond->turn) && !$jang_cond->is_naki_ragging()) {
+	  $json_obj["op"] = $jp->show_decl_form(true);
+	var_dump($json_obj["op"]);
+	}
+	$this->send_message($json_obj, $jp->token);
+      }
+      $jang_cond->dump_stat();
+      if(!$jang_cond->is_end) return;
+
+      foreach($jang_cond->jp as $jp) {
+	if (!$jp->is_hora) continue;
+	$json_obj = array("type" => "player",
+			  "q" => "update",
+			  'wind' => $jp->wind,
+			  "is_kaihua" => $jp->is_kaihua, 
+			  'is_tenho' =>  $jp->is_tenho,
+			  'is_reach' =>  $jp->is_reach,
+			  'is_1patsu' => $jp->is_1patsu,
+			  'changkong' => $jang_cong->jp[$jang_cond->turn]->changkong_stolen,
+			  );
+	$this->send_message($json_obj, -1); 
+      }
+
+      if($jang_cond->is_ryukyoku) {
+	$pt = $jang_cond->reserve_payment_ryukyoku();
+	$json_obj = array("type" => "layout",
+			  "op" => "payment",
+			  "point" => $pt, 
+			  'next' => $jang_cond->aspect);
+	for($i = 0; $i < 4; $i++)
+	  //foreach($jang_cond->jp as &$jp)
+	  $this->send_message($json_obj, $jang_cond->jp[$i]->token); 
+      }
+      return;
+      
     case "haifu":
       if (isset($msg->h)) {
       
@@ -382,39 +486,122 @@ class SocketHandler{
 	$jang_cond->eval_command($msg->h, $playerIndex);
       
       }
-
+      $this->send_updated_haifu($pre_size, -1);
+      return;
       // send updated haifu to all
       $send_mes = array();
       for ($i = $pre_size; $i < count($jang_cond->haifu); $i++){
 	array_push($send_mes, $jang_cond->haifu[$i]);
       }
 
-      for ($j = 0; $j < 4; $j++) {
+      foreach($jang_cond->jp as $j => $jp) {
 	$s_haifu = array();
-
-	foreach($send_mes as $i => $haifu) {
-	  $haifu = haifu_make_secret($haifu, $jang_cond->jp[$j]->wind);
+	foreach($send_mes as $haifu) {      
+	  $haifu = haifu_make_secret($haifu, $jp->wind);
 	  array_push($s_haifu, $haifu);
 	}
-	$json_obj = array('type'=>"haifu", 'haifu' => implode(";", $s_haifu));
-	$this->send_message($json_obj, $jang_cond->jp[$j]->token);
+	$json_obj = array('type'=>"haifu", 
+			  'haifu' => implode(";", $s_haifu));
+	$this->send_message($json_obj, $jp->token);
+
+	$json_obj = array("type" => "layout", 
+			  "op" => $jp->show_naki_form(true), 
+			  "time" => 10);
+	if (($j == $jang_cond->turn) && !$jang_cond->is_naki_ragging()) {
+	  $json_obj["op"] = $jp->show_decl_form(true);
+	  var_dump($json_obj["op"]);
+	}
+	$this->send_message($json_obj, $jp->token);
       }
+
       $jang_cond->dump_stat();
+      //if(!$jang_cond->is_end) return;
+
+      $target = $jang_cond->jp[$jang_cond->turn]->changkong_stolen;
+      foreach($jang_cond->jp as $jp) {
+	if (!$jp->is_hora) continue;
+	$json_obj = array("type" => "player",
+			  "q" => "calc",
+			  'wind' => $jp->wind,
+			  "is_kaihua" => $jp->is_kaihua, 
+			  'is_tenho' =>  $jp->is_tenho,
+			  'is_reach' =>  $jp->is_reach,
+			  'is_1patsu' => $jp->is_1patsu,
+			  'changkong' => $target
+			  );
+	$this->send_message($json_obj, -1); 
+      }
 
       if($jang_cond->is_ryukyoku) {
 	$pt = $jang_cond->reserve_payment_ryukyoku();
-	$json_obj = array("type"=>"approval", 
-			  'next'=> $jang_cond->aspect);
-	$json_obj["point"] = $pt;
-	foreach($jang_cond->jp as $jp)
-	  $this->send_message($json_obj, $jp->token); 
+	$json_obj = array("type" => "layout",
+			  "op" => "payment",
+			  "point" => $pt, 
+			  'next' => $jang_cond->aspect);
+	for($i = 0; $i < 4; $i++)
+	  $this->send_message($json_obj, $jang_cond->jp[$i]->token); 
       }
       return;
       break;
     }
-
-
   }
 
-
+  function send_updated_haifu($pre_size, $playerIndex) {
+    $jang_cond = $this->jang_tables[0];
+    $send_mes = array();
+    for ($i = $pre_size; $i < count($jang_cond->haifu); $i++){
+      array_push($send_mes, $jang_cond->haifu[$i]);
+    }
+    
+    foreach($jang_cond->jp as $j => $jp) {
+      if ($j != $playerIndex && $playerIndex != -1) continue;
+      $s_haifu = array();
+      foreach($send_mes as $haifu) {
+	$haifu = haifu_make_secret($haifu, $jp->wind);
+	  array_push($s_haifu, $haifu);
+      }
+      $json_obj = array('type'=>"haifu", 
+			'haifu' => implode(";", $s_haifu));
+      $this->send_message($json_obj, $jp->token);
+      
+      $json_obj = array("type" => "layout", 
+			"op" => $jp->show_naki_form(true), 
+			"time" => 10);
+      if (($j == $jang_cond->turn) && !$jang_cond->is_naki_ragging()) {
+	$json_obj["op"] = $jp->show_decl_form(true);
+	// var_dump($json_obj["op"]);
+      }
+      $this->send_message($json_obj, $jp->token);
+    }
+    
+    $jang_cond->dump_stat();
+    //if(!$jang_cond->is_end) return;
+    
+    $target = $jang_cond->jp[$jang_cond->turn]->changkong_stolen;
+    foreach($jang_cond->jp as $jp) {
+      if (!$jp->is_hora) continue;
+      $json_obj = array("type" => "player",
+			"q" => "calc",
+			'wind' => $jp->wind,
+			"is_kaihua" => $jp->is_kaihua, 
+			'is_tenho' =>  $jp->is_tenho,
+			  'is_reach' =>  $jp->is_reach,
+			'is_1patsu' => $jp->is_1patsu,
+			'changkong' => $target
+			);
+      $this->send_message($json_obj, $playerIndex < 0 ? -1 : $jang_cond->jp[$playerIndex]->token); 
+    }
+    
+    if($jang_cond->is_ryukyoku) {
+      $pt = $jang_cond->reserve_payment_ryukyoku();
+      $json_obj = array("type" => "layout",
+			"op" => "payment",
+			"point" => $pt, 
+			'next' => $jang_cond->aspect);
+      for($i = 0; $i < 4; $i++)
+	$this->send_message($json_obj, $jang_cond->jp[$i]->token); 
+      }
+    return;
+  }
 }
+

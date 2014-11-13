@@ -1,16 +1,26 @@
 img.tate {width: 18px;  height: 24px;}
 img.yoko {width: 24px;  height: 18px;}
+/* 
+furo:18+18+24 = 60px 
+furo(kong): 18*3+24 = 78px → 1枚あたり3pxかぶせると 66px
+80 * 4 = 320 
+
+(4kan) (10 + 18 * 2) + 67 * 4 =  314 ← (10 + 18 * 2) + 80 * 4 = 366
+(3kan) (10 + 18 * 5) + 67 * 3 =  301 ← (10 + 18 * 5) + 80 * 3 = 340
+
+*/
 
 div#right_column {float:right; margin-left:10px;}
-#jang_table {background-color:#ada; border-collapse:collapse; border: solid brown 3px; width:314px; height:385px; position:relative;}
+#jang_table, .payment {border: solid brown 3px;}
+#jang_table {background-color:#ada; border-collapse:collapse; position:relative;
+ width:314px; height:366px; }
 #jang_table tbody td {padding:0;}
 
-#fuoh tbody td {border: solid gray 1px; padding:0; width:38px; 
-		line-height:100%; border: solid brown 3px;}
-#fuoh {text-align:center; font-size:10pt; border-collapse:collapse; 
-       width:115px; 
-       position:absolute; top:100px; left:100px; right:100px; bottom:150px;}
-#wangpai {white-space:nowrap; height:50px; border: solid brown 3px;
+#fuoh {padding:0; margin:0;
+       border: solid brown 3px;  font-size:10pt;
+       position:absolute; top:100px; left:100px; right:100px; bottom:127px;}
+#fuoh .ch {font-size:16pt;}
+#wangpai {white-space:nowrap; height:25px; border: solid brown 3px;
 	  position:absolute; bottom:100px; right:100px;}
 #deck {vertical-align:top; text-align:right;}
 #banked {text-align:right; line-height:1.25em; vertical-align: bottom;}
@@ -19,7 +29,7 @@ div#right_column {float:right; margin-left:10px;}
 #wind_left,
 #wind_right,
 #wind_bottom
-{line-height:1.25em; width:60px; height:40px;}
+{/*width:40px;*/ position:absolute; padding:1px;}
 
 #call_top,
 #call_left,
@@ -43,10 +53,24 @@ div#right_column {float:right; margin-left:10px;}
 #inhand_right  {position:absolute; bottom:10px; right:0;}
 #inhand_left   {position:absolute;    top:10px;  left:0;}
 
-#furo_top    {float:left;  height:28px;}
-#furo_bottom {float:right; height:28px;}
-#furo_left   {position:absolute; bottom:0; left:0; width:28px;}
-#furo_right  {position:absolute; top:0;   right:0; width:28px;}
+#furo_top0, #furo_top1, #furo_top2, #furo_top3
+{float:left;  height:25px; width:67px; display:none;
+text-align:left; white-space:nowrap;}
+#furo_bottom0, #furo_bottom1, #furo_bottom2, #furo_bottom3
+{float:right; height:25px; width:67px; display:none;
+text-align:right; white-space:nowrap;}
+#furo_left0, #furo_left1, #furo_left2, #furo_left3
+{position:absolute; left:0; width:25px; height:67px; display:none;}
+#furo_right0, #furo_right1, #furo_right2, #furo_right3
+{position:absolute; right:0; width:25px; height:67px; display:none;}
+#furo_left0 {bottom:  0px; }
+#furo_left1 {bottom: 67px; }
+#furo_left2 {bottom:133px; }
+#furo_left3 {bottom:200px; }
+#furo_right0 {top:  0px; }
+#furo_right1 {top: 67px; }
+#furo_right2 {top:133px; }
+#furo_right3 {top:200px; }
 
 #discard_top0,    
 #discard_top1,
@@ -96,3 +120,13 @@ button#auto_step
 .reach_opt {border:solid gray 1px; background-color:#ccc;}
 #operation { height:80px;}
 .op { width:62px; height:80px; float:left; text-align:center; }
+
+#point_agenda table tbody tr td 
+{text-align:right; }
+#point_agenda {bottom:0; left:0; right:0; height:100px; background:white; position:absolute;}
+.payment {
+    background: #fdc; z-index:5; opacity:.9
+}
+#point_table {
+    position:absolute; top:25px; left:25px; right:25px; bottom:25px; 
+}

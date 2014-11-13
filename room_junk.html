@@ -4,16 +4,19 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script type="text/javascript" src="jquery-1.2.6.js"></script>
+<script type="text/javascript" src="../kappa12/jMah_v130.js"></script>
 <script type="text/javascript" src="cli_junkspace_4p.js"></script>
 <script type="text/javascript" src="room_junk.js"></script>
-<script type="text/javascript" src="../kappa12/jMah_v130.js"></script>
 <link rel="stylesheet" type="text/css" href="haifu_seq.css">
 <title>牌譜レシーバ</title>
 </head>
 <body style="padding:0; margin:0; width:320px; background-color:#daf;">
   <div id="jang_table">
     <div id="hand_top">
-      <div id="furo_top"><span>露t</span></div>
+      <div id="furo_top0">露t1</div>
+      <div id="furo_top1">露t2</div>
+      <div id="furo_top2">露t3</div>
+      <div id="furo_top3">露t4</div>
       <div id="inhand_top">
 	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
       </div>
@@ -22,22 +25,25 @@
       <div id="inhand_left">
 	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
       </div>
-      <div id="furo_left">
-	<span>露L</span>
-	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
-      </div>
+      <div id="furo_left0">露L1</div>
+      <div id="furo_left1">露L2</div>
+      <div id="furo_left2">露L3</div>
+      <div id="furo_left3">露L4</div>
     </div>
     <div id="hand_bottom">
-      <div id="furo_bottom"><span>露B</span></div>
+      <div id="furo_bottom0">露B1</div>
+      <div id="furo_bottom1">露B2</div>
+      <div id="furo_bottom2">露B3</div>
+      <div id="furo_bottom3">露B4</div>
       <div id="inhand_bottom">
 	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
       </div>
     </div>
     <div id="hand_right">
-      <div id="furo_right">
-	<span>露R</span>
-	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
-      </div>
+      <div id="furo_right0">露R1</div>
+      <div id="furo_right1">露R2</div>
+      <div id="furo_right2">露R3</div>
+      <div id="furo_right3">露R4</div>
       <div id="inhand_right">
 	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
       </div>
@@ -85,32 +91,41 @@
       <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
     </div>
 
-    <table id="fuoh">
-      <tbody>
-	<tr>
-	</tr>
-	<tr>
-	  <td></td>
-	  <td id="wind_top">東</td>
-	  <td id="deck">残69</td>
-	</tr>
-	<tr>
-	  <td id="wind_left">南</td>
-	  <td id="aspect"></td>
-	  <td id="wind_right">北</td>
-	</tr>
-	<tr>
-	  <td></td>
-	  <td id="wind_bottom">西</td>
-	  <td id="banked"></td>
-	</tr>
-    </tbody></table>
+    <div id="fuoh">
+      <div id="wind_top" style="top:0; left:10px; right:10px; text-align:center;">
+	<span class="name">上野</span><br>
+	<span class="pt">250</span>
+	<span class="ch">東</span>
+      </div>
+      <div id="wind_left" style="top:40px; left:0; right:20px; text-align:left;">
+	<span class="name">佐野</span><br>
+	<span class="ch">南</span><br>
+	<span class="pt">250</span>
+      </div>
+      <div id="wind_bottom" 
+	   style="bottom:0; left:10px; right:10px; text-align:center;">
+	<span class="ch">西</span>
+	<span class="pt">250</span><br>
+	<span class="name">下野</span>
+      </div>
+      <div id="wind_right" 
+	   style="bottom:40px; left:20px; right:0; text-align:right;">
+	<span class="pt">250</span><br>
+	<span class="ch">北</span><br>
+	<span class="name">宇野</span>
+      </div>
+    </div>
+    <div style="position:absolute; top:25px; left:25px; font-size:10pt;">
+      <span id="aspect"></span>
+      <span id="deck">残69</span>
+    </div>
     
     <div id="wangpai">
-      <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><br>
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
     </div>
+    <div id="point_table"></div>
   </div>
+
 </div>　
 
 <div id="operation">
@@ -123,7 +138,7 @@
   <label><input type=radio value=3 name="yourDirection">北家</label>
 -->
 </div>
-<div id="point_table"></div>　
+
 
 <h2>Tiles receiver</h2>
 <div id="step"></div>

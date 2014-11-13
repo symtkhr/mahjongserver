@@ -1,15 +1,15 @@
-
 Array.prototype.index = function(value){
-  for(var i=0; i<this.length; i++){ if(this[i]==value) return i; }
+  for (var i = 0; i < this.length; i++)
+    if (this[i] == value) return i;
   return -1;
 };
 Array.prototype.clone = function(){
   var res=[];
-  for(var i=0; i<this.length; i++){ res.push(this[i]); }
+  for (var i = 0; i < this.length; i++){ res.push(this[i]); }
   return res;
 };
 Array.prototype.diff = function(arr){
-  for(var i = arr.length; i > 0; i--){ 
+  for (var i = arr.length; i > 0; i--){ 
     var c = this.index(arr[i - 1]);
     if(c >= 0) this.splice(c, 1);
   }
@@ -21,7 +21,8 @@ Number.prototype.toStrByteHex = function(){
 }
 var posname = [ "top", "left", "bottom", "right"];
 var ePos = [];
-for(var i=0; i < posname.length; i++) ePos[posname[i]] = i;
+for (var i = 0; i < posname.length; i++) ePos[posname[i]] = i;
+var id2num = function(id){ return Math.ceil(id / 4); }
 
 var CHI   = 1;
 var PONG  = 2;
@@ -32,13 +33,11 @@ var RONG  = 6;
 var DISCTYPE_STOLEN = 1;
 var DISCTYPE_REACH  = 2;
 
-
 var exit = function(str){
   alert(str);
   stop_by_undefined_call();
 }
 
-//////////////////////////////////////////////
 var JangPlayer = function(){
   this.name;
   this.wind;
@@ -51,7 +50,7 @@ var JangPlayer = function(){
   this.furo_from = [];
   this.sutehai = [];
   this.sutehai_type = [];
-  this.is_reach  = false;
+  this.is_reach  = 0;
   this.is_1patsu = false; 
   this.tempai_target = [];
   this.is_furiten = false;
@@ -62,144 +61,29 @@ var JangPlayer = function(){
   this.draw_tile = function(tile){
     if(this.tehai.length % 3 != 1) exit("tahai or shohai");
     this.tehai.push(tile);
-    //(no call if the load haifu)
-    if(!this.is_reach) this.furiten = false;
   }
 
-  ////// [[Discard tiles]] //////
-  this.discard = function(turn, target, is_call_reach){
-    if(turn != this.wind) return false;
-    var tehai = this.tehai;
-
-    // normal update of tehai & sutehai
-    if(this.tehai.index(target) < 0){
-      if(this.tehai.index(0) < 0) exit("invalid discard");
+  this.discard = function(target, is_call_reach){
+    if (this.tehai.index(target) < 0){
+      if (this.tehai.index(0) < 0) exit("invalid discard");
       this.tehai.diff([0]);
     } else { 
       this.tehai.diff([target]);
     }
-    this.tehai.sort(function(a,b){ return a-b; });
+    this.tehai.sort(function(a, b){ return a - b; });
     this.sutehai.push(target);
-    this.sutehai_type.push(0);
-    
-    // tempai check (no need if the load haifu)
-    this.tempaihan();
+    if(is_call_reach) this.is_reach = 1;
+    this.sutehai_type.push(is_call_reach ? DISCTYPE_REACH : 0);
 
-    // 1patsu should be erased if already reached
-    is_valid_call = false;
-    if(this.is_reach){
-      //if(this.is_1patsu) alert("cleared");
-      this.is_1patsu = false;
-    }
-    // apply reach
-    else if(is_call_reach){
-      is_valid_call = this.declare_reach();
-    }
     return true;
-  }
-
-  this.declare_reach = function(){
-    this.is_reach = true;
-    this.is_1patsu = true;
-    this.sutehai_type[this.sutehai_type.length - 1] = DISCTYPE_REACH;
-    return true;
-  }
-
-  ////// [[Judge Cutting]] //////
-  this.nakihan = function(turn, sutehai){
-    if(this.wind == turn) return;
-    BIT_RON = 8;
-    BIT_KAN = 4;
-    BIT_PON = 2;
-    BIT_CHI = 1;
-
-    var mai = [];
-    this.bit_naki = 0;
-    var sutenum = id2num(sutehai);
-
-    // Get the number of tiles
-    for(var i=0; i<=34; i++) mai[i] = 0;
-    for(var i=0; i<this.tehai.length; i++) mai[id2num(this.tehai[i])]++;
-
-    // Check Rong Flag
-    if(this.tempai_target.length > 0){
-      if(0 <= this.tempai_target.index(sutenum)) this.bit_naki |= BIT_RON;
-      /*
-      var test_hand = this.tehai.clone();
-      test_hand.push(sutehai);
-      */
-      //hands_check = new FinCheck;
-      //if ( hands_check.agari_hantei(test_hand) ) this.bit_naki |= BIT_RON;
-    }
-    
-    // Check Kong/Pong Flag
-    if(!this.is_reach ){
-      if( mai[sutenum] == 3 ) this.bit_naki |= BIT_KAN | BIT_PON;
-      if( mai[sutenum] == 2 ) this.bit_naki |= BIT_PON;
-    }
-
-    // Check Chie Flag 
-    if(this.wind == (turn + 1) % 4){
-      if(sutenum > 27 || this.is_reach) return; // 字牌,立直者除く
-      if(sutenum     % 9 > 1 && mai[sutenum+1] && mai[sutenum-1]) // 嵌張チー[1,9]除く
-	this.bit_naki |= BIT_CHI;    
-      if((sutenum-1) % 9 < 7 && mai[sutenum+1] && mai[sutenum+2]) // 下目チー[8,9]除く
-	this.bit_naki |= BIT_CHI; 
-      if((sutenum-1) % 9 > 1 && mai[sutenum-2] && mai[sutenum-1]) // 上目チー[1,2]除く
-	this.bit_naki |= BIT_CHI;
-    }
-  }
-
-  this.tempaihan = function(){
-    var HandObj = new HandSet();
-    for(var i = 0; i < this.tehai.length; i++){
-      HandObj.hai.push(id2num(this.tehai[i]) - 1);
-    }
-    for(var i = 0; i < this.tehai_furo.length; i++){
-      var furo = this.tehai_furo[i];
-      var head = id2num(Math.min.apply(null, furo)) - 1;
-      var type = id2num(furo[0]) != id2num(furo[1]) ? typ.chi :
-        (furo.length == 3 ?  typ.pon : typ.kan ); // not considered ankong
-      HandObj.n.push([head, type]);
-    } 
-    var ag = [];
-    for(var i = 0; i < 34; i++) {
-      if(HandObj.mai()[i] == 4) continue;
-      HandObj.hai.push(i);
-      if( HandObj.split_into_ments(false) ) ag.push(i + 1);
-      HandObj.hai.pop();
-    }
-    if(ag.length > 0){ this.tempai_target = ag;   return true; }
-    return false; 
-    /*
-    this.is_tempai = ( hands_check.tenpai_hantei(this.tehai) );
-    if(this.is_tempai) {
-      for(var i = 0; i < this.sutehai.length; i++){
-	var sutehai = this.sutehai[i];
-	if(this.is_furiten) break;
-	for(var i = 0; i < this.is_tempai.length; i++){
-	  var machi = this.is_tempai[i];
-	  if(machi != id2num(sutehai)) continue;
-	  this.is_furiten = true;
-	  break;
-	}
-      }
-    }
-    */
-  }
-  
-  this.set_reservation = function(naki_type, target) {
-    this.bit_naki = 0;
-    this.rsv_naki["type"] = naki_type;
-    this.rsv_naki["target"] = target;
   }
 
   this.haifu2target = function(q) {
-    var targets= [];
+    var targets = [];
     for(var i = 0; i < q.length / 2; i++){
       var target = parseInt(q.substr(i * 2, 2), 16);
-      if(this.tehai.index(target) < 0){
-	if(this.tehai.index(0) < 0) return false;
+      if (this.tehai.index(target) < 0){
+	if (this.tehai.index(0) < 0) return false;
 	this.tehai.diff([0]);
       }
       targets.push(target);
@@ -219,58 +103,35 @@ var JangPlayer = function(){
 
     this.typfuro.push(typefuro);
 
-    if(typefuro == DMK){
+    if (typefuro == DMK) {
       var gaito = [];
       var furohai = 4 * Math.ceil(nakihai / 4);
-      for(var i = 0; i < 4; i++) gaito.push(furohai - i);
+      for (var i = 0; i < 4; i++) gaito.push(furohai - i);
     } else {
       var gaito = [nakihai];
-      for(var i = 0; i < target.length; i++) gaito.push(target[i]);
+      for (var i = 0; i < target.length; i++) gaito.push(target[i]);
     }
     this.tehai = this.tehai.diff(gaito);
-	
-    //here should be kakan consideration(maikka)
     this.tehai_furo.push(gaito);
     this.furo_from.push((this.wind - turn + 4) % 4);
-
-    return true;
-  }
-
-  this.delare_tsumo = function(){
-    var turn = this.wind;
-    //var hands_check = new FinCheck;
-    //if(!hands_check.agari_hantei(this.tehai)) return false;
-    this.is_hora = true;
-    this.tempai_target = [];
     return true;
   }
 
   this.declare_hora = function(turn){
-    //turn == this.wind;
     this.is_hora = true;
     this.tempai_target = [];
-    /*
-    // Tsumo
-    if(turn == this.wind){
-      hands_check = new FinCheck;
-      if(!hands_check.agari_hantei(this.tehai) ) return false;
-      return true;
-    }
-    // Rong
-    */
     return true;
   }
 
-  this.declare_kong = function(target){
+  this.declare_own_kong = function(target){
     var tehai = this.tehai;
     var nakihai = id2num(parseInt(target, 16));
 
     var gaito = [];
-    for(var i=0; i < this.tehai.length; i++) {
+    for(var i = 0; i < this.tehai.length; i++) {
       var id = this.tehai[i];
-      if(id2num(id) == nakihai) gaito.push(id);
+      if (id2num(id) == nakihai) gaito.push(id);
     }
-    
 
     var gaito_furo = -1;
     for(var i = 0; i < this.tehai_furo.length; i++){
@@ -289,7 +150,6 @@ var JangPlayer = function(){
       var furo_ments = [];
       for (var i = 0; i < 4; i++) 
 	furo_ments.push(id2num(parseInt(target, 16)) * 4 - i);
-      //this.tehai_furo[gaito_furo].push(parseInt(target, 16));
       var len = this.tehai.length;
       this.tehai = this.tehai.diff(furo_ments);
       while(len - this.tehai.length < 1) this.tehai = this.tehai.diff([0]);   
@@ -312,95 +172,6 @@ var JangPlayer = function(){
       return ANKAN;
     }
   }
-
-  this.calc_payment = function(field, honba, target, is_tsumo, doradisp, yamahai){
-    var HandObj = new HandSet();
-
-    for(var i=0; i < this.tehai.length; i++){
-      HandObj.addhi(id2num(this.tehai[i]) - 1, -1);
-    }
-    
-    for(var i = 0; i < this.tehai_furo.length; i++){
-      var furo = this.tehai_furo[i];
-      var head = id2num(Math.min.apply(null, furo)) - 1;
-      var type = id2num(furo[0]) != id2num(furo[1]) ? typ.chi :
-        (furo.length == 3 ?  typ.pon : typ.kan ); // not considered ankong
-      var type = this.typfuro[i];
-      if (type == CHI) type = typ.chi;
-      else if(type == PONG) type = typ.pon;
-      else if(type == DMK || type == KAKAN) type = typ.kan;
-      else if(type == ANKAN) type = typ.ankan;
-      HandObj.addhi(head, type);
-    }
-    /*
-    for(var j=0; j < 4; j++){
-      var typefuro = this.tehai_furotype[j];
-      if(typefuro == 0) break;
-      if(typefuro == 1){
-	var ments = [];
-	for(var i=0; i < 3; i++){
-	  var id = this.tehai_furo[j * 4 + i];
-	  ments.push(id2num(id));
-	}
-	var head = ments.sort(function(a,b){return a-b;}).shift();
-	var type = typ.chi;
-      } else {
-	var idhi = this.tehai_furo[j * 4];
-	var head = Math.floor((idhi-1)/4);
-	if(typefuro <= 4) var type = typ.pon;
-	else if(typefuro <= 7) var type = typ.kan;
-	else if(typefuro == 8) var type = typ.ankan;
-      }
-      HandObj.n.push([head, type]);
-    }
-    */
-    var CalcObj = new HandCalc();
-    CalcObj.ba_kz = field; // 場 [0=東, 1=南, 2=西, 3=北]
-    CalcObj.ch_kz = this.wind; // 家 [0=東, 1=南, 2=西, 3=北]
-    // 和了り方 [0=ロン, 1=ツモ, 2=牌底ロン, 3=牌底ツモ, 4=搶槓, 5=嶺上ツモ]
-    CalcObj.tsumo = is_tsumo;
-    if(yamahai <= 0) CalcObj.tsumo += 2;
-
-    // 立直 [0=ダマ, 1=立直, 2=立直一発, 3=W立直, 4=W立直一発]
-    CalcObj.reach = this.is_reach ? 1:0;
-    if(CalcObj.reach > 0) CalcObj.reach += this.is_1patsu ? 1:0;
-    CalcObj.tsumi = honba; // 積み棒
-    CalcObj.aghi = id2num(target) - 1; // 和了牌
-    //if(!is_tsumo) 
-    HandObj.addhi(CalcObj.aghi, -1);
-    CalcObj.dora  = 0; // ドラ枚数
-    var mai = HandObj.mai();
-    //$("#sel_haifu").append(mai);
-    for(var j = 0; j < doradisp.length; j++) {
-      var dora = id2num(doradisp[j]) - 1;
-      if(dora % 9 == 8) dora -= 8;
-      else if(dora == hi.pei) dora = hi.ton;
-      else if(dora == hi.chu) dora = hi.hak;
-      else dora++;
-      //$("#point_table").html(dora);
-      for(var i = 0; i < mai.length; i++) {
-	if(i == dora) CalcObj.dora += mai[i];
-      }
-    }
-    var ResObj  = new JangResult();
-    ResObj.get_result_by_hand(HandObj, CalcObj);
-    //var res = CalcObj.tsumo % 2 == 0 ? "ロン":"ツモ";
-    $("#point_table").append(mai.join("/")+"<br>"+CalcObj.dora);
-    var res = CalcObj.yaku();
-    if (CalcObj.dora > 0) res += ", ドラ" + CalcObj.dora;
-    res += "<br>";
-    res += ResObj.CalcObj.han() + "翻" + ResObj.CalcObj.fu() + "符";
-    res += CalcObj.point(0) + "点";
-    res += ResObj.result_table();
-    $("#point_table").append(res);
-    var point = [];
-    point.push(CalcObj.point(0));
-    point.push(CalcObj.point(1));
-    point.push(CalcObj.point(2));
-
-    return point;
-  }
-
 
   this.find_target = function(sutenum, op) {
     var targets = [];
@@ -427,18 +198,16 @@ var JangPlayer = function(){
       if(neighbors[1].length == 0) neighbors[0] = [];
       if(neighbors[2].length == 0) neighbors[3] = [];
 
-
       for(var i = 0; i < neighbors.length; i++) {
 	targets = targets.concat(neighbors[i]);
       }
-      //alert(neighbors +  "/" + neighbors.length + "/" + targets);
       break;
     }
     return targets;
   }
+
   this.show_expose_tile_selection = function(targets){
-    //alert(targets);
-    for(var i = 0; i < targets.length; i++) {
+    for (var i = 0; i < targets.length; i++) {
       var id = targets[i];
       var jq_id = this.wind + "hand_" + id.toStrByteHex();
       $("#" + jq_id).css("border", "2px solid blue").click(function(){
@@ -450,233 +219,126 @@ var JangPlayer = function(){
     }
   };
 };
-  /*
-  this.make_haifu = function(op, target){
-    fp = fopen("haifu.dat","a+");
-    fout = sprintf("%01d%s_", this.wind, op);
-    if(!is_array(target)) 
-      fout += sprintf("%02x", target);
-    else 
-      foreach(target as targetj) fout += sprintf("%02x",targetj);
-    echo "[".fout."]";
-    //fputs(fp, fout."\n");
-    fclose(fp);
-  }
-  */
-
-  /*
-  ////// [[Show Situation Notice]] //////
-  this.dump_stat_cli = function(turn){
-    var str_te = "";
-    var num_te = "";
-    var str_st = "";
-    var cmd = [	 "##",
-		 "1m","2m","3m","4m","5m","6m","7m","8m","9m",
-		 "1p","2p","3p","4p","5p","6p","7p","8p","9p",
-		 "1s","2s","3s","4s","5s","6s","7s","8s","9s",
-		 "to","na","sh","pe","hk","ht","ch"];
-    
-    for (var i = 0; i < this.tehai.length; i++) {
-      var id = this.tehai[i];
-      str_te += cmd[id2num(id)] + " ";
-      num_te += id.toStrByteHex() + " ";
-    }
-
-    for(var i = 0; i < this.tehai_furo.length; i++) {
-      var furo = this.tehai_furo[i];
-      str_te += " / ";
-      num_te += " / ";
-      for(var j = 0; j < furo.length; j++){
-	var id = furo[j];
-	if(this.typfuro[i] == ANKAN) str_te +="##";
-	else 
-	  str_te += (id > 0) ? cmd[id2num(id)] : ""; 
-	if(id == undefined) alert(i+"/"+j);
-	num_te += (id > 0) ? id.toStrByteHex() : "";
-      }
-    }
-    var mes  = (this.bit_naki) ? this.show_naki_form() : "";
-    mes += (turn == this.wind) ? this.show_decl_form() : "";
-
-    var str_flag  = this.is_reach   ? "[rch]" : "";
-    str_flag += this.is_1patsu  ? "[1pt]" : "";
-    str_flag += this.is_tempai  ? "[tmp]" : "";
-    str_flag += this.is_furiten ? "[fri]" : "";
-    
-    var printf =  "&lt;" + this.name + "> " + str_te + " | " + mes + "\n";
-    printf += (turn == this.wind ? "*   " : "    ") + num_te + " | " + str_flag + "\n";
-
-    printf += "   [";
-    for(var i=0; i < this.sutehai.length; i++) {
-      var id = this.sutehai[i];
-      if(id == 0) continue;
-      var s = cmd[id2num(id)];
-      switch(this.sutehai_type[i]){
-      case 1: printf += "<s>" + s + "</s>"; break;
-      case 2: printf += "<b>" + s + "</b>"; break;
-      default: printf += s; break;
-      }
-      printf += " ";
-    }
-    printf += "]\n";
-    $("#mes").append(printf);
-  } 
-  */
 
 var Layout = function() {
-  ////// [[Show Cutting Notice]] //////
-  this.show_naki_form = function(){
-    var jp = jang_cond.jp[qplayer];
-    if( jp.bit_naki == 0 || !jp.operable) return; 
-    
-    var menu_all = ["DECLC","DECLP","DECLK","DECLF"];
-    var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", 
-		  "DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"打"};
-    var menu = [];
-
-    for(var i = 0; i < menu_all.length; i++){
-      if((jp.bit_naki >> i) & 0x01) // Check each bit
-        menu.push(menu_all[i]);
-    }
-    if(menu.length == 0) return;
-    
-    var mes = "<button id='" +  jp.wind + "DECL0' class='decl op'>逸</button> ";
-
-    for(i = 0; i < menu.length; i++) {
-      mes += "<button id='" + jp.wind + menu[i] + "' class='decl op'>";
-      mes += op2str[menu[i]] + "</button> ";
-    }
-    $("#operation").html(mes);
-  }
-
-  ////// [[Show Declaration Notice]] //////
-  this.show_decl_form = function(){
-    var jp = jang_cond.jp[qplayer];
-    var menu = [];
-    var mai = [];
-    var cmd_sort = "";
-    var mes =  '';//'<button id="discard" class="op">打</button>';
-
-    if(!jp.operable) return;
-
-    mes += '<button id="move_l" class="op">&lt;&lt;</button>';
-    mes += '<div id="rc" class="op"></div>';
-    mes += '<button id="move_r" class="op">&gt;&gt;</button>';
-
-    if (!jp.is_reach) {
-      var is_menzen = true;
-      for(var i = 0; i < jp.furo_from.length; i++) {
-	if(jp.furo_from[i] == 0) continue;
-	is_menzen = false;
-      }
-      //alert(is_menzen);
-      if(is_menzen) {
-	mes += '<label class="reach_opt op">';
-	mes += '<input type="checkbox" id="reach' + jp.wind + '">立</label>';
-      }
-    }
-    
-    // Check Tsumo Flag
-    if(jp.tempai_target.length > 0){
-      if(0 <= jp.tempai_target.index(id2num(jp.tehai[jp.tehai.length -1])))
-	menu.push("F");
-    }
-    for(var j = 0; j <= 34; j++) mai[j] = 0;
-    // Get the number of tiles
-    for(var j = 0; j < 14; j++) if(jp.tehai[j] > 0) mai[id2num(jp.tehai[j])]++;
-    // Check AnKan Flag
-    for(var i = 0; i < mai.length; i++)
-      if(mai[i] == 4 && i > 0)  menu.push("K_" + (i * 4).toStrByteHex());
-
-    // Check KaKan Flag
-    for(var i in jp.tehai_furo){
-      var furo = jp.tehai_furo[i];
-      var nakihai1 = id2num(furo[0]);
-      if(nakihai1 == undefined) break;
-      var nakihai2 = id2num(furo[1]);
-      if(nakihai1 == nakihai2 && mai[nakihai1] > 0 && nakihai1 > 0){
-	  menu.push("K_" + furo[0].toStrByteHex());
-      }
-    }
-    //if(menu.length == 0) return mes;
-
-    for(var j = 0; j < menu.length; j++) {
-      mes += "<button id='" + jp.wind + "DECL" + menu[j] + "' ";
-      mes += "class='decl op'>";
-      mes += menu[j].substr(0, 1);
-      //mes += menu[j];
-      mes += id2num("0x" + menu[j].split("_").pop());
-      mes += "</button> ";
-    }  
-
-    mes += '<span id="count"></span>';
-
-    $("#operation").html(mes);
-  }
-
-  var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", 
+  var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", "DECL0":"パス",
 		"DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"打"};
-  var imgpath = function(id, is_reach) {
-    if(typeof is_reach === "undefined") is_reach = false;
-    var is_yoko = (is_horizon && !is_reach) || (!is_horizon && is_reach);
-    var cmd0 =  cmd[id2num(id)];
-    if(is_yoko) cmd0 = "trans/" + cmd0 + "-";
-    return  "../kappa12/haiga/" + cmd0 + ".gif";
-  };
   var wind2name = ["東","南", "西", "北"];  
-
-
- ////// [[Show Situation Notice]] //////
-  this.dump_stat = function(turn, haifu){
-    var jp = jang_cond.jp[qplayer];
-    var op = haifu.replace(/[^A-Z]/g,"");
-    var this_pos = posname[jp.pos];
-    var is_horizon = (jp.pos == ePos.left  || jp.pos == ePos.right);
-    var is_reverse = (jp.pos == ePos.right || jp.pos == ePos.top);
-    var sp = is_horizon ? "<br>" : " ";//"&#32;";
-
-    // Table info
-    $("#wind_" + this_pos).html(wind2name[jp.wind] + "<br>" + jp.name + "<br>" + jp.pt);
-    var obj = $("#wind_" + this_pos + ", #hand_" + this_pos);
-    obj.css("background-color", turn == jp.wind ? "green":"")
-    .css("color", turn == jp.wind ? "white":"black");
-    if(jp.is_hora) obj.css("background-color","yellow").css("color", "black");
-
-    if(jp.operable) {
-      $("#operation").html('<button id="approval">OK</button>');
-      if(op !== "HAND") {
-	if(jp.bit_naki) 
-	  this.show_naki_form();
-	else if(turn == jp.wind)
-	  this.show_decl_form();
+  
+  this.init_layout = function() {
+    for(var j = 0; j < 4; j++) {
+      for(var i = 0; i < 4; i++) {
+	$("#furo_" + posname[j] + i).hide();
       }
     }
+    $("#point_table").hide();
+    $("#point_table").html("");
+  };
+    
+  this.show_operation = function(op) {
+    if(op == null) {
+      $("#operation").html("");
+      return;
+    }
+    for (var i = 0; i < jang_cond.jp.length; i++)
+      if (jang_cond.jp[i].operable) break;
+    var jp = jang_cond.jp[i];
+    var menu = op.split(";");
+    var mes = "";
+
+    if (menu.index("DISC") >= 0) {
+      mes += '<button id="move_l" class="op">&lt;&lt;</button>';
+      mes += '<div id="rc" class="op"></div>';
+      mes += '<button id="move_r" class="op">&gt;&gt;</button>';
+      if (!jp.is_reach) {
+	var is_menzen = true;
+	for (var i = 0; i < jp.furo_from.length; i++) {
+          if (jp.furo_from[i] == 0) continue;
+          is_menzen = false;
+	}
+	if (is_menzen) {
+          mes += '<label class="reach_opt op">';
+          mes += '<input type="checkbox" id="reach' + jp.wind + '">立</label>';
+	}
+      }
+    }
+    for (i = 0; i < menu.length; i++) {
+      if (menu[i] === "DISC") continue;
+      mes += "<button id='" + jp.wind + menu[i] + "' class='decl op'>";
+      mes += op2str[menu[i].split("_")[0]] + "</button> ";
+    }
+    $("#operation").html(mes);
+  };
+
+  this.update_table_info = function() {
+
+
+    
+  };
+  
+  this.update_call_info = function(op, posname, is_horizon, qplayer, turn) {
+    var jp = jang_cond.jp[qplayer];
     var str_flag = "";
-    if(jp.is_reach) {
+    if (jp.is_reach) {
       var path = is_horizon ? "trans/reach-" : "reach";
       path = "../kappa12/haiga/" + path + ".png";
       str_flag += '<img src="' + path + '">';
     }
-    str_flag += jp.is_1patsu  ? "[即]" : "";
-    str_flag += jp.is_furiten ? "[振]" : "";
-    str_flag += jp.tempai_target.length > 0  ? "[聴]" : "";
+    //str_flag += jp.is_1patsu  ? "[即]" : "";
+    //str_flag += jp.is_furiten ? "[振]" : "";
+    //str_flag += jp.tempai_target.length > 0  ? "[聴]" : "";
     str_flag += jp.is_hora    ? "和了" : "";
     
-    $("#call_" + this_pos).html(str_flag);
-    if(jp.wind == turn && op !== "DECLF" && op !== "HAND") { 
-      $("#call_" + this_pos).append(" " + op2str[op]);
+    $("#call_" + posname).html(str_flag);
+    if (jp.wind == turn && op !== "DECLF" && op !== "HAND" && op2str[op]) { 
+      $("#call_" + posname).append(" " + op2str[op]);
     }
+  };
+
+  ////// [[Show Situation Notice]] //////
+  this.dump_stat = function(qplayer, turn, haifu){
+    this.qplayer = qplayer;
+    var jp = jang_cond.jp[qplayer];
+    var op = haifu.replace(/[^A-Z]/g,"");
+    var this_pos = posname[jp.pos];
+    var is_vertical = (jp.pos == ePos.left  || jp.pos == ePos.right);
+    var is_reverse = (jp.pos == ePos.right || jp.pos == ePos.top);
+    var sp = is_vertical ? "<br>" : " ";
+
+    var imgpath = function(id, is_yoko) 
+    {
+      if(typeof is_yoko === "undefined") is_yoko = false;
+      var is_trans = (is_vertical && !is_yoko) || (!is_vertical && is_yoko);
+      var cmd0 =  cmd[id2num(id)];
+      if (is_trans) cmd0 = "trans/" + cmd0 + "-";
+      return  "../kappa12/haiga/" + cmd0 + ".gif";
+    };
+
+
+    // Table info
+    $("#wind_" + this_pos + " .pt").html(jp.pt.toString(10));
+    $("#wind_" + this_pos + " .ch").html(wind2name[jp.wind]);
+    $("#wind_" + this_pos + " .name").html(jp.name);
+    var obj = $("#wind_" + this_pos + ", #hand_" + this_pos);
+    obj.css("background-color", turn == jp.wind ? "green":"")
+       .css("color", turn == jp.wind ? "white" : "black");
+    if (jp.is_hora) {
+      obj.css("background-color","yellow").css("color", "black");
+    }
+    $("#wind_" + this_pos).css("z-index", turn == jp.wind ? 0 : 1);  
+
+    this.update_call_info(op, this_pos, is_vertical, qplayer, turn);
 
     // Display hand
     var objarr = [];
-
+    
     for (var i = 0; i < jp.tehai.length; i++) {
       if ((jp.wind == turn) && (i == jp.tehai.length - 1) &&
-	  (op === "DRAW" || op === "HAND")) objarr.push(sp);
+          (op === "DRAW" || op === "HAND")) objarr.push(sp);
       var id = jp.tehai[i];
       var attr = { "src" : imgpath(id),
-		   "class" : (jp.wind == turn) ? "inhand" : "",
-		   "id"  : jp.wind + "hand_" + id.toStrByteHex() };
+                   "class" : (jp.wind == turn && (!jp.is_reach || i == jp.tehai.length - 1)) ? "inhand" : "",
+                   "id"  : jp.wind + "hand_" + id.toStrByteHex() };
       objarr.push($("<img>").attr(attr));
     }
 
@@ -685,71 +347,84 @@ var Layout = function() {
     for(var n = 0; n < objarr.length; n++) {
       var i = (!is_reverse) ? n : objarr.length - n - 1;
       obj.append(objarr[i]);
-      if(is_horizon) obj.append("<br>");
+      if(is_vertical) obj.append("<br>");
     }
 
-    var objarr = [];
-    for(var i = jp.tehai_furo.length - 1; i >= 0; i--) {
+    for (var i = 0; i < jp.tehai_furo.length; i++) {
+      var objarr = [];
       var furo = jp.tehai_furo[i];
-      objarr.push(sp);
-      for(var j = 0; j < furo.length; j++){
+      for (var j = 0; j < furo.length; j++) {
 	var id = furo[j];
 	if(jp.typfuro[i] == ANKAN){
-	  var path0 = (j==1 || j==2) ? imgpath(0) : imgpath(id);
+	  var path0 = (j == 1 || j == 2) ? imgpath(0) : imgpath(id);
 	} else if(furo.length == 4) {
 	  var path0 = (j == 3 && jp.furo_from[i] == 3) || 
 	    (j != 2 && j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
-	} else{
+	} else {
 	  var path0 = (j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
 	}
 	if(id == undefined) alert(i + "/" + j);
 	var attr = { "src" : path0, 
-		     "id" : "hand_" + id.toStrByteHex() };
+		     "id" : "hand_" + id.toStrByteHex(),
+		     "style" : "position:relative; "
+	};
+	/*
+	if (furo.length == 4) {
+	  //right->top, top->left, left->bottom, bottom->right
+	  attr.style += posname[(jp.pos + 1) % 4] + ":" + (j * 3) + "pt"; 
+	}
+	*/
 	objarr.push($("<img>").attr(attr));
+      }
+      var obj = $("#furo_" + this_pos + i);
+      obj.show();
+      obj.html("");
+      for (var n = 0; n < objarr.length; n++) {
+	var j = is_reverse ? (objarr.length - n - 1) : n;
+	if (objarr.length == 4) 
+	  objarr[j].css(is_vertical ? "top" : "left", (n * -3) + "pt");
+	obj.append(objarr[j]);
+	if (is_vertical) obj.append("<br>");
       }
     }
 
-    var obj= $("#furo_" + this_pos);
-    obj.html("");
-    for(var n = 0; n < objarr.length; n++) {
-      var i = !is_reverse ? n : objarr.length - n - 1;
-      obj.append(objarr[i]);
-      if(is_horizon) obj.append("<br>");
-    }
-    var j = 0;
     var objarr = [];
-    for(var i = 0; i < jp.sutehai.length; i++) {
+    for (var i = 0; i < jp.sutehai.length; i++) {
       var id = jp.sutehai[i];
-      if(id == 0) continue;
-
+      if (id == 0) continue;
+      var attr = { "id" : "disc_" + id.toStrByteHex() };
       switch(jp.sutehai_type[i]){
       case 1: 
-	var attr = { "src" : imgpath(id), "id" : "disc_" + id.toStrByteHex(), "style" : "opacity:.4;" };
+	attr.src = imgpath(id);
+	attr.style = "opacity:.4"; //border:red 1px solid;";
 	break;
-	continue;
       case 2:
-	var attr = { "src" : imgpath(id, true), "id" : "disc_" + id.toStrByteHex() };
+	attr.src = imgpath(id, true);
+	break;
+      case 3:
+	attr.src = imgpath(id, true);
+	attr.style = "opacity:.4;";
 	break;
       default: 
-	var attr = { "src" : imgpath(id), "id" : "disc_" + id.toStrByteHex() };
+	attr.src = imgpath(id);
 	break;
       }
       objarr.push($("<img>").attr(attr));
     }
 
-    for(var j = 0; j < 3; j++) {
+    for (var j = 0; j < 3; j++) {
       var obj = $("#discard_" + this_pos + j);
       obj.html("");
-      for(var i = 0; i < 6; i++) {
+      for (var i = 0; i < 6; i++) {
 	n = j * 6 + (is_reverse ? 5 - i : i);
 	if(n < objarr.length){
 	  obj.append(objarr[n]);
-	  if(is_horizon) obj.append("<br>");
+	  if (is_vertical) obj.append("<br>");
 	}
       }
     }
-  } 
-}
+  };
+};
 
 /////////////////////////////////////////////////////////////////////////////
 var JangTable = function(){
@@ -777,56 +452,28 @@ var JangTable = function(){
     this.is_end = false;
     this.is_haitei = false;
   }
-
-  this.table_init = function(){
-      /*
-    var pos = [ "top", "left", "bottom", "right"];
-    for(var n = 0; n < 4; n++) {
-      var this_pos = pos[n];
-      var is_horizon = (n % 2 == 1);
-
-      $("#hand_" + this_pos)
-      .css( is_horizon ? "width" :"height", "28px")
-      .css(!is_horizon ? "width" :"height", "320px");
-
-      for(var i = 0; i < 3; i++)
-	$("#discard_" + this_pos + i)
-	  .css(is_horizon ? "width" :"height", "28px")
-	  .css(!is_horizon ? "width" :"height", (18 * 5 + 25) + "px");
-
-      $("#call_" + this_pos)
-	.css(is_horizon ? "width" :"height", "28px")
-	.css(!is_horizon ? "width" :"height", "320px");
-
-      $("#wind_" + this_pos)
-	.css("width" , (18 * 4) + "px")
-	.css("height", (18 * 2) + "px");
-
-    }
-      */
-  }
   
   this.check_extra = function() {
     var JpInstance = this.jp;
-   var cmd = [	 "##",
+    var cmd = [	 "##",
 		 "1m","2m","3m","4m","5m","6m","7m","8m","9m",
 		 "1p","2p","3p","4p","5p","6p","7p","8p","9p",
 		 "1s","2s","3s","4s","5s","6s","7s","8s","9s",
 		 "to","na","sh","pe","hk","ht","ch"];
     var t = [];
-    for(var i = 0; i < 4; i++) {
+    for (var i = 0; i < 4; i++) {
       t = t.concat(JpInstance[i].tehai);
       var arr = JpInstance[i].tehai_furo;
-      for(var j = 0; j < arr.length; j++) t = t.concat(arr[j]);
+      for (var j = 0; j < arr.length; j++) t = t.concat(arr[j]);
       var arr = JpInstance[i].sutehai;
-      for(var j = 0; j < arr.length; j++) 
-	if(!(JpInstance[i].sutehai_type[j] & DISCTYPE_STOLEN)) t.push(arr[j]);
+      for (var j = 0; j < arr.length; j++) 
+	if (!(JpInstance[i].sutehai_type[j] & DISCTYPE_STOLEN)) t.push(arr[j]);
     }
-    t.sort(function(a,b){ return a-b; });
+    t.sort(function(a, b){ return a-b; });
     var pre_id = 0;
     var mes_alert = "";
     var mes_alert_ex = "";
-    for(var i=0; i <  t.length; i++) {
+    for (var i = 0; i <  t.length; i++) {
       var id = t[i];
       if(id > 136) {
       } else if(pre_id + 1 < id){
@@ -841,57 +488,6 @@ var JangTable = function(){
       $("#alert_mes").html('重複牌：' + mes_alert_ex);
     //$("#alert_mes").html('(' + mes_alert + ')<br>' + mes_alert_ex);  
     //echo count(t)." tiles\n";
-  }
-
-
-  this.deal_tiles = function(){
-    var JpInstance = this.jp;
-    /*
-    $fp = fopen("haifu.dat", 'w');
-    fclose($fp);
-    */
-    for(var i = 0; i < 2; i++){
-      if(JpInstance[i * 2].token > 0 ) continue;
-      token= rand(1, 0xffff);
-      JpInstance[i * 2 + 0].token = token;
-      JpInstance[i * 2 + 1].token = token;
-      //echo i + ":<token=" + JpInstance[i*2].token + ">\n";
-      break;
-    }
-    
-    //  Shuffling tiles
-    for(i=0; i<136; i++)
-      this.yamahai[i] = i + 1; 
-    
-    for(i=0; i<300; i++) {
-      r1 = rand(0, 136);
-      r2 = rand(0, 136);
-      if(r1 > r2)
-	list(r1, r2) = [r2, r1]; 
-      for(j=0; j < abs(r2 - r1); j++) { 
-        list(this.yamahai[r1 + j], this.yamahai[j]) = 
-          [this.yamahai[j], this.yamahai[r1 + j]]; 
-      }
-    }
-    
-    // Dealing tiles
-    for(var i = 0; i < 4; i++){
-      for(var j = 0; j < 13; j++)
-	JpInstance[i].tehai[j] = this.yamahai.shift();
-      unset(JpInstance[i].tehai[13]);
-    }
-    
-    for(var i = 0; i < 4; i++){
-      sort(JpInstance[i].tehai); 
-      //this.make_haifu(i . "DEAL", JpInstance[i].tehai);
-      //JpInstance[i].make_haifu("DEAL", JpInstance[i].tehai);
-    }
-    tile = this.yamahai.shift();  // 1st Drawing
-    JpInstance[0].tehai.push(tile);
-    //JpInstance[0].make_haifu("DRAW", tile);
-    this.make_haifu("0DRAW_" + tile.toStrByteHex());
-
-    this.save_jokyo();
   }
 
   this.make_haifu = function(str_haifu) {
@@ -909,7 +505,7 @@ var JangTable = function(){
     var obj = $("#wangpai");
     for(var i = 0; i < 7; i++) {
       var obj0 = obj.children("img").eq(i);
-      if( 1 < i && i - 2 < this.dora.length ) {
+      if ( 1 < i && i - 2 < this.dora.length ) {
 	var cmd0 = cmd[id2num(this.dora[i - 2])];
 	obj0.attr({"src" : "../kappa12/haiga/" + cmd0 + ".gif"});
       } else {
@@ -930,121 +526,73 @@ var JangTable = function(){
     JpInstance[(myself + 1) % 4].pos = ePos.right;
     JpInstance[(myself + 2) % 4].pos = ePos.top;
     JpInstance[(myself + 3) % 4].pos = ePos.left;
-    /*
-      for (var i = 0; i < JpInstance.length; i++) {
-      JpInstance[i].dump_stat(jang_cond.turn, "");
-      }*/
   };
     
-
-
-  ////// [[Processing Commands]] //////
   this.eval_command = function(haifu){
-    if(!haifu) return;
-    if(haifu === "END") { this.is_end = true; return; }
+    if (!haifu) return;
+    if (haifu === "END") { this.is_end = true; return; }
     var reg = haifu.match(/^([0-3x])([A-Z0]+)_([0-9a-f]+)$/);
-    if(!reg) return alert("Invalid format:" + reg);
+    if (!reg) return alert("Invalid format:" + reg);
     var qplayer = reg[1] * 1;
     var op = reg[2];
     var qtarget = reg[3];
-    var JpInstance = this.jp;
-    var my_wind = 0;
-    var news = ["T","N","S","P"];
+    var jp = this.jp[qplayer];
 
     switch(op){
     case "DEAL":
-      //JpInstance[qplayer].pos  = qplayer;
-      this.change_position();
-      for(var i = 0; i < 13; i++)
-	JpInstance[qplayer].tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
-      JpInstance[qplayer].tempaihan();
-      //this.make_haifu(haifu);
+      this.change_position(); // Layout制御
+      for (var i = 0; i < 13; i++)
+	jp.tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
       break;
 
     case "DRAW":
       this.turn = qplayer;
-      JpInstance[qplayer].draw_tile(parseInt(qtarget, 16));
-      for(var i = 0; i < 4; i++) JpInstance[i].bit_naki = 0;
-      //this.dora.push(parseInt(qtarget, 16));
-      //this.make_haifu(haifu);
+      jp.draw_tile(parseInt(qtarget, 16));
       this.is_rag = false;
       this.yama--;
       break;
 
     case "DORA":
-      this.dora.push(parseInt(qtarget, 16));
-      //this.make_haifu(haifu);
+      for (var i = 0; i < qtarget.length; i += 2)
+	this.dora.push(parseInt(qtarget.substr(i, 2), 16));
       break;
 
     case "DISC":
     case "DISCR":
-       var turn = this.turn;
+    case "DISCT":
+    case "DISCRT":
+      if (this.turn != jp.wind) return alert("invalid timing");
       var target = parseInt(qtarget, 16);
-      var is_valid = JpInstance[turn].discard(qplayer, target, op==="DISCR");
-      if(!is_valid) return alert("invalid target");
-      if(op === "DISCR") this.banked++;
-      //this.make_haifu(haifu); // todo: warning DISCR with no reach right
+      var is_valid = jp.discard(target, op.indexOf("R") > 0);
+      if (!is_valid) return alert("invalid target");
       this.is_rag = true;
-      for(var i = 0; i < 4; i++) 
-	if (JpInstance[i].operable) 
-	  JpInstance[i].nakihan(turn, target);
-      //this.turn_to_next();
       break;
-    
+      
+    case "DECLF":
+      jp.declare_hora(this.turn);
+      break;
+
     case "DECLC":
     case "DECLP":
-    case "DECLK":
-    case "DECLF":
-      if(op === "DECLF") {
-	JpInstance[qplayer].declare_hora(this.turn);
-        break;
-      } else
-	if(qplayer == this.turn) {
-	  if(op === "DECLK") {
-	    var naki_type = JpInstance[qplayer].declare_kong(qtarget);
-	    if(!naki_type) return alert("Invalid declare"); 
-	    //naki_type = ANKAN; // [todo: consider KAKAN
-	    //this.make_haifu(haifu);
-	  }
-	} else {
-	  // specify the stolen tile
-	  var nakare = this.turn;
-	  var pos_discard = JpInstance[nakare].sutehai.length - 1;
-	  var nakihai = JpInstance[nakare].sutehai[pos_discard];
-	  
-	  // actual stealing/exposure
-	  JpInstance[qplayer].expose_tiles(this.turn, nakihai, op, qtarget);
-	  JpInstance[this.turn].sutehai_type[pos_discard] |= DISCTYPE_STOLEN;
-	  //this.make_haifu(haifu);
-	  this.turn = qplayer;
-	}
-      // all flags are canceled (in case)
-      for(var i = 0; i < 4; i++){
-	JpInstance[i].bit_naki = 0;
-	JpInstance[i].is_1patsu = false;
+    case "DECLK":  
+      if (qplayer == this.turn && op === "DECLK") {
+	var naki_type = jp.declare_own_kong(qtarget);
+	if (!naki_type) return alert("Invalid kong"); 
+      } else {
+	var nakare = this.jp[this.turn];
+	var pos_discard = nakare.sutehai.length - 1;
+	var nakihai = nakare.sutehai[pos_discard];
+	jp.expose_tiles(this.turn, nakihai, op, qtarget);
+	nakare.sutehai_type[pos_discard] |= DISCTYPE_STOLEN;
+	this.turn = qplayer;
       }
-      if(op === "DECLK") this.lingshang--; // [todo: needs after kong flag? 
+      if (op === "DECLK") this.lingshang--; // [todo: needs after kong flag? 
       break;
 
     case "HAND":
-      JpInstance[qplayer].tehai = [];
+      jp.tehai = [];
       for(var i = 0; i < qtarget.length / 2; i++)
-	JpInstance[qplayer].tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
-      if(this.turn == qplayer) {
-	var target = JpInstance[this.turn].tehai.pop(); 
-	JpInstance[this.turn].tehai.push(target);
-      } else {
-	var target = JpInstance[this.turn].sutehai.pop();
-	JpInstance[this.turn].sutehai.push(target);
-      }
-      var point = JpInstance[qplayer].calc_payment(Math.floor(this.aspect / 4), 
-	        0/*honba*/, target, this.turn == qplayer, this.dora, this.yama
-      );
-      this.msgstock.push({p:point, q:"calc", wind:qplayer});
-      break;
-
-    case "END":
-      this.is_end = true;
+	jp.tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
       break;
 
     default:
@@ -1052,59 +600,156 @@ var JangTable = function(){
     }
     this.make_haifu(haifu);
   }
-  /*
-  this.calc_payment = function(player) {
-    $("#calc_table").html("13_0_0");
-    if (player == this.turn) {
-      this.jp[player].pt += 15;
-      for (var i = 0; i < 4; i++) {
-	if (i == player) continue;
-	this.jp[i].pt -= (i == 0) ? 7 : 4;
-      }
 
+  this.calc_payment = function(wind, is_display){
+    var jp = this.jp[wind];
+    if(!jp.is_hora && is_display) return;
+
+    var stolen_jp = this.jp[this.turn];
+    if (jp.is_changkong > 0) {
+      var target = jp.is_changkong;
+    } else if(this.turn == jp.wind) {
+      var target = stolen_jp.tehai.pop(); 
+      stolen_jp.tehai.push(target);
     } else {
-      this.jp[player].pt += 13;
-      this.jp[this.turn].pt -= 13;
+      var target = stolen_jp.sutehai.pop();
+      stolen_jp.sutehai.push(target);
     }
-  }
-  */
-  /*
-  this.turn_to_next = function(){
-    var JpInstance = this.jp;
 
-    for(var i = 0; i < 4; i++) if(JpInstance[i].bit_naki > 0) return;
-    this.turn = (this.turn + 1) % 4;
-    if( this.yamahai.length < 14 ){ 
-      this.end_kyoku();
-      return;
-    } 
-    target = this.yamahai.shift();
-    JpInstance[this.turn].draw_tile(target);
-    this.make_haifu(this.turn + "DRAW_" + target.toStrByteHex());
-  }
-  
-  this.check_simultaneous = function(player){
-    BIT_RON = 8;
-    var JpInstance = this.jp;
-    naki_type = JpInstance[player].rsv_naki["type"];
-    nakare = this.turn;
-
-    if(nakare == player) return false;
-
-    for(i = 0; i < 4; i++){
-      if(i == nakare || i == player) continue;
-      if(naki_type < JpInstance[i].bit_naki) return true;
-      if(naki_type == RONG && (JpInstance[i].bit_naki & BIT_RON)) return true;
-      if(naki_type == 0) continue;
-      JpInstance[i].bit_naki = 0;
-      JpInstance[i].rsv_naki["type"] = 0;
+    var HandObj = new HandSet();
+    for (var i = 0; i < jp.tehai.length; i++){
+      HandObj.addhi(id2num(jp.tehai[i]) - 1, -1);
     }
-    return false;
-  }
-  */
+    
+    for (var i = 0; i < jp.tehai_furo.length; i++){
+      var furo = jp.tehai_furo[i];
+      var head = id2num(Math.min.apply(null, furo)) - 1;
+      var type = id2num(furo[0]) != id2num(furo[1]) ? typ.chi :
+        (furo.length == 3 ?  typ.pon : typ.kan ); // not considered ankong
+      var type = jp.typfuro[i];
+      if (type == CHI) type = typ.chi;
+      else if (type == PONG) type = typ.pon;
+      else if (type == DMK || type == KAKAN) type = typ.kan;
+      else if (type == ANKAN) type = typ.ankan;
+      HandObj.addhi(head, type);
+    }
 
-  ////// [[End]] //////
-  this.end_kyoku = function(){}
+    var CalcObj = new HandCalc();
+    CalcObj.ba_kz = Math.floor(this.aspect / 4); // 場 [0=東, 1=南, 2=西, 3=北]
+    CalcObj.ch_kz = jp.wind; // 家 [0=東, 1=南, 2=西, 3=北]
+    // 和了り方 [0=ロン, 1=ツモ, 2=牌底ロン, 3=牌底ツモ, 
+    //          4=搶槓ロン, 5=嶺上ツモ, 6=配牌ロン, 7=配牌ツモ]
+    CalcObj.tsumo = (this.turn == jp.wind);
+    if (jp.is_kaihua) CalcObj.tsumo = 5;
+    else if (jp.is_changkong > 0) CalcObj.tsumo = 4;
+    else if (this.yama <= 0) CalcObj.tsumo += 2;
+    else if (jp.is_tenho) CalcObj.tsumo += 6;
+
+    // 立直 [0=ダマ, 1=立直, 2=立直一発, 3=W立直, 4=W立直一発]
+    CalcObj.reach = (jp.is_reach == 2) ? 3 : jp.is_reach;
+    if (CalcObj.reach > 0) CalcObj.reach += jp.is_1patsu ? 1 : 0;
+    CalcObj.tsumi = 0; // 積み棒
+    CalcObj.aghi = id2num(target) - 1; // 和了牌
+    HandObj.addhi(CalcObj.aghi, -1);
+    CalcObj.dora  = 0; // ドラ枚数
+    var mai = HandObj.mai();
+
+    for (var j = 0; j < this.dora.length; j++) {
+      var dora = id2num(this.dora[j]) - 1;
+      if(dora % 9 == 8) dora -= 8;
+      else if(dora == hi.pei) dora = hi.ton;
+      else if(dora == hi.chu) dora = hi.hak;
+      else dora++;
+
+      for (var i = 0; i < mai.length; i++) {
+	if (i == dora) CalcObj.dora += mai[i];
+      }
+    }
+    var ResObj  = new JangResult();
+    ResObj.get_result_by_hand(HandObj, CalcObj);
+
+    var point = [CalcObj.point(0)];
+    if (CalcObj.tsumo % 2 == 1) {
+      if (CalcObj.ch_kz == 0) 
+	point.push(CalcObj.point(1));
+      else
+	point.push(CalcObj.point(2), CalcObj.point(1));
+    }
+
+    if (!is_display) return point[0];
+
+    //Layout制御
+    var imgpath = function(id, is_yoko) 
+    {
+      var cmd0 =  cmd[id2num(id)];
+      if(is_yoko) cmd0 = "trans/" + cmd0 + "-";
+      return  "../kappa12/haiga/" + cmd0 + ".gif";
+    };
+
+    //和了手表示
+    if(0) {
+    var objarr = [];
+    var jp = this;
+    if(is_tsumo) jp.tehai.pop();
+    for (var i = 0; i < jp.tehai.length; i++) {
+      var id = jp.tehai[i];
+      var attr = { "src" : imgpath(id),
+                    "id"  : jp.wind + "hand_" + id.toStrByteHex() };
+      $("#point_table").append($("<img>").attr(attr));
+    }
+    $("#point_table").append(is_tsumo ? "ツモ" : "ロン");
+    var attr = { "src" : imgpath(target),
+		 "id"  : jp.wind + "hand_" + id.toStrByteHex() };
+    $("#point_table").append($("<img>").attr(attr));
+
+    for (var i = 0; i < jp.tehai_furo.length; i++) {
+      var objarr = [];
+      var furo = jp.tehai_furo[i];
+      $("#point_table").append(" ");
+      for (var j = 0; j < furo.length; j++) {
+	var id = furo[j];
+	if(jp.typfuro[i] == ANKAN){
+	  var path0 = (j == 1 || j == 2) ? imgpath(0) : imgpath(id);
+	} else if(furo.length == 4) {
+	  var path0 = (j == 3 && jp.furo_from[i] == 3) || 
+	    (j != 2 && j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
+	} else {
+	  var path0 = (j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
+	}
+	if(id == undefined) alert(i + "/" + j);
+	var attr = { "src" : path0 };
+	$("#point_table").append($("<img>").attr(attr));
+      }
+    }
+    }
+    // 点数表示
+    var res = '<div style="background:white; top:0; right:0; left:0; height:69px; padding:2px;" class="payment">';
+    res += '<div style="float:right;" id="doradisp"></div>';
+    res += CalcObj.yaku().join(", ");
+    if (CalcObj.dora > 0) res += ", ドラ" + CalcObj.dora;
+    res += "<br>";
+    res += "= " + ResObj.CalcObj.han() + "翻";
+    res += (10 * Math.ceil(ResObj.CalcObj.fu() / 10)) + "符";
+    if (point.length == 1)
+      res += " = <b>" + CalcObj.point(0) + "点</b>";
+    else if (point.length == 2) 
+      res += " = <b>" + point[1] + "点オール</b>";
+    else if (point.length == 3)
+      res += " = <b>" + point[1] + " / " + point[2] + "点</b>";
+    $("#point_table").append(res);
+
+    //王牌表示
+    $("#doradisp").append("<b>王牌</b><br>");
+    for(var i = 0; i < this.dora.length; i++) {
+      if(i * 2 == this.dora.length && jp.is_reach) $("#doradisp").append("<br>");
+      var id = this.dora[i];
+      var attr = { "src" : imgpath(id) };
+      $("#doradisp").append($("<img>").attr(attr));
+    }
+
+    return point;
+  }
+
+
 }
 
-var id2num = function(id){ return Math.ceil(id / 4); }

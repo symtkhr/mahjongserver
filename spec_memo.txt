@@ -1,3 +1,70 @@
+<11/14>
+役なし和了の対応
+ただし現状では牌底のみ・搶槓のみが和了できないと思われ
+
+<11/9>
+テストケース後付けしてみる
+
+なぜかドラが増えた?
+type:haifu/haifu:3DEAL_00000000000000000000000000;0DEAL_03070c143648545c5e60616671;1DEAL_00000000000000000000000000;2DEAL_00000000000000000000000000;xDORA_2b;0DRAW_62;0DISC_71;1DRAW_00;1DISC_76;2DRAW_00;2DISC_7a;3DRAW_00;3DISC_42;0DRAW_28;0DISC_28;1DRAW_00;1DISC_6a;2DRAW_00;2DISC_83;3DRAW_00;3DISC_70;0DRAW_72;0DISC_72;1DRAW_00;1DISC_06;2DRAW_00;2DISC_74;3DRAW_00;3DISC_05;3DRAW_00;3DISC_87;xDORA_2c;0DRAW_68;0DISC_48;1DRAW_00;1DISC_45;2DRAW_00;2DISC_82;3DRAW_00;3DISC_21;0DRAW_65;0DISC_14;1DRAW_00;1DISC_22;2DRAW_00;2DISC_7c;3DRAW_00;3DISC_19;0DRAW_7b;0DISC_7b;1DRAW_00;1DISC_10;2DRAW_00;2DISC_4b;3DRAW_00;3DISC_64;0DRAW_25;0DISC_25;1DRAW_00;1DISC_4a;2DRAW_00;2DISC_79;3DRAW_00;3DISC_01;0DRAW_0a;0DISC_0a;1DRAW_00;1DISC_47;2DRAW_00;2DISC_0b;3DRAW_00;3DISC_40;0DRAW_52;0DISCR_36;1DRAW_00;1DISC_1e;2DRAW_00;2DISC_2a;3DRAW_00;3DISC_2f;0DRAW_04;0DISC_04;1DRAW_00;1DISC_86;2DRAW_00;2DISC_23;3DRAW_00;3DISC_7f;0DRAW_6e;0DISC_6e;1DRAW_00;1DISC_7d;2DRAW_00;2DISC_46;3DRAW_00;3DISC_27;0DRAW_24;0DISC_24;1DRAW_00;1DISCR_32;2DRAW_00;2DISC_49;3DRAW_00;3DISC_33;0DRAW_85;0DISC_85;1DRAW_00;1DISC_6f;2DRAW_00;2DISC_37;3DRAW_00;3DISC_2e;1DECLF_0;1DORA_4d1f;1HAND_13181c31353d3f4143444e5355;END/
+
+
+<11/7>
+表示制御設計が弱い。
+
+●ログイン
+蔵a→:   {q:login, name:####}
+●開戦
+→蔵a-d: {type:table,  q:renew, aspect:xx, honba:xx, banked:xx }
+→蔵a-d: {type:player, q:renew, wind:xx, name:###, pt:xx, operable:t/f, id:xx}
+●配牌
+→蔵a:   {type:haifu,  haifu:"aDEAL_xxxxx;...;aDRAW_xx" }
+●打牌+自摸
+蔵a→:    {q:haifu, haifu:bDISC_xx}
+→蔵a-d:  {type:haifu, haifu:"aDISC_xx;bDRAW_xx"}
+→蔵b:    {type:layout, op:DISC;DECLF;DECLK, time:xx}
+→蔵a,c,d:{type:layout, op:null}
+●打牌+ラグ
+蔵b→:   {q:haifu, haifu:bDISC_xx}
+→蔵d:   {type:layout, op:DECLC;DECLP, time:xx}
+→蔵a-c: {type:layout, op:null}
+●切断
+→蔵a-d: {type:player, q:update, wind:xx, is_connected:t/f}
+●和了放棄
+→蔵a-d: {type:player, q:update, wind:xx, is_houki:t/f}
+●和了
+蔵c→:   {q:haifu, haifu:"cDECLF_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx", id:xx}
+→蔵c:   {type:player, q:calc, wind:xx, 
+	 is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵c:   {type:table, q:update, wind:xx, is_end:true}
+蔵c→:   {q:calc, wind:xx, p:[x,x,x]}
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+●役なし和了
+蔵c→:   {q:haifu, haifu:"cDECLF_0", is_yakunashi}
+→蔵c:   {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx", id:xx}
+→蔵a-d: {type:player, q:update, wind:xx, is_houki:t/f}
+●荒牌流局
+蔵c→:   {q:haifu, haifu:"cDISC_xx"}
+→蔵c:   {type:haifu, haifu:"cDISC_xx;cHAND:xxxxxxx", id:xx}
+→蔵c:   {type:player, q:update, is_reach, is_tempai} // 不要かも
+→蔵c:   {type:table, q:update, wind:xx, is_end:true}
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+
+データ構造が決まればロジックは自ずと決まる
+
+<11/6>
+テスト環境がほしい。。
+
+<11/4-5>
+*cli:立直宣言牌を鳴かれるときつい#
+*cli:流局時にリロードをすると詰む#
+*srv:ロン和了/嶺上自摸のばあいも最終自摸牌が最後につく#
+*cli:かんで待ちが変わると嶺上開花できない#
+*srv:槓フラグでボタンが表示されない#
+*srv:搶槓制御->二家和のときにスルーが後発だと両者とも上がれない#
+*srv:搶槓制御->和了後のカウントダウンが止まらない#
+
 <10/30>
 クライアント側再設計
 JSONでオブジェクトもらう?
@@ -6,23 +73,21 @@ JSONでオブジェクトもらう?
 <10/21-25>
 タイマ実装完了
 問題点:
-*srv:終局制御(切れない,宣言できない)
-*srv/cli:ラグ中のUI表示,#自摸和後のUI
-*cli:画面表示・ソケット送付モジュールの要整理
-*cli:聴牌から一向聴に戻したときに表示が解消されない
+*cli:和了放棄の表示
+*srv:W立直 #
 
+*srv:ログイン制御# -> 卓の数 * 4 をログインユーザ数が超えた場合の処理
+*srv/cli:切断処理# -> 摸牌した後に落ちた場合の処理(timeoutで処理?)
+-> 全卓の check_timeout()を1秒置きにたたく? -> 何か怪しい
 
-*srv:ログイン制御
 *srv:流局制御：和了やめ, 箱割れ, 流し満貫*
-*srv/cli:振聴*
 *srv/cli:錯和の和了放棄* (役なし栄・振聴栄*・不聴立直*) → 鳴きフラグなどのスルー*
-*cli:天和・地和・人和(*)
-*srv:立直中の暗かん
-*srv:ぽんちー直後のかん
+*srv/cli:選択:自摸切り,鳴きなし,ロンなし,自動和了
+
 *srv:二家和制御/頭跳ね
+*srv:立直中の暗かん → できてた?
+*srv:ぽんちー直後のかん
 *srv:途中流局:九種九牌・四開かん・四風連打・四家立直 → 終了後は無勝負やり直し
-*srv/cli:切断処理
-*srv/cli:自摸切り,鳴きなし,ロンなし,自動和了
 *srv:ルール選択:喰い替え,赤・花・透明, 2翻縛
 *srv:借金立直
 
@@ -36,6 +101,13 @@ JSONでオブジェクトもらう?
 	#3親栄和→東1-1へ/#4親自摸和→東1-1へ
 	5不聴流局→東2-0へ/6聴牌流局→東2-0へ
 *srv:流れ供託・通らば立直で振り込んだときの供託#
+*srv/cli:振聴#
+*srv:終局制御(切れない,宣言できない)*
+*srv/cli:ラグ中のUI表示#, #自摸和後のUI
+*cli:画面表示・ソケット送付モジュールの要整理#
+*cli:聴牌から一向聴に戻したときに表示が解消されない→聴牌削除の削除#
+*cli:立直中に自摸牌以外をクリック不可に#
+*cli:天和・地和・人和(*)#
 
 <10/14>
 点数計算実装完了

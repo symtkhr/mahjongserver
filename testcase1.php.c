@@ -10,18 +10,20 @@ $fouth = array(
 "3DEAL_0407152d2e3539454e50566a6f",
 "0DRAW_34",
 "0DISC_26",
-//"1DRAW_5e",
-"1DISC_4c",
+"1DRAW_5e",
+//"1DISC_01",//人和
+"1DISC_4c", 
+//"2DRAW_0d", //地和
+
 "2DRAW_19",
-//
-"2DISC_19",
+"2DISCR_19",
 "3DRAW_5b",
 "3DISC_04",
 //*/
 );
 
 // テストケース<2>: 終巡制御
-$fouths = array(
+$vfouth = array(
  /*sending 0:*/ "0DEAL_01070c1b1c1e21233449667e86",
  /*sending 1:*/ "1DEAL_151725262e303340415a61646e",
  /*sending 2:*/ "2DEAL_0d0e1f2b2f323b4254575f637a",
@@ -150,7 +152,7 @@ $fouths = array(
  /*sending 125:*/ "0DRAW_22",
 	      );
 
-// テストケース<3>: 二家搶槓
+// テストケース<3>: 三種槓 + 二家搶槓
 $fouth = array(
 "0DEAL_0c121426333e454d4f506b6f88",
 "1DEAL_0407133b4a5460626471747d7f",
@@ -242,32 +244,38 @@ $fouth = array(
 
 "0DECLK_0c",
 "0DRAW_21",
+//"0DRAW_".sprintf("%02x", (5+9)*4-1),
+//*
 "0DISC_36",
 "xDORA_28",
 "1DRAW_68",
 "1DISC_64",
-/*"2DRAW_61",
+"2DRAW_61",
 "2DISC_61",
 "3DRAW_78",
 "3DISC_78",
 "0DRAW_11",
 "0DECLK_11",
-"0DRAW_24"
-*/	       );
+//"0DRAW_24"
+/**/	       );
 
-
-/*
-$fp = fopen("haifu.dat","w");
-fwrite($fp, $fouth);
-fclose($fp);
-$fp = fopen("jokyo.dat","w");
-fwrite($fp, $foutj);
-fclose($fp);
-*/
 
 $unit_test = ($argv[1] === "unit");
 if($unit_test) {
-  $test_case = array(
+  // for 二家和搶槓
+$test_case = array(
+array("2DECL0_0", "3DECL0_0"), //→ 0DRAW_嶺上
+array("2DECLF_0", "3DECL0_0"), //→ 栄2
+array("2DECL0_0", "3DECLF_0"), //→ 栄3
+array("2DECLF_0", "3DECLF_0"), //→ 栄2・栄3
+array("3DECL0_0", "2DECL0_0"), //→ 0DRAW_嶺上
+array("3DECLF_0", "2DECL0_0"), //→ 栄3
+array("3DECL0_0", "2DECLF_0"), //→ 栄2
+array("3DECLF_0", "2DECLF_0"), //→ 栄2・栄3
+);
+
+  // for 複合鳴きフラグ
+  $jtest_case = array(
 		     array("0DECLC_060a", "1DECLK_01", "2DECLF_0"),//→ 栄
 		     array("1DECLK_01", "0DECLC_060a", "2DECLF_0"), //→ 栄
 		     array("0DECL0_0", "1DECLK_01", "2DECLF_0"), //→ 栄
@@ -318,7 +326,7 @@ $jang_cond = new JongTable;
 $jang_cond->init_members();
 $jang_cond->aspect = 0;
 $jang_cond->jp_size = 4;
-$bandaid_name = array("Spr","Sum","Aut","Win");
+$bandaid_name = array("SpringFire","SummerWater","AutumnWind","WinterEarth");
 $bandaid_pt = array(0,0,0,0);
 for($i = 0; $i < 4; $i++){
   $jang_cond->jp[$i] = new JangPlayer;
@@ -327,7 +335,7 @@ for($i = 0; $i < 4; $i++){
   $jang_cond->jp[$i]->pt = $bandaid_pt[$i];
  }
 
-if(1) {
+if(0) {
   $jang_cond->init_aspects();
   load_haifu_s($fouth);
   make_random_haifu();
@@ -360,7 +368,7 @@ function make_random_haifu() {
     $jang_cond->start_game();
     $jang_cond->deal_tiles();
   }
-  for($loop = 0; $loop < 14/*< 136 - 13 * 5 - 30*/; $loop++) {
+  for($loop = 0; $loop < 0/*< 136 - 13 * 5 - 30*/; $loop++) {
     $turn = $jang_cond->turn;
     $wind = $jang_cond->jp[$turn]->wind;
     $tehai = $jang_cond->jp[$turn]->tehai;
@@ -535,7 +543,6 @@ function load_haifu_s($haifu, $is_shown = false) {
     default:
       break;
     }
-    //if($i_st > 5) break;
   }
 
 }
