@@ -20,7 +20,7 @@ var layout_click_arrow_button = function(){
   
   $(".inhand").removeClass("ex_selected").css("border","none");
   $("#rc").html(obj.clone().attr("id","").attr("class", "")
-		.css("height","80px").css("width","60px"));
+		.css("height","100%").css("width","100%"));
   obj.addClass("ex_selected").css("border","2px solid red");
 };
 
@@ -77,8 +77,8 @@ var jang_table_set = function(obj) {
 var layout_aspect = function(obj) {
   var strwind = ["東","南","西","北"];
   var str_fuwo = strwind[parseInt(obj.aspect / 4)] + (obj.aspect % 4 + 1) + "-";
-  str_fuwo += (obj.honba) + "<br>";
-  str_fuwo += "供" + (obj.banked);
+  str_fuwo += (obj.honba);
+  str_fuwo += " 供" + (obj.banked);
   $("#aspect").html(str_fuwo);
 };
 
@@ -100,9 +100,9 @@ var layout_payment = function(msg) {
 
   var res = "<div id='point_agenda' class='payment'><table><tr>";
   res += "<td></td><td></td>";
-  res += "<td style='width:4ex'>和了</td>";
-  res += "<td style='width:4ex'>本場</td>";
-  res += "<td style='width:4ex'>供託</td>";
+  res += "<td style='white-space:nowrap'>和了</td>";
+  res += "<td style='white-space:nowrap'>本場</td>";
+  res += "<td style='white-space:nowrap'>供託</td>";
   res += "<td style='width:1em'></td><td style='width:4ex'></td>";
   res += "</tr>";
   for (var pindex = 0; pindex < 4; pindex++) {
@@ -125,6 +125,14 @@ var layout_payment = function(msg) {
   }
   res += "</table></div>";
   $("#point_table").append(res);
+
+  if(msg.call) {
+    var layoutObj = new Layout;
+    for (var i = 0; i <  msg.call.length; i++) {
+      layoutObj.set_call_info(msg.call[i], i);
+    }
+  }
+
   if(0) {
     var res = "NEXT = ";
     var strwind = ["T","N","S","P"];
@@ -132,19 +140,20 @@ var layout_payment = function(msg) {
     $("#point_table").append(res);
   }
   $("#point_table").fadeIn();
-  $("#call_top, #call_left, #call_right").fadeOut();
-  
-  $("#operation").html('<button id="approval">OK</button>');
-  $("#operation").append('<button id="show_table">卓表示</button>');
+  $("#call_top, #call_left, #call_right, #call_bottom").show();
+  $("#operation .op").hide();
+  $("#operation .ops").hide();
+  $("#approval, #show_table").show();
+
   $("#show_table").click(function() { 
       if($(this).hasClass("showTable")) {
 	$(this).html("卓表示").removeClass("showTable");
 	$("#point_table").fadeIn();
-	$("#call_top, #call_left, #call_right").fadeOut();
+	//$("#call_top, #call_left, #call_right").fadeOut();
       } else {
 	$(this).html("点数表示").addClass("showTable");
 	$("#point_table").fadeOut();
-	$("#call_top, #call_left, #call_right").fadeIn();
+	//$("#call_top, #call_left, #call_right").fadeIn();
       }
     });
 };
@@ -185,6 +194,7 @@ var SocketHandler = function() {
     var startCount = function() {
       gRtime = 5;
       clearInterval(gPsgID);
+      return;
       gPsgID = setInterval(function() {
 	  $("#count").html(gRtime.toString(10));
 	  gRtime--; 
@@ -211,7 +221,8 @@ var SocketHandler = function() {
     var msg = { "q" : "approval" };
     if (getRequest()) msg["id"] = getRequest().shift();
     websocket.send(JSON.stringify(msg));
-    $(this).hide();
+    $("#approval").hide();
+    $("#message").html("おまちください");
   };
 
   websocket.onmessage = function(ev) {
@@ -269,9 +280,26 @@ var SocketHandler = function() {
     if (obj.op === "payment"){
       layout_payment(obj);
       $("#approval").click(approval_ok);
+    } else if (obj.op === "approval") {
+      $(".op, .ops, #show_table").hide();
+      $("#approval").show();
+      $("#approval").click(approval_ok);
+      $("#show_table").click(function() { 
+	  if($(this).hasClass("showTable")) {
+	    $(this).html("卓表示").removeClass("showTable");
+	    $("#point_table").fadeIn();
+	    //$("#call_top, #call_left, #call_right").fadeOut();
+	  } else {
+	    $(this).html("点数表示").addClass("showTable");
+	    $("#point_table").fadeOut();
+	    //$("#call_top, #call_left, #call_right").fadeIn();
+	  }
+	});
+
+
+
     } else {
       (new Layout).show_operation(obj.op);
-      // layout制御
       $(".inhand, #rc").click(inhand_click);
       $("#move_l, #move_r").click(layout_click_arrow_button);
       $(".decl").click(declare_sender);
@@ -283,7 +311,7 @@ var SocketHandler = function() {
     if(!$(this).hasClass("ex_selected") && $(this).hasClass("inhand")) {
       $(".inhand").removeClass("ex_selected").css("border","none");
       $("#rc").html($(this).clone().attr("id","_").attr("class","")
-		    .css("height","80px").css("width","60px"));
+		    .css("height","100%").css("width","100%"));
       $(this).addClass("ex_selected").css("border","2px solid red");
       return false;
     }
@@ -300,19 +328,29 @@ var SocketHandler = function() {
     $(".inhand:last") : $(".ex_selected");
     
     var haifu = obj.attr("id").split("hand_").join("DISC_");
-    if ($("#reach" + haifu.substr(0, 1)).attr("checked")) 
+    if ($("#reach").attr("checked")) 
       haifu = haifu.split("DISC_").join("DISCR_");
     
     var msg = { "size": jang_cond.haifu.length, "h":haifu, "q":"haifu" };
     if(getRequest()) msg["id"] = getRequest().shift();
     websocket.send(JSON.stringify(msg));
-    $("#operation").html("おまちください");
+    $("#operation .op").hide();
+    $("#operation .ops").hide();
+    $("#rc").html("");
+    $("#messsage").html("おまちください");
   }
   
+  var jp_operable = function() {
+    for (var i = 0; i < jang_cond.jp.length; i++)
+      if (jang_cond.jp[i].operable) return i;
+    return -1;
+  }
+
   var declare_sender = function(){
     clearInterval(gPsgID);
     var JpInstance = jang_cond.jp;
-    var haifu = $(this).attr("id");
+    var haifu = jp_operable() + $(this).attr("id");
+    //alert(haifu);
     var msg = { "size": jang_cond.haifu.length, 
 		"h":haifu, "q":"haifu"};
     if(getRequest()) msg["id"] = getRequest().shift();
@@ -321,7 +359,7 @@ var SocketHandler = function() {
     if (haifu.match(/^[0-3]DECL0/)) {
       msg.h += "_0";
       websocket.send(JSON.stringify(msg));
-      $(this).parent().html("おまちください");
+      $("#message").html("おまちください");
       return;
     }
     
@@ -332,7 +370,7 @@ var SocketHandler = function() {
 	  msg.h += $(this).attr("id").split("hand_").pop();
 	});
       websocket.send(JSON.stringify(msg));
-      $(this).parent().html("おまちください");
+      $("#message").html("おまちください");
       return;
     }
     
@@ -347,16 +385,18 @@ var SocketHandler = function() {
       var point = jang_cond.calc_payment(parseInt(player), false);
       if (point == 0) msg.h += "0";
       msg.h += "_0";
-      alert(msg.h);
+      // alert(msg.h);
       websocket.send(JSON.stringify(msg));
-      $(this).parent().html("おまちください");
+      $("#message").html("おまちください");
       break;
     case "DECLK":
       if(jang_cond.turn != JpInstance[player].wind) {
 	msg.h += "_" + nakihai.toStrByteHex();
+      } else {
+	msg.h += "_" + $(this).attr("target");
       }
       websocket.send(JSON.stringify(msg));
-      $(this).parent().html("おまちください");
+      $("#message").html("おまちください");
       break;
     case "DECLC":
     case "DECLP":
@@ -370,7 +410,7 @@ var SocketHandler = function() {
 	msg.h += targets[i].toStrByteHex();
       }
       websocket.send(JSON.stringify(msg));
-      $(this).parent().html("おまちください");
+      $("#message").html("おまちください");
     } else {
       alert(targets);
     }

@@ -1,6 +1,44 @@
+<11/16>
+[ルール]
+<鳴き>
+喰い替え 可
+海底牌は鳴けない、槓できない
+ポンチー直後の槓 可
+槓ドラ: 暗槓で即めくり, 明槓で打牌後めくりまたは嶺上開花後めくり
+
+<和了>
+後付け あり
+二家和・三家和: 頭跳ねオンリー
+役なし和了・振聴ロンはその場で和了放棄通知 (ボタンを誤って押さないように注意)
+暗槓の搶槓ロン 常になし
+
+<宣言>
+不聴立直はその場で和了放棄通知 (チェックを誤って押さないように注意)
+借金立直 あり
+立直後暗槓: 不可
+途中流局 (四風連打・九種九牌・三家和・四人立直・四槓算了) すべてなし
+槓は何回発生しても続行。5回め以降の槓は嶺上牌を海底から引き, 槓ドラを増やさない。
+
+<局遷移>
+東南戦 西入なし
+0点開始 50点返し -250点未満で箱割れ
+不聴親流れ, 和了やめ聴牌やめ あり
+
+<役>
+
+<他>
+王牌は14枚残し
+赤ドラなし
+包なし
+2翻しばり なし
+流し満貫: あり。和了扱いではない()。複数者成立は個別計算。
+
+
 <11/14>
 役なし和了の対応
-ただし現状では牌底のみ・搶槓のみが和了できないと思われ
+蔵: DECLF宣言時に 嶺上/天和系 以外の役を計算 → 役なしならDECLF0_0を送付
+鯖: DECLF0_0 が来たら, 状況役ちぇっく → 該当なしなら和了放棄
+//ただし現状では牌底のみ(蔵側で解決)・搶槓のみが和了できないと思われ
 
 <11/9>
 テストケース後付けしてみる
@@ -41,15 +79,32 @@ type:haifu/haifu:3DEAL_00000000000000000000000000;0DEAL_03070c143648545c5e606166
 蔵c→:   {q:calc, wind:xx, p:[x,x,x]}
 →蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
 ●役なし和了
-蔵c→:   {q:haifu, haifu:"cDECLF_0", is_yakunashi}
-→蔵c:   {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx", id:xx}
-→蔵a-d: {type:player, q:update, wind:xx, is_houki:t/f}
+蔵c→:   {q:haifu, haifu:"cDECLF0_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF0_0;cHAND_xxxxxxx;dDRAW_00", id:xx}
+→蔵a-d: {type:player, q:update, wind:c, is_houki:t/f}
+●振聴栄
+蔵c→:   {q:haifu, haifu:"cDECLF0_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF0_0;cHAND_xxxxxxx;dDRAW_00", id:xx}
+→蔵a-d: {type:player, q:update, wind:c, is_houki:t/f}
+●不聴立直
+蔵c→:   {q:haifu, haifu:"cDISCR_xx"}
+→蔵c:   {type:haifu, haifu:"cDISCR0_0;cHAND_xxxxxxx;dDRAW_00", id:xx}
+→蔵a-d: {type:player, q:update, wind:c, is_houki:t/f}
 ●荒牌流局
 蔵c→:   {q:haifu, haifu:"cDISC_xx"}
 →蔵c:   {type:haifu, haifu:"cDISC_xx;cHAND:xxxxxxx", id:xx}
 →蔵c:   {type:player, q:update, is_reach, is_tempai} // 不要かも
 →蔵c:   {type:table, q:update, wind:xx, is_end:true}
 →蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+●流し満貫
+●終局
+蔵c→:   {q:haifu, haifu:"cDECLF_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx", id:xx}
+→蔵a-d: {type:player, q:calc, wind:xx, 
+	 is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵a-d:   {type:table, q:update, wind:xx, is_end:true}
+蔵c→:   {q:calc, wind:xx, p:[x,x,x]}
+→蔵a-d: {type:layout, op:payment, next:end, point:[x,x,x,x...]}
 
 データ構造が決まればロジックは自ずと決まる
 
@@ -72,25 +127,46 @@ JSONでオブジェクトもらう?
 
 <10/21-25>
 タイマ実装完了
-問題点:
+
+●未遂チケット(11/23リリースまでに終わらせたいもの):
 *cli:和了放棄の表示
-*srv:W立直 #
+*srv/cli:終了制御：和了やめ*, 箱割れ*, 南4終了*, その後のインタフェイス
+*srv/cli:自摸切り牌->cli:DISCT/DISCTR/DISCTR0/DISCR0の対応
+*srv/cli:メンバの値を自由に変えられるインタフェイス
+*srv/cli:ログイン後のwaiting表示/approval表示
+*srv/cli:選択:鳴きなし,ロンなし
+*srv:切断時動作をもう少し詰める
+*srv:立直中の暗槓の禁止 *
+*cli:立直チェック時の色付け
+*cli:振り込み者の色付け
+*cli:搶槓のみでの和了->point = undefined で返るため、まあ異常ない。
+*cli:流局時聴牌を見やすくする。色付けとか。
+*cli:切断表示
+*cli:カウントダウンどうする?
+*cli:他人のターンで他人の牌が、鳴きラグで自分の手牌が選択できちゃう
+*cli:自槓ボタン押せず
 
 *srv:ログイン制御# -> 卓の数 * 4 をログインユーザ数が超えた場合の処理
 *srv/cli:切断処理# -> 摸牌した後に落ちた場合の処理(timeoutで処理?)
 -> 全卓の check_timeout()を1秒置きにたたく? -> 何か怪しい
+-> disconnectイベント時に強制進行させてしまうとか。
 
-*srv:流局制御：和了やめ, 箱割れ, 流し満貫*
-*srv/cli:錯和の和了放棄* (役なし栄・振聴栄*・不聴立直*) → 鳴きフラグなどのスルー*
-*srv/cli:選択:自摸切り,鳴きなし,ロンなし,自動和了
+*srv/cli:流し満貫表示 #
+*cli:OKボタンでかくする#
+*cli:宣言を見やすくする。局遷移後に宣言が見えなくなるバグの修正。#
+*cli:左右プレイヤの名前の重なり #
+*cli:右プレイヤの捨牌が上詰めになるもんだい#、捨て牌が18枚しか#
 
-*srv:二家和制御/頭跳ね
+
+●未遂チケット(優先度低)
+*cli:自摸切り,自動和了
 *srv:立直中の暗かん → できてた?
 *srv:ぽんちー直後のかん
-*srv:途中流局:九種九牌・四開かん・四風連打・四家立直 → 終了後は無勝負やり直し
-*srv:ルール選択:喰い替え,赤・花・透明, 2翻縛
+*srv:途中流局: 四開かん > 四家立直 > 九種九牌 > 四風連打 → 終了後は無勝負やり直し
+*srv:ルール選択: 喰い替え,赤・花・透明#, 2翻縛
 *srv:借金立直
 
+●以下、済み(ただしテストコードが要る)：
 *srv:要確認>配牌聴牌で栄和可能か?#
 *srv:うらどら・かんどら＃
 *srv:自摸和のとき理牌しない＃
@@ -103,11 +179,14 @@ JSONでオブジェクトもらう?
 *srv:流れ供託・通らば立直で振り込んだときの供託#
 *srv/cli:振聴#
 *srv:終局制御(切れない,宣言できない)*
-*srv/cli:ラグ中のUI表示#, #自摸和後のUI
+*srv/cli:ラグ中のUI表示#, 自摸和後のUI#
 *cli:画面表示・ソケット送付モジュールの要整理#
-*cli:聴牌から一向聴に戻したときに表示が解消されない→聴牌削除の削除#
+*cli:聴牌から一向聴に戻したときに表示が解消されない→聴牌表示の削除#
 *cli:立直中に自摸牌以外をクリック不可に#
 *cli:天和・地和・人和(*)#
+*srv/cli:錯和の和了放棄# (役なし栄・振聴栄*・不聴立直*) → 鳴きフラグなどのスルー*
+*srv:二家和制御/頭跳ね → 頭跳ね縛り
+*srv:W立直 #
 
 <10/14>
 点数計算実装完了

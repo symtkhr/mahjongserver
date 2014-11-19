@@ -2,7 +2,8 @@
 define("DEBUG", false);
 
 require_once("srv_jang0602.php.c");
-if(DEBUG || true) {
+//if(DEBUG || true) {
+if(DEBUG) {
   require_once("testcase1.php.c");
  } else {
   $jang_cond = new JongTable;
@@ -325,7 +326,9 @@ class SocketHandler{
       // TODO: token が重複しているかどうかの確認
       $this->users[$token] = Array("status"=>"LOBBY", "name"=>($msg->name));
       $rmsg = $this->mask(json_encode(array('type'=>'login', 'id'=>$token)));
-      @socket_write($sock, $rmsg, strlen($rmsg));    
+      @socket_write($sock, $rmsg, strlen($rmsg));
+      // through
+    case "reserve":
       $jang_cond->add_player($msg->name, $token);
       if(DEBUG)
 	echo "<<".($jang_cond->jp_size) ." gatherring...\n";
@@ -334,12 +337,22 @@ class SocketHandler{
       if($jang_cond->jp_size < 4) return;
       if(DEBUG)
 	var_dump($jang_cond->jp);
-      $jang_cond->deal_tiles();
+      //$jang_cond->deal_tiles();
 
       foreach($jang_cond->jp as $i => $JpInst) 
       {
 	$id = $JpInst->token;
 	$this->users[$id]["status"] = sprintf("TABLE_%04x", 0);
+	/*
+	$send_mes = array();
+	$send_mes["type"] = "player";
+	$send_mes["q"]    = "renew";
+	$send_mes["wind"] = $JpInst->wind;
+	$send_mes["pt"]   = $JpInst->pt;
+	$send_mes["name"] = $JpInst->name;
+	$send_mes["operable"] = ($i == $playerIndex);
+	$this->send_message((object)$send_mes, -1);
+	*/
 	$msg = array( "q"=>"history", "id" => $id );
 	$this->srv_sockrecv_handler((object)$msg, $this->users[$id]["sock"]);	
       }
@@ -378,7 +391,7 @@ class SocketHandler{
 
       $jang_cond->commit_payment();
       $jang_cond->commit_continue();
-      foreach($jang_cond->jp as $i => $JpInst) 
+      foreach($jang_cond->jp as $JpInst) 
       {
 	$id = $JpInst->token;
 	$msg = array( "q"=>"history", "id" => $id );
@@ -392,7 +405,13 @@ class SocketHandler{
       $this->users[$id]["sock"] = $sock;
       $jang_cond->jp[$playerIndex]->is_connected = true;
 
-      if ($jang_cond->jp_size < 4) return;
+      if ($jang_cond->jp_size < 4) { 
+	$send_mes = array("type" => "layout", 
+			  "q" => "waiting",
+			  "current" => $jang_cond->jp_size);
+	$this->send_message((object)$send_mes, -1);
+	return;
+      }
 
       $send_mes = array("type" => "table", 
 			"q" => "renew",
@@ -416,8 +435,9 @@ class SocketHandler{
       
       $this->send_updated_haifu($pre_size, $playerIndex);
       return;
+      /*
       $send_mes = array();
-      /* 以下, case "haifu"とほぼ同内容 */
+      // 以下, case "haifu"とほぼ同内容 
       for($i = $msg->size; $i < count($jang_cond->haifu); $i++)
       {
 	$haifu = $jang_cond->haifu[$i];  
@@ -477,6 +497,7 @@ class SocketHandler{
 	  //foreach($jang_cond->jp as &$jp)
 	  $this->send_message($json_obj, $jang_cond->jp[$i]->token); 
       }
+      */
       return;
       
     case "haifu":
@@ -488,6 +509,7 @@ class SocketHandler{
       }
       $this->send_updated_haifu($pre_size, -1);
       return;
+      /*
       // send updated haifu to all
       $send_mes = array();
       for ($i = $pre_size; $i < count($jang_cond->haifu); $i++){
@@ -541,13 +563,24 @@ class SocketHandler{
 	for($i = 0; $i < 4; $i++)
 	  $this->send_message($json_obj, $jang_cond->jp[$i]->token); 
       }
+      */
       return;
       break;
     }
+
   }
 
   function send_updated_haifu($pre_size, $playerIndex) {
     $jang_cond = $this->jang_tables[0];
+    if (!$jang_cond->inplay) {
+      //$jang_cond->inplay = true;
+      $send_mes = array('type' => 'layout',
+			"op" => "approval", 
+			'next' => $jang_cond->aspect);
+      $this->send_message((object)$send_mes, -1);
+      return;
+    }
+
     $send_mes = array();
     for ($i = $pre_size; $i < count($jang_cond->haifu); $i++){
       array_push($send_mes, $jang_cond->haifu[$i]);
@@ -593,11 +626,22 @@ class SocketHandler{
     }
     
     if($jang_cond->is_ryukyoku) {
+      $calls = array();
+      foreach($jang_cond->jp as $jp) {
+	if ($jp->is_nagashi)
+	  $calls[$jp->wind] = "nagashi";
+	else if ($jp->is_tempai)
+	  $calls[$jp->wind] = "tempai";
+	else 
+	  $calls[$jp->wind] = "";
+      }
       $pt = $jang_cond->reserve_payment_ryukyoku();
       $json_obj = array("type" => "layout",
 			"op" => "payment",
 			"point" => $pt, 
-			'next' => $jang_cond->aspect);
+			'next' => $jang_cond->aspect,
+			'call' => $calls,
+			);
       for($i = 0; $i < 4; $i++)
 	$this->send_message($json_obj, $jang_cond->jp[$i]->token); 
       }

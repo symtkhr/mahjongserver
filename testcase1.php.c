@@ -1,8 +1,68 @@
 <?
 require_once("srv_jang0602.php.c");
 
-// テストケース<1>: 複合鳴きフラグ 
+function make_testcase() {
+  $fouth = array();
+  $tans = array(
+	       "2m","3m","4m","5m","6m","7m","8m",
+	       "2p","3p","4p","5p","6p","7p","8p",
+	       "2s","3s","4s","5s","6s","7s","8s");
+  $yaos = array(
+	       "1m","1p","1s",
+	       "9m","9p","9s",
+	       "to","na","sh","pe","hk","ht","ch");
+  $q = 0;
+  $t = 0;
+
+  for($i = 0; $i < 17; $i++) {
+    for($jp = 0; $jp < 4; $jp++) {
+      if ($jp == 1) {
+	array_push($fouth,
+		   sprintf("%dDRAW_%s", $jp, $tans[$t % 21]),
+		   sprintf("%dDISC_%s", $jp, $tans[$t % 21])); 
+	$t++;
+	
+      } else {
+
+	array_push($fouth,
+		   sprintf("%dDRAW_%s", $jp, $yaos[$q % 13]),
+		   sprintf("%dDISC_%s", $jp, $yaos[$q % 13])); 
+	$q++;
+      }
+    }
+  }
+  array_push($fouth, "0DRAW_ch");
+  //array_push($fouth, "0DRAW_8p", "0DISC_8p", "1DRAW_ch");
+ 
+  return $fouth;
+}
+
+
+$fouth = array_merge(array(
+	       "0DEAL_2s2s3s3s4s4s5s5s6s6s7s7s8s",
+	       "1DEAL_2s3s4s5s6s7s8s8s3p4p5p6p7p",
+	       "2DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
+	       "3DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
+			   ),
+		     make_testcase());
+
+
 $fouth = array(
+	       "0DEAL_2s3s3s4s4s5s1m2m3m1ptohkhk",
+	       "1DEAL_2s3s4s5s6s7s8s8s1p4p5p6p7p",
+	       "2DEAL_2m3m4m5m6m7m8m2p2p4p5phthk",
+	       "3DEAL_2m3m4m5m6m7m8m3p3p4p5p6p7p",
+	       "0DRAW_ch", "0DISC_ch", 
+	       "1DRAW_3p", "1DISC_3p", 
+	       "3DECLP_3p3p", "3DISC_7p",
+	       "0DRAW_2p", "0DISC_to",
+	       "1DRAW_ch", "1DISC_ch", 
+	       "2DRAW_ch", "2DISC_ch", 
+	       "3DRAW_3p", "3DECLK_3p",
+	       );
+
+// テストケース<1>: 複合鳴きフラグ 
+$sfouth = array(
 "0DEAL_060b0a10111226303a444d4f58",
 "1DEAL_010203131c1e24292c3c3d3e4c",
 "2DEAL_080c3132333f41475d62687273",
@@ -22,7 +82,14 @@ $fouth = array(
 //*/
 );
 
-// テストケース<2>: 終巡制御
+$sfouth = array(
+	       "0DEAL_1p9p1s9s1m9m9mtotonanashhk",
+	       "1DEAL_1p9p1s9s1m9m9mtotonanashhk",
+	       "2DEAL_1p1p9p9p1s9s1mshshpepehkhk",
+	       "3DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
+       );
+
+// てストケース<2>: 終巡制御
 $vfouth = array(
  /*sending 0:*/ "0DEAL_01070c1b1c1e21233449667e86",
  /*sending 1:*/ "1DEAL_151725262e303340415a61646e",
@@ -153,7 +220,7 @@ $vfouth = array(
 	      );
 
 // テストケース<3>: 三種槓 + 二家搶槓
-$fouth = array(
+$vfouth = array(
 "0DEAL_0c121426333e454d4f506b6f88",
 "1DEAL_0407133b4a5460626471747d7f",
 "2DEAL_1632383a3f4046525c5d697284",
@@ -335,7 +402,8 @@ for($i = 0; $i < 4; $i++){
   $jang_cond->jp[$i]->pt = $bandaid_pt[$i];
  }
 
-if(0) {
+if(1) {
+  var_dump($fouth);
   $jang_cond->init_aspects();
   load_haifu_s($fouth);
   make_random_haifu();
@@ -361,13 +429,13 @@ if(0) {
 if($unit_test)
    cmd_debug();
 
-
 function make_random_haifu() {
   global $jang_cond;
   if(0) {
     $jang_cond->start_game();
     $jang_cond->deal_tiles();
   }
+  // 指定の回数の自摸切り
   for($loop = 0; $loop < 0/*< 136 - 13 * 5 - 30*/; $loop++) {
     $turn = $jang_cond->turn;
     $wind = $jang_cond->jp[$turn]->wind;
@@ -464,9 +532,10 @@ function load_haifu_s($haifu, $is_shown = false) {
   global $jang_cond;
   $jp =& $jang_cond->jp;
   $is_test = false;
+  $mai = array_fill(0, 35, 0);
 
   foreach($haifu as $step){
-    $reg = preg_match("/^([0-3x])(D[A-Z]+)_([0-9a-f]+)$/",trim($step),$ref);
+    $reg = preg_match("/^([0-3x])(D[A-Z]+)_([0-9a-z]+)$/",trim($step),$ref);
     if($reg != 1) continue;
 
     $op = $ref[2];
@@ -476,11 +545,27 @@ function load_haifu_s($haifu, $is_shown = false) {
     case "DEAL":
     case "DRAW":
     case "DECK":
-      for($i = 0; $i < strlen($target); $i += 2)
-	array_push($jang_cond->yamahai, hexdec(substr($target, $i, 2)));
-       break;
+      for($i = 0; $i < strlen($target); $i += 2) {
+	$id = hexdec(substr($target, $i, 2));
+	if (1) {
+	  $hainum = cmd2id(substr($target, $i, 2));
+	  $mai[$hainum]++;
+	  if ($mai[$hainum] > 4)
+	    exit("Invalid haifu:" . substr($target, $i, 2) . "\n");
+	  $id = $hainum * 4 - 4 + $mai[$hainum];
+	}
+	array_push($jang_cond->yamahai, $id);
+      }
+      break;
     case "DORA":
-      array_push($jang_cond->wangpai, hexdec($target));
+      $id = hexdec($target);
+      if (1) {
+	$hainum = cmd2id($target);
+	$mai[$hainum]++;
+	if ($mai[$hainum] > 4) exit("Invalid haifu:" . $hainum . "\n");
+	$id = $hainum * 4 - 4 + $mai[$hainum];
+      }
+      array_push($jang_cond->wangpai, $id);
       break;
     }
   }
@@ -511,7 +596,7 @@ function load_haifu_s($haifu, $is_shown = false) {
 
   foreach($haifu as $i_st => $step){
     if($step==="TEST") $is_test = true;
-    $reg = preg_match("/^([0-3x])(D[A-Z0]+)_([0-9a-f]+)$/",trim($step),$ref);
+    $reg = preg_match("/^([0-3x])(D[A-Z0]+)_([0-9a-z]+)$/",trim($step),$ref);
     if($reg != 1) continue;
 
     $wind = $ref[1] * 1;
@@ -535,6 +620,10 @@ function load_haifu_s($haifu, $is_shown = false) {
     /* through */
     case "DISC":
     case "DISCR":
+    echo $step;
+      $step = translate_haifu($jang_cond->jp[$playerIndex]->tehai, $target, 
+			      $step);
+     
     case "DECL0":
       $jang_cond->eval_command($step, $playerIndex);
       break;
@@ -547,4 +636,30 @@ function load_haifu_s($haifu, $is_shown = false) {
 
 }
 
+function translate_haifu($tehai, $target, $step){
+  $targetId = "";
+  $nums = array();
+  for($i = 0; $i < strlen($target); $i += 2) {
+    array_push($nums, cmd2id(substr($target, $i, 2)));
+  }
+  sort($nums);
+  $q = 0;
+  foreach($tehai as $tehaij) {
+    if(ceil($tehaij / 4) != $nums[$q]) continue;
+    $q++;
+    $targetId .= sprintf("%02x", $tehaij);
+    if ($q == count($nums)) break;
+  }
+  return sprintf("%s_%s", array_shift(explode("_", $step)), $targetId);
+}
+
+function cmd2id($cmd) {
+  return array_search($cmd,array(
+		 "dummycommand",
+		 "1m","2m","3m","4m","5m","6m","7m","8m","9m",
+		 "1p","2p","3p","4p","5p","6p","7p","8p","9p",
+		 "1s","2s","3s","4s","5s","6s","7s","8s","9s",
+		 "to","na","sh","pe","hk","ht","ch")
+ );
+}
 ?>

@@ -222,7 +222,7 @@ var JangPlayer = function(){
 
 var Layout = function() {
   var op2str = {"DECLC":"吃", "DECLP":"碰", "DECLK":"槓", "DECL0":"パス",
-		"DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"打"};
+		"DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"立直"};
   var wind2name = ["東","南", "西", "北"];  
   
   this.init_layout = function() {
@@ -236,20 +236,18 @@ var Layout = function() {
   };
     
   this.show_operation = function(op) {
+    $("#operation .op").hide();
+    $("#operation .ops").hide();
     if(op == null) {
-      $("#operation").html("");
       return;
     }
     for (var i = 0; i < jang_cond.jp.length; i++)
       if (jang_cond.jp[i].operable) break;
     var jp = jang_cond.jp[i];
     var menu = op.split(";");
-    var mes = "";
 
     if (menu.index("DISC") >= 0) {
-      mes += '<button id="move_l" class="op">&lt;&lt;</button>';
-      mes += '<div id="rc" class="op"></div>';
-      mes += '<button id="move_r" class="op">&gt;&gt;</button>';
+      $("#move_l, #move_r, #rc").show();
       if (!jp.is_reach) {
 	var is_menzen = true;
 	for (var i = 0; i < jp.furo_from.length; i++) {
@@ -257,17 +255,16 @@ var Layout = function() {
           is_menzen = false;
 	}
 	if (is_menzen) {
-          mes += '<label class="reach_opt op">';
-          mes += '<input type="checkbox" id="reach' + jp.wind + '">立</label>';
+	  $("#reach").parent().parent().show();
+	} else {
+	  $("#reach").hide();
 	}
       }
     }
     for (i = 0; i < menu.length; i++) {
       if (menu[i] === "DISC") continue;
-      mes += "<button id='" + jp.wind + menu[i] + "' class='decl op'>";
-      mes += op2str[menu[i].split("_")[0]] + "</button> ";
+      $("#" + menu[i].split("_").shift()).show();
     }
-    $("#operation").html(mes);
   };
 
   this.update_table_info = function() {
@@ -276,14 +273,23 @@ var Layout = function() {
     
   };
   
+  this.set_call_info = function(call, qplayer) {
+    var jp = jang_cond.jp[qplayer];
+    var this_pos = posname[jp.pos];
+    $("#call_" + this_pos).html(call).show();
+
+  }
+
   this.update_call_info = function(op, posname, is_horizon, qplayer, turn) {
     var jp = jang_cond.jp[qplayer];
     var str_flag = "";
+    /*
     if (jp.is_reach) {
       var path = is_horizon ? "trans/reach-" : "reach";
       path = "../kappa12/haiga/" + path + ".png";
       str_flag += '<img src="' + path + '">';
     }
+    */
     //str_flag += jp.is_1patsu  ? "[即]" : "";
     //str_flag += jp.is_furiten ? "[振]" : "";
     //str_flag += jp.tempai_target.length > 0  ? "[聴]" : "";
@@ -292,6 +298,9 @@ var Layout = function() {
     $("#call_" + posname).html(str_flag);
     if (jp.wind == turn && op !== "DECLF" && op !== "HAND" && op2str[op]) { 
       $("#call_" + posname).append(" " + op2str[op]);
+      $("#call_" + posname).show();
+    } else {
+      $("#call_" + posname).hide();
     }
   };
 
@@ -316,16 +325,16 @@ var Layout = function() {
 
 
     // Table info
-    $("#wind_" + this_pos + " .pt").html(jp.pt.toString(10));
-    $("#wind_" + this_pos + " .ch").html(wind2name[jp.wind]);
-    $("#wind_" + this_pos + " .name").html(jp.name);
-    var obj = $("#wind_" + this_pos + ", #hand_" + this_pos);
-    obj.css("background-color", turn == jp.wind ? "green":"")
+    $(".wind_" + this_pos + " .pt").html(jp.pt.toString(10));
+    $(".wind_" + this_pos + " .ch").html(wind2name[jp.wind]);
+    $(".wind_" + this_pos + " .name").html(jp.name);
+    var obj = $(".wind_" + this_pos);
+    obj.css("background-color", turn == jp.wind ? "green" : "")
        .css("color", turn == jp.wind ? "white" : "black");
     if (jp.is_hora) {
       obj.css("background-color","yellow").css("color", "black");
     }
-    $("#wind_" + this_pos).css("z-index", turn == jp.wind ? 0 : 1);  
+    $(".wind_" + this_pos).css("z-index", turn == jp.wind ? 0 : 1);  
 
     this.update_call_info(op, this_pos, is_vertical, qplayer, turn);
 
@@ -412,17 +421,21 @@ var Layout = function() {
       objarr.push($("<img>").attr(attr));
     }
 
+    var PERLINE = 6;
     for (var j = 0; j < 3; j++) {
-      var obj = $("#discard_" + this_pos + j);
+      var obj = $("#discard_" + this_pos + j + " span");
       obj.html("");
-      for (var i = 0; i < 6; i++) {
-	n = j * 6 + (is_reverse ? 5 - i : i);
-	if(n < objarr.length){
-	  obj.append(objarr[n]);
+      var nstart = j * PERLINE;
+      var nstop = (j < 2) ? (nstart + PERLINE) : objarr.length;
+      for (var n = nstart; n < nstop; n++) {
+	var i = is_reverse ? (nstart + nstop - n - 1) : n;
+	if (i < objarr.length){
+	  obj.append(objarr[i]);
 	  if (is_vertical) obj.append("<br>");
 	}
       }
     }
+    $("#message").html("");
   };
 };
 
@@ -559,8 +572,10 @@ var JangTable = function(){
 
     case "DISC":
     case "DISCR":
+    case "DISCR0":
     case "DISCT":
-    case "DISCRT":
+    case "DISCTR":
+    case "DISCTR0":
       if (this.turn != jp.wind) return alert("invalid timing");
       var target = parseInt(qtarget, 16);
       var is_valid = jp.discard(target, op.indexOf("R") > 0);

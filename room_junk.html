@@ -12,7 +12,7 @@
 </head>
 <body style="padding:0; margin:0; width:320px; background-color:#daf;">
   <div id="jang_table">
-    <div id="hand_top">
+    <div id="hand_top" class="wind_top">
       <div id="furo_top0">露t1</div>
       <div id="furo_top1">露t2</div>
       <div id="furo_top2">露t3</div>
@@ -21,7 +21,7 @@
 	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
       </div>
     </div>
-    <div id="hand_left">
+    <div id="hand_left" class="wind_left">
       <div id="inhand_left">
 	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
       </div>
@@ -30,7 +30,7 @@
       <div id="furo_left2">露L3</div>
       <div id="furo_left3">露L4</div>
     </div>
-    <div id="hand_bottom">
+    <div id="hand_bottom" class="wind_bottom">
       <div id="furo_bottom0">露B1</div>
       <div id="furo_bottom1">露B2</div>
       <div id="furo_bottom2">露B3</div>
@@ -39,7 +39,7 @@
 	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
       </div>
     </div>
-    <div id="hand_right">
+    <div id="hand_right" class="wind_right">
       <div id="furo_right0">露R1</div>
       <div id="furo_right1">露R2</div>
       <div id="furo_right2">露R3</div>
@@ -49,87 +49,141 @@
       </div>
     </div>
 
-    <div id="call_top"></div>
-    <div id="call_left"></div>
-    <div id="call_bottom"></div>
-    <div id="call_right"></div>
+    <div id="call_top" class="fukidashi"></div>
+    <div id="call_left" class="fukidashi"></div>
+    <div id="call_bottom" class="fukidashi"></div>
+    <div id="call_right" class="fukidashi"></div>
+    
+    <div id="discard_top0"><span>
+      <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+    </span></div>
 
-    <div id="discard_top2">
+    <div id="discard_top1"><span>
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
-    </div>
-    <div id="discard_top1">
+    </span></div>
+
+    <div id="discard_top2"><span>
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
-    </div>
-    <div id="discard_top0">
-      <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
-    </div>
-    <div id="discard_left2">
+    </span></div>
+
+
+    <div id="discard_left0">
+      <span>
       <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
     </div>
     <div id="discard_left1">
+      <span>
       <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
     </div>
-    <div id="discard_left0">
+    <div id="discard_left2">
+      <span>
       <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
     </div>
+
     <div id="discard_bottom0">
+      <span>
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </span>
     </div>
     <div id="discard_bottom1">
+      <span>
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </span>
     </div>
     <div id="discard_bottom2">
+      <span>
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </span>
     </div>
-    <div id="discard_right0">
+
+    <div id="discard_right0"><span class="bottom_align">
       <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
     </div>
-    <div id="discard_right1">
+
+    <div id="discard_right1"><span class="bottom_align">
       <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
     </div>
-    <div id="discard_right2">
-      <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+
+    <div id="discard_right2"><span class="bottom_align">
+<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
+    </div>
+    <div id="discard_right3"><span class="bottom_align">
+<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
     </div>
 
     <div id="fuoh">
-      <div id="wind_top" style="top:0; left:10px; right:10px; text-align:center;">
+      <div class="wind_top" style="position:aboslute; top:0; left:10px; right:10px; text-align:center;">
 	<span class="name">上野</span><br>
 	<span class="pt">250</span>
 	<span class="ch">東</span>
       </div>
-      <div id="wind_left" style="top:40px; left:0; right:20px; text-align:left;">
-	<span class="name">佐野</span><br>
-	<span class="ch">南</span><br>
-	<span class="pt">250</span>
+      <div style="position:absolute; top:36px; right:0;left:0; bottom:36px;">
+	<div style="width:100%; text-align:left;" class="wind_left">
+	  <span class="name">佐野</span>
+	</div>
+	<div style="width:50%; text-align:left; float:left;" class="wind_left">
+	  <span class="ch">南</span><br>
+	  <span class="pt">-250</span>
+	</div>
       </div>
-      <div id="wind_bottom" 
-	   style="bottom:0; left:10px; right:10px; text-align:center;">
+      <div style="position:absolute; bottom:36px; right:0;left:0; bottom:36px;">
+	<div style="width:50%; text-align:right; margin-left:auto;" class="wind_right">
+	  <span class="pt">-250</span><br>
+	  <span class="ch">北</span>
+	</div>
+	<div style="text-align:right; width:100%; margin-left:auto;" class="wind_right">
+	  <span class="name">宇野</span>
+	</div>
+      </div>
+      <div class="wind_bottom" 
+	   style="position:absolute; bottom:0; left:10px; right:10px; text-align:center;">
 	<span class="ch">西</span>
 	<span class="pt">250</span><br>
 	<span class="name">下野</span>
       </div>
-      <div id="wind_right" 
-	   style="bottom:40px; left:20px; right:0; text-align:right;">
-	<span class="pt">250</span><br>
-	<span class="ch">北</span><br>
-	<span class="name">宇野</span>
-      </div>
     </div>
-    <div style="position:absolute; top:25px; left:25px; font-size:10pt;">
-      <span id="aspect"></span>
-      <span id="deck">残69</span>
-    </div>
-    
     <div id="wangpai">
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
     </div>
     <div id="point_table"></div>
   </div>
-
-</div>　
-
+</div>
+<!--div style="position:absolute; top:25px; left:25px; font-size:10pt;"-->
 <div id="operation">
-  <button id="approval" style="width:100px; height:100px;">OK</button>
+  <div style="float:right;">
+    <div class="ops">
+      <label><input type="checkbox" id="reach">立直</label>
+    </div>
+    <button id="DECLC" class="ops decl">吃</button>
+    <button id="DECLP" class="ops decl">碰</button>
+    <button id="DECLK" class="ops decl">槓</button>
+    <button id="DECLF" class="ops decl">和了</button><br>
+    <button id="DECL0" class="ops decl">パス</button>
+    <div class="ops">
+      <label><input type="checkbox" id="reach">鳴きなし</label>
+    </div>
+    <div class="ops">
+      <label><input type="checkbox" id="reach">ロンなし</label>
+    </div>
+  </div>
+  <div>
+    <span id="aspect">東1-1</span>
+    <span id="deck">残69 供託0</span>
+  </div>   
+
+  <button id="move_l" class="op">&lt;&lt;</button>
+  <div id="rc" class="op"></div>
+  <button id="move_r" class="op">&gt;&gt;</button>
+  <button id="approval" class="op">OK</button>
+  <button id="show_table" class="op">卓表示</button>
+  <div id="message"></div>
 <!--
   手前：
   <label><input type=radio value=0 name="yourDirection">東家</label>
