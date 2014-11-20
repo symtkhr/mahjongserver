@@ -55,6 +55,7 @@ var JangPlayer = function(){
   this.tempai_target = [];
   this.is_furiten = false;
   this.is_hora = false;
+  this.is_connect = true;
   this.bit_naki = 0;
   this.token;
 
@@ -327,7 +328,9 @@ var Layout = function() {
     // Table info
     $(".wind_" + this_pos + " .pt").html(jp.pt.toString(10));
     $(".wind_" + this_pos + " .ch").html(wind2name[jp.wind]);
-    $(".wind_" + this_pos + " .name").html(jp.name);
+    var obj = $(".wind_" + this_pos + " .name").html(jp.name);
+    obj.html(jp.name);
+    obj.css("color", jp.is_connect ? "black" : "red");
     var obj = $(".wind_" + this_pos);
     obj.css("background-color", turn == jp.wind ? "green" : "")
        .css("color", turn == jp.wind ? "white" : "black");

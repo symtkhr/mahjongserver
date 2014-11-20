@@ -257,6 +257,10 @@ var SocketHandler = function() {
     case "approval":
       // sock制御
       break;
+
+    case "disconnect":
+      jang_cond.jp[msg.wind].is_connect = false;
+      break;
       
     case  "haifu":
       handle_haifu(msg);
