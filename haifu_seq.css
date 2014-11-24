@@ -12,8 +12,9 @@ furo(kong): 18*3+24 = 78px → 1枚あたり3pxかぶせると 66px
 
 div#right_column {float:right; margin-left:10px;}
 #jang_table, .payment {border: solid brown 3px;}
-#jang_table {background-color:#ada; border-collapse:collapse; position:relative;
- width:314px; height:366px;}
+#jang_table {
+    background-color:#ada; border-collapse:collapse; position:relative;
+    width:314px; height:366px;}
 #jang_table tbody td {padding:0;}
 
 #fuoh {padding:0; margin:0;
@@ -217,16 +218,58 @@ button#auto_step
 
 .decl, #approval{}
 .reach_opt {border:solid gray 1px; background-color:#ccc;}
-#operation { height:110px; background:#fcf; }
-.op { width:56px; height:72px; float:left; text-align:center; }
-.ops{ width:50px; height:55px; float:left; text-align:center; }
+#operation { height:110px; background:#fcf; position:relative;}
+.op  { width:50px; height:72px; float:left; text-align:center; display:none; }
+.ops { width:60px; height:55px; float:left; text-align:center; display:none; }
+#rc { border:solid red 2px;  background-color:green; width:56px;}
+.opc { width:78px; height:34px; 
+       border:solid gray 1px; background-color:#ccc; display:block;}
+#ops_steal {
+    position:absolute; right:80px; bottom:0;
+    text-align:right;
+}
+#message {
+    position:absolute; left:0; bottom:0; background:#ecc; width:240px;
+}
 
-#point_agenda table tbody tr td 
-{text-align:right; }
-#point_agenda {bottom:0; left:0; right:0; height:100px; background:white; position:absolute;}
 .payment {
-    background: #fdc; z-index:5; opacity:.9
+    /*background: #fdc; */
+    z-index:5; opacity:.9;
 }
-#point_table {
+#point_agenda {
+    position:absolute; bottom:0; left:0; right:0;
+    height:100px; background:white;
+}
+#point_agenda table tbody tr td {
+    text-align:right; white-space:nowrap;
+}
+#point_calc {
+    background:white; top:0; right:0; left:0; height:69px; padding:2px;
+}
+#point_table, #reservation {
     position:absolute; top:25px; left:25px; right:25px; bottom:25px; 
+    z-index:5;
 }
+#reservation
+{
+    background:white;
+    opacity: .9;
+}
+#stat_top, #stat_bottom, #stat_left, #stat_right 
+{
+    position: absolute; 
+    opacity: .6;
+}
+.ex_selected {
+    border: 2px solid red;
+}
+
+#stat_top    { height:25px; top:0px;    right:0px; left:0px; }
+#stat_bottom { height:25px; bottom:0px; right:0px; left:0px; }
+#stat_left   { width:25px; top:0px; bottom:0px; left:0; }
+#stat_right  { width:25px; top:0px; bottom:0px; right:0; }
+
+#rule ul  {padding-left:1.5em; margin:0;}
+#rule li  {padding:0; margin:0;}
+
+h3 {background:#afc; margin:10px 0; padding:2px; border-left:10px green solid}

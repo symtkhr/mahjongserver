@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script type="text/javascript" src="jquery-1.2.6.js"></script>
 <script type="text/javascript" src="../kappa12/jMah_v130.js"></script>
-<script type="text/javascript" src="cli_junkspace_4p.js"></script>
-<script type="text/javascript" src="room_junk.js"></script>
+<script type="text/javascript" src="junk_table.js"></script>
+<script type="text/javascript" src="junk_player.js"></script>
+<script type="text/javascript" src="junk_room.js"></script>
 <link rel="stylesheet" type="text/css" href="haifu_seq.css">
 <title>牌譜レシーバ</title>
 </head>
-<body style="padding:0; margin:0; width:320px; background-color:#daf;">
+<body style="padding:0; margin:0; width:320px;">
   <div id="jang_table">
     <div id="hand_top" class="wind_top">
       <div id="furo_top0">露t1</div>
@@ -113,76 +114,81 @@
 <img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
       </span>
     </div>
-    <div id="discard_right3"><span class="bottom_align">
-<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
-      </span>
-    </div>
 
     <div id="fuoh">
       <div class="wind_top" style="position:aboslute; top:0; left:10px; right:10px; text-align:center;">
-	<span class="name">上野</span><br>
-	<span class="pt">250</span>
+	<span class="name">------</span><br>
+	<span class="pt">000</span>
 	<span class="ch">東</span>
       </div>
       <div style="position:absolute; top:36px; right:0;left:0; bottom:36px;">
 	<div style="width:100%; text-align:left;" class="wind_left">
-	  <span class="name">佐野</span>
+	  <span class="name">-------</span>
 	</div>
 	<div style="width:50%; text-align:left; float:left;" class="wind_left">
 	  <span class="ch">南</span><br>
-	  <span class="pt">-250</span>
+	  <span class="pt">-000</span>
 	</div>
       </div>
       <div style="position:absolute; bottom:36px; right:0;left:0; bottom:36px;">
 	<div style="width:50%; text-align:right; margin-left:auto;" class="wind_right">
-	  <span class="pt">-250</span><br>
+	  <span class="pt">-000</span><br>
 	  <span class="ch">北</span>
 	</div>
 	<div style="text-align:right; width:100%; margin-left:auto;" class="wind_right">
-	  <span class="name">宇野</span>
+	  <span class="name">-------</span>
 	</div>
       </div>
       <div class="wind_bottom" 
 	   style="position:absolute; bottom:0; left:10px; right:10px; text-align:center;">
 	<span class="ch">西</span>
-	<span class="pt">250</span><br>
-	<span class="name">下野</span>
+	<span class="pt">-000</span><br>
+	<span class="name">-------</span>
       </div>
+
+      <div id="stat_top"></div>
+      <div id="stat_left"></div>
+      <div id="stat_bottom"></div>
+      <div id="stat_right"></div>
+
     </div>
     <div id="wangpai">
       <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
     </div>
     <div id="point_table"></div>
+    <div id="reservation" class="payment"></div>
+
   </div>
 </div>
 <!--div style="position:absolute; top:25px; left:25px; font-size:10pt;"-->
 <div id="operation">
   <div style="float:right;">
-    <div class="ops">
-      <label><input type="checkbox" id="reach">立直</label>
-    </div>
+    <label class="opc"><input type="checkbox" id="reach">立直</label>
+    <label class="opc"><input type="checkbox" id="unsteal">鳴きなし</label>
+    <label class="opc"><input type="checkbox" id="unrong">ロンなし</label>
+  </div>
+  <div style="float:right; width:60px;">
+    <button id="DECLF" class="ops decl">和了</button>
+  </div>
+  <div style="width:170px;">
+    <span id="aspect">東1-1</span>
+    <span id="deck">残69 供託0</span>
+  </div>
+  <div style="width:170px;">
+    <button id="move_l" class="op">&lt;&lt;</button>
+    <div id="rc" class="op"></div>
+    <button id="move_r" class="op">&gt;&gt;</button>
+  </div>
+  <div id="ops_steal">
+    <button id="DECL0" class="ops decl">パス</button>
     <button id="DECLC" class="ops decl">吃</button>
     <button id="DECLP" class="ops decl">碰</button>
     <button id="DECLK" class="ops decl">槓</button>
-    <button id="DECLF" class="ops decl">和了</button><br>
-    <button id="DECL0" class="ops decl">パス</button>
-    <div class="ops">
-      <label><input type="checkbox" id="reach">鳴きなし</label>
-    </div>
-    <div class="ops">
-      <label><input type="checkbox" id="reach">ロンなし</label>
-    </div>
   </div>
-  <div>
-    <span id="aspect">東1-1</span>
-    <span id="deck">残69 供託0</span>
-  </div>   
-
-  <button id="move_l" class="op">&lt;&lt;</button>
-  <div id="rc" class="op"></div>
-  <button id="move_r" class="op">&gt;&gt;</button>
-  <button id="approval" class="op">OK</button>
-  <button id="show_table" class="op">卓表示</button>
+  <div class="transition">
+    <button id="approval" class="op">OK</button>
+    <button id="show_table" class="op">卓表示</button>
+  </div>
   <div id="message"></div>
 <!--
   手前：
@@ -194,7 +200,56 @@
 </div>
 
 
-<h2>Tiles receiver</h2>
+<div id="rule">
+<h2>[ルール]</h2>
+
+<b>太字</b>は特に一般的でないと思われるもの。
+
+<h3>鳴き</h3>
+<ul>
+  <li>喰い替え 可
+  <li>河底牌は鳴けない, 海底牌は槓できない
+  <li>槓ドラ: 暗槓で即めくり, 明槓で打牌後めくりまたは嶺上開花後めくり
+  <li><b>槓は何回発生しても続行</b><br>
+    (5回め以降の槓は嶺上牌を海底から引き, 槓ドラを増やさない)</b>
+  <li><b>ポンチー直後の槓 可</b>
+  <li><b>立直後の暗槓 不可</b>
+</ul>
+
+<h3>和了</h3>
+<ul>
+  <li>後付け あり
+  <li>二家和・三家和: 頭跳ねオンリー
+  <li><b>役なし和了・振聴ロン・不聴立直はその場で和了放棄通知</b> (ボタンを誤って押さないように注意)
+  <li>暗槓の搶槓ロン 常になし
+</ul>
+  
+<h3>宣言</h3>
+<ul>
+  <li>借金立直 あり
+  <li><b>途中流局 すべてなし</b> (四風連打・九種九牌・三家和・四人立直・四槓算了)
+</ul>
+
+<h3>局遷移</h3>
+<ul>
+  <li>東南戦 <b>西入なし</b>
+  <li>0点開始 50点返し -250点未満で箱割れ
+  <li>不聴親流れ, 和了やめ聴牌やめ あり
+</ul>
+
+<h3>役</h3>
+  <div id="yakulist"></div>
+<h3>他</h3>
+<ul>
+  <li>王牌は14枚残し
+  <li>赤ドラなし
+  <li>包なし
+  <li>2翻しばり なし
+  <li>流し満貫: あり。非和了扱い(供託は取得できない, 1本場追加で親聴牌なら連荘)。複数者成立は個別計算。
+</ul>
+</div>
+
+<div style="display:block;">
 <div id="step"></div>
 <div>
   <textarea id="sel_haifu_edit"></textarea>
@@ -206,8 +261,6 @@
 <hr>
 <div id="alert_mes"></div>
 <div style="clear:both;"></div>
+</div>
 <hr>
-
-<hr>
-
 </body></html>

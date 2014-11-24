@@ -1,5 +1,10 @@
 <?
-require_once("srv_jang0602.php.c");
+require_once("JongTable.php.c");
+require_once("JangPlayer.php.c");
+require_once("JongCommon.php.c");
+require_once("SocketHandler.php.c");
+
+define("DEBUG", true);
 
 function make_testcase() {
   $fouth = array();
@@ -48,17 +53,18 @@ $fouth = array_merge(array(
 
 
 $fouth = array(
-	       "0DEAL_2s3s3s4s4s5s1m2m3m1ptohkhk",
-	       "1DEAL_2s3s4s5s6s7s8s8s1p4p5p6p7p",
+	       "1DEAL_2s3s4s5s6s8s8s8s1p4p5p6p7p",
 	       "2DEAL_2m3m4m5m6m7m8m2p2p4p5phthk",
 	       "3DEAL_2m3m4m5m6m7m8m3p3p4p5p6p7p",
+	       "0DEAL_2s3s3s4s4s5s1m2m3m1ptohkhk",
+
 	       "0DRAW_ch", "0DISC_ch", 
 	       "1DRAW_3p", "1DISC_3p", 
 	       "3DECLP_3p3p", "3DISC_7p",
 	       "0DRAW_2p", "0DISC_to",
 	       "1DRAW_ch", "1DISC_ch", 
 	       "2DRAW_ch", "2DISC_ch", 
-	       "3DRAW_3p", "3DECLK_3p",
+	       "3DRAW_3p", //"3DECLK_3p",*/
 	       );
 
 // テストケース<1>: 複合鳴きフラグ 
@@ -391,7 +397,8 @@ array("3DECLF_0", "2DECLF_0"), //→ 栄2・栄3
 //テスト条件
 $jang_cond = new JongTable;
 $jang_cond->init_members();
-$jang_cond->aspect = 0;
+$jang_cond->inplay = true;
+$jang_cond->aspect = 7;
 $jang_cond->jp_size = 4;
 $bandaid_name = array("SpringFire","SummerWater","AutumnWind","WinterEarth");
 $bandaid_pt = array(0,0,0,0);
@@ -429,6 +436,10 @@ if(1) {
 if($unit_test)
    cmd_debug();
 
+$socks = new SocketHandler;
+$socks->is_in_unit_test = true;
+$socks->start_server();
+
 function make_random_haifu() {
   global $jang_cond;
   if(0) {
@@ -452,81 +463,6 @@ function make_random_haifu() {
   }
 
 }
-/*
-function load_haifu_v($haifu, $is_shown = false) {
-  global $jang_cond;
-  $JpInstance =& $jang_cond->jp;
-
-  foreach($haifu as $step){
-    $reg = preg_match("/^([0-3x])(D[A-Z]+)_([0-9a-f]+)$/",trim($step),$ref);
-    if($reg != 1) { 
-      if(preg_match("/^DECK_([0-9a-f]+)$/", $step, $ref))
-      for($i=0; $i < strlen($ref[1]); $i+=2)
-	  array_push($jang_cond->yamahai, hexdec(substr($ref[1], $i, 2)));
-      continue;
-    }
-
-    $wind = $ref[1] * 1;
-    $playerIndex = ($wind + $jang_cond->aspect) % 4;
-    $op = $ref[2];
-    $target = $ref[3];
-    if($is_shown)
-      echo "**".$step."**\n";
-
-    switch($op){
-
-    case "DEAL":
-      //$playerIndex = $wind;
-      //$playerIndex = ($jang_cond->aspect + $wind) % 4;
-      //$JpInstance[$playerIndex] = new JangPlayer;
-      //$jang_cond->init_members();
-      //$JpInstance[$playerIndex]->wind = $wind;
-
-      for($i = 0; $i < 13; $i++)
-	array_push($JpInstance[$playerIndex]->tehai, hexdec(substr($target, $i*2, 2)));
-      $JpInstance[$playerIndex]->tempaihan();
-      $jang_cond->make_haifu($step);
-      break;
-
-    case "DRAW":
-      for($i = 0; $i < 4; $i++) 
-	$JpInstance[$i]->bit_naki = 0;
-      //if($i != $playerIndex && $JpInstance[$i]->bit_naki > 0)
-      //  $jang_cond->eval_command($JpInstance[$i]->wind . "DECL0_0", $i);
-
-      $jang_cond->turn = $playerIndex;
-      $JpInstance[$playerIndex]->draw_tile(hexdec($target));
-      $jang_cond->make_haifu($step);
-      break;
-
-    case "DECLC":
-    case "DECLP":
-    case "DECLK":
-    case "DECLF":
-      for($i = 0; $i < 4; $i++) 
-	if($i != $playerIndex && $JpInstance[$i]->bit_naki > 0)
-	  $jang_cond->eval_command($JpInstance[$i]->wind . "DECL0_0", $i);
-    // through 
-            
-    default:
-      $jang_cond->eval_command($step, $playerIndex);
-      if($op ==="DECLK") {
-	if(end($JpInstance[$playerIndex]->tehai) == NULL) {
-	  array_pop($JpInstance[$playerIndex]->tehai);
-	  array_pop($jang_cond->haifu);
-	}
-      } else if(end($jang_cond->haifu) === "END") {
-	array_pop($jang_cond->haifu);
-	$jang_cond->is_ryukyoku = false;
-      }
-      break;
-    }
-    //break;
-      
-  }
-
-}
-*/
 
 function load_haifu_s($haifu, $is_shown = false) {
   global $jang_cond;
@@ -546,24 +482,24 @@ function load_haifu_s($haifu, $is_shown = false) {
     case "DRAW":
     case "DECK":
       for($i = 0; $i < strlen($target); $i += 2) {
-	$id = hexdec(substr($target, $i, 2));
-	if (1) {
-	  $hainum = cmd2id(substr($target, $i, 2));
-	  $mai[$hainum]++;
-	  if ($mai[$hainum] > 4)
-	    exit("Invalid haifu:" . substr($target, $i, 2) . "\n");
-	  $id = $hainum * 4 - 4 + $mai[$hainum];
-	}
-	array_push($jang_cond->yamahai, $id);
+        $id = hexdec(substr($target, $i, 2));
+        if (1) {
+          $hainum = cmd2id(substr($target, $i, 2));
+          $mai[$hainum]++;
+          if ($mai[$hainum] > 4)
+            exit("Invalid haifu:" . substr($target, $i, 2) . "\n");
+          $id = $hainum * 4 - 4 + $mai[$hainum];
+        }
+        array_push($jang_cond->yamahai, $id);
       }
       break;
     case "DORA":
       $id = hexdec($target);
       if (1) {
-	$hainum = cmd2id($target);
-	$mai[$hainum]++;
-	if ($mai[$hainum] > 4) exit("Invalid haifu:" . $hainum . "\n");
-	$id = $hainum * 4 - 4 + $mai[$hainum];
+        $hainum = cmd2id($target);
+        $mai[$hainum]++;
+        if ($mai[$hainum] > 4) exit("Invalid haifu:" . $hainum . "\n");
+        $id = $hainum * 4 - 4 + $mai[$hainum];
       }
       array_push($jang_cond->wangpai, $id);
       break;
