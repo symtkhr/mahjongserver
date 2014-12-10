@@ -39,9 +39,9 @@ var exit = function(str){
 }
 
 var JangPlayer = function(){
-  this.name;
-  this.wind;
-  this.pt;
+  this.name = "";
+  this.wind = 0;
+  this.pt = 0;
   this.operable = false;
   this.pos = -1;
   this.tehai = [];
@@ -74,8 +74,8 @@ var JangPlayer = function(){
     }
     this.tehai.sort(function(a, b){ return a - b; });
     this.sutehai.push(target);
-    if(op.indexOf("R") > 0) this.is_reach = 1;
-    if(op.indexOf("R0") > 0) this.is_houki = 1;
+    if (op.indexOf("R") > 0) this.is_reach = 1;
+    if (op.indexOf("R0") > 0) this.is_houki = 1;
     this.sutehai_type.push(op.indexOf("R") > 0 ? DISCTYPE_REACH : 0);
 
     return true;
@@ -136,7 +136,7 @@ var JangPlayer = function(){
     var nakihai = id2num(parseInt(target, 16));
 
     var gaito = [];
-    for(var i = 0; i < this.tehai.length; i++) {
+    for (var i = 0; i < this.tehai.length; i++) {
       var id = this.tehai[i];
       if (id2num(id) == nakihai) gaito.push(id);
     }
@@ -181,49 +181,84 @@ var JangPlayer = function(){
     }
   }
 
-  this.find_target = function(sutenum, op) {
+  this.find_target = function(op, sutenum) {
+    if (op.match(/DECLP/)) 
+      return this.find_pong_target(sutenum);
+    if (op.match(/DECLC/))
+      return this.find_chi_target(sutenum);
+    if (op.match(/DECLK/))
+      return this.find_kong_target();
+    
+  }
+
+  this.find_kong_target = function() {
+    var mai = [];
     var targets = [];
-    switch(op) {
-    case "DECLP":
-      for(var i = 0; i < this.tehai.length; i++) {
-        var target = this.tehai[i];
-        if(sutenum == id2num(target)) targets.push(target);
-      }
-      break;
-
-    case "DECLC":
-      var diff = [-2, -1, 1, 2];
-      var neighbors = [[], [], [], []];
-      if(sutenum < 1 || 27 < sutenum) break;
-      for(var i = 0; i < this.tehai.length; i++) {
-        var target = this.tehai[i];
-        for(var j = 0; j < diff.length; j++) {
-          var head = (sutenum - 1) % 9 + diff[j] + 1;
-          if(head < 1 || 9 < head) continue;
-          if(sutenum + diff[j] == id2num(target)) neighbors[j].push(target);
-        }
-      }
-      if(neighbors[1].length == 0) neighbors[0] = [];
-      if(neighbors[2].length == 0) neighbors[3] = [];
-
-      for(var i = 0; i < neighbors.length; i++) {
-        targets = targets.concat(neighbors[i]);
-      }
-      break;
+    for (var i = 0; i < 34; i++) mai.push(0);
+    for (var i = 0; i < this.tehai.length; i++) {
+      mai[id2num(this.tehai[i])]++;
+    }
+    for (var i = 0; i < 34; i++)
+      if (mai[i] == 4) targets.push(i * 4);
+    for (var i = 0; i < this.tehai_furo.length; i++) {
+      if (this.typfuro != PONG) continue;
+      var nakinum = id2num(this.tehai_furo[i][0]);
+      if (mai[nakinum] == 1) targets.push(nakinum * 4);
     }
     return targets;
   }
 
-  this.show_expose_tile_selection = function(targets){
+  this.find_pong_target = function(sutenum) {
+    var targets = [];
+    for (var i = 0; i < this.tehai.length; i++) {
+      var target = this.tehai[i];
+      if (sutenum == id2num(target)) targets.push(target);
+    }
+    return targets;
+  }
+  
+  this.find_chi_target = function(sutenum) {
+    var targets = [];
+    var diff = [-2, -1, 1, 2];
+    var neighbors = [[], [], [], []];
+    if ((sutenum < 1) || (27 < sutenum)) return [];
+    for (var i = 0; i < this.tehai.length; i++) {
+      var target = this.tehai[i];
+      for (var j = 0; j < diff.length; j++) {
+	var head = (sutenum - 1) % 9 + diff[j] + 1;
+	if ((head < 1) || (9 < head)) continue;
+	if (sutenum + diff[j] == id2num(target)) neighbors[j].push(target);
+      }
+    }
+    if (neighbors[1].length == 0) neighbors[0] = [];
+    if (neighbors[2].length == 0) neighbors[3] = [];
+    
+    for (var i = 0; i < neighbors.length; i++) {
+      targets = targets.concat(neighbors[i]);
+    }
+    return targets;
+  }
+
+  this.show_kong_tile_selection = function(targets) {
+    for (var i = 0; i < targets.length; i++) {
+      for (var j = 0; j < 4; j++) {
+	var id = targets[i] - j;
+	var jq_id = this.wind + "hand_" + id.toStrByteHex();
+	$("#" + jq_id).css("border", "2px solid blue");
+      }
+    }
+  }
+
+  this.show_expose_tile_selection = function(targets) {
     for (var i = 0; i < targets.length; i++) {
       var id = targets[i];
       var jq_id = this.wind + "hand_" + id.toStrByteHex();
       $("#" + jq_id).css("border", "2px solid blue").click(function(){
-        if($(this).hasClass("ex_selected"))
-          $(this).css("border-color", "blue").removeClass("ex_selected");
-        else
-          $(this).css("border-color", "red").addClass("ex_selected");
-      });
+	  if ($(this).hasClass("ex_selected"))
+	    $(this).css("border-color", "blue").removeClass("ex_selected");
+	  else
+	    $(this).css("border-color", "red").addClass("ex_selected");
+	});
     }
   };
 };

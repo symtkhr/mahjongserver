@@ -14,7 +14,7 @@ div#right_column {float:right; margin-left:10px;}
 #jang_table, .payment {border: solid brown 3px;}
 #jang_table {
     background-color:#ada; border-collapse:collapse; position:relative;
-    width:314px; height:366px;}
+    width:314px; height:366px; float:left;}
 #jang_table tbody td {padding:0;}
 
 #fuoh {padding:0; margin:0;
@@ -218,7 +218,11 @@ button#auto_step
 
 .decl, #approval{}
 .reach_opt {border:solid gray 1px; background-color:#ccc;}
-#operation { height:110px; background:#fcf; position:relative;}
+#operation { 
+    height:110px; width:320px; background:#bee; 
+    position:relative;
+    float:left;
+}
 .op  { width:50px; height:72px; float:left; text-align:center; display:none; }
 .ops { width:60px; height:55px; float:left; text-align:center; display:none; }
 #rc { border:solid red 2px;  background-color:green; width:56px;}
@@ -242,6 +246,7 @@ button#auto_step
 }
 #point_agenda table tbody tr td {
     text-align:right; white-space:nowrap;
+    line-height:18px;
 }
 #point_calc {
     background:white; top:0; right:0; left:0; height:69px; padding:2px;

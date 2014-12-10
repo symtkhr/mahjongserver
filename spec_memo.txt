@@ -1,15 +1,192 @@
+<12/03>
+3DEAL_090b0f1217272e50545e617880
+0DEAL_0a0d1a1f2a2b3c42435d6b7479
+1DEAL_2531373b404c5153696a767a7d
+2DEAL_02030e162329334b4d576f777b
+xDORA_68
+0DRAW_62
+0DISC_42
+1DRAW_67
+1DISC_76
+2DRAW_1e
+2DISC_77
+3DRAW_47
+3DISC_78
+0DRAW_1c
+0DISC_79
+1DRAW_28
+1DISC_7a
+2DRAW_7e
+2DISCT_7e
+3DRAW_22
+3DISC_80
+0DRAW_20
+0DISC_74
+1DRAW_36
+1DISC_7d
+2DRAW_46
+2DISC_7b
+3DRAW_86
+3DISCT_86
+0DRAW_24
+0DISC_6b
+1DECLP_696a
+1DISC_4c
+2DRAW_52
+2DISC_6f
+3DRAW_1b
+3DISC_47
+0DRAW_88
+0DISCT_88
+1DRAW_2f
+1DISC_67
+2DRAW_45
+2DISC_23
+3DRAW_30
+3DISCT_30
+0DRAW_4e
+0DISCT_4e
+1DRAW_71
+1DISCT_71
+2DRAW_6d
+2DISCT_6d
+3DRAW_13
+3DISC_22
+0DRAW_5a
+0DISC_1f
+1DRAW_7f
+1DISCT_7f
+2DRAW_3e
+2DISCT_3e
+3DRAW_73
+3DISCT_73
+0DRAW_60
+0DISC_5d
+1DRAW_75
+1DISCT_75
+2DRAW_18
+2DISCT_18
+3DRAW_5c
+3DISC_0b
+0DRAW_65
+0DISCT_65
+1DRAW_84
+1DISCT_84
+2DRAW_56
+2DISC_4b
+3DRAW_48
+3DISCT_48
+0DRAW_21
+0DISCT_21
+1DRAW_82
+1DISCT_82
+2DRAW_34
+2DISCT_34
+3DRAW_35
+3DISCT_35
+0DRAW_04
+0DISCT_04
+1DRAW_5b
+1DISCT_5b
+2DRAW_6c
+2DISCT_6c
+3DRAW_66
+3DISC_5c
+0DRAW_19
+0DISC_2b
+1DRAW_1d
+1DISCT_1d
+2DRAW_2c
+2DISCT_2c
+3DRAW_07
+3DISC_2e
+0DRAW_3d
+0DISCR_2a
+1DRAW_7c
+1DISCT_7c
+2DRAW_5f
+2DISCT_5f
+3DRAW_59
+3DISC_27
+1DECLP_2528
+1DECLF0_bad
+1HAND_3136373b4051532f
+END
+この牌譜でなぜDECLF0できるの?
+
+<11/27>
+handle_haifu()処理中にhandle_haifu()されるとこける。
+Table.haifu[]がおかしくなる。
+
+case "haifu":
+* msg.haifu を JangTable.haifu に push する。
+* handle_haifu() して, this.motion.then(イベントメソッド)する。
+* motion_start() して, this.in_motion の是非でmotionを開始する/this.motion.then()する。
+
+case "layout":
+* msg.layout のイベントメソッドを this.motion[] に pushする。
+* motion_start() して, this.in_motion の是非でmotionを開始する/this.motion.する。
+
+case "approval":
+case "disconnect":
+case "table":
+case "player":
+即時(layoutと競合しないか?)
+
+
 <11/23>
 公開テスト
 
-じゃあ来週までに下記チケットを。
-・役なし自摸後の詰みバグ
-・「聴牌」ふきだし表示
-・操作時の音出し
-・鳴きラグの捨牌に矢印とか点滅とか入れる。
-・鷲巣雀の黒牌表現
-・自摸牌をあらかじめ選択しておく
-・立直中の自動自摸切り
-・自摸切りbot
+●未遂チケット(優先度高)
+・キー操作
+・srv:自摸切りbot → 済み.ただし自巡中に落ちた場合は進まない。
+*cli:Deferredなど動的表示
+*srv:ログイン制御# -> 卓の数 * 4 をログインユーザ数が超えた場合の処理
+
+●未遂チケット(優先度中)
+*srv/cli:メンバの値を自由に変えられるインタフェイス
+*cli:振り込み者の色付け
+*cli:流局時聴牌を見やすくする。色付けとか。→ layout_payment
+*cli:錯和がわかりにくい
+*srv/cli:切断処理# -> 摸牌した後に落ちた場合の処理(timeoutで処理?)
+-> 全卓の check_timeout()を1秒置きにたたく? -> 何か怪しい
+-> disconnectイベント時に強制進行させてしまうとか。
+
+*srv:不正なタイミングで"DECL0"を発行すると多牌/少牌扱いされて止まる
+*cli:搶槓のみでの和了->point = undefined で返るため、まあ動作に問題ないが要注意。
+
+●未遂チケット(優先度低)
+*cli:選択肢複数時の自槓ボタン->青枠が出るが押すと赤枠になり切れる。
+*cli:自摸切り,自動和了
+*cli:自摸牌をあらかじめ選択しておく
+*srv:立直中の暗かん → できてた?
+*srv:ぽんちー直後のかん不可
+*srv:途中流局: 四開かん > 四家立直 > 九種九牌 > 四風連打 → 終了後は無勝負やり直し
+*srv:2翻縛
+*srv:借金立直不可
+*srv:喰い替え不可
+*srv:二家和
+
+●完了
+・鷲巣雀の黒牌表現 → svg化にして背景を黒にするのが良いかも.(白の識別は?)
+                  → gifのまま明度操作で十分
+・操作時の音出し → 済み
+・cli:立直中の自動自摸切り → 立直流局時に無限ループしちゃってる... → 済み
+・cli:「聴牌」ふきだし表示 → できたけどなんか粗い
+・cli:鳴きラグの捨牌に矢印とか点滅とか入れる。→ とりあえず赤枠にしてみた。
+・cli:開局時の表示が前局のを引きずる
+*srv:自摸和了
+・srv/cli:役なし自摸後の詰みバグ	→ HAND;END;してしまった模様
+*cli:自槓ボタン押せず
+->選択してから押せばよい(わかりにく...)
+->なぜそうなっているのか?
+->selective_declaration()による(.ex_selectedなオブジェクトがあれば投げてしまう)。
+*cli:自摸切り牌->cli:DISCT/DISCTR/DISCTR0/DISCR0の対応
+*cli:dump_stat()表示の見直し全般
+  -> call:牌譜を1つ遡ったときの動作が他家ならそれも表示
+  -> 例:A打(立直)→B摸/A打→B吃/A槓→D栄/A誤栄→C摸
+  -> 例外:A槓→A摸 は 両方表示?
+*srv/cli:牌選択: 赤#・透明#
 
 <11/16>
 [ルール]
@@ -66,7 +243,8 @@ type:haifu/haifu:3DEAL_00000000000000000000000000;0DEAL_03070c143648545c5e606166
 ●ログイン
 蔵a→:   {q:login, name:####}
 ●開戦
-→蔵a-d: {type:table,  q:renew, aspect:xx, honba:xx, banked:xx }
+→蔵a-d: {type:table,  q:renew, aspect:xx, honba:xx, banked:xx, 
+	 tile_set:"transp;red" }
 →蔵a-d: {type:player, q:renew, wind:xx, name:###, pt:xx, operable:t/f, id:xx}
 ●配牌
 →蔵a:   {type:haifu,  haifu:"aDEAL_xxxxx;...;aDRAW_xx" }
@@ -141,55 +319,6 @@ JSONでオブジェクトもらう?
 <10/21-25>
 タイマ実装完了
 
-●未遂チケット(11/23リリースまでに終わらせたいもの):
-*srv/cli:メンバの値を自由に変えられるインタフェイス
-
-*srv:切断時動作をもう少し詰める
-*srv:自摸和了
-*cli:自摸切り牌->cli:DISCT/DISCTR/DISCTR0/DISCR0の対応
-*cli:dump_stat()表示の見直し全般
-  -> call:牌譜を1つ遡ったときの動作が他家ならそれも表示
-  -> 例:A打(立直)→B摸/A打→B吃/A槓→D栄/A誤栄→C摸
-  -> 例外:A槓→A摸 は 両方表示?
-   *cli:振り込み者の色付け
-   *cli:流局時聴牌を見やすくする。色付けとか。
-
-*srv:ログイン制御# -> 卓の数 * 4 をログインユーザ数が超えた場合の処理
-*srv/cli:切断処理# -> 摸牌した後に落ちた場合の処理(timeoutで処理?)
--> 全卓の check_timeout()を1秒置きにたたく? -> 何か怪しい
--> disconnectイベント時に強制進行させてしまうとか。
-
-*cli:立直チェック時の色付け
-*srv:不正なタイミングで"DECL0"を発行すると少牌扱いされて止まる
-
-*cli:自槓ボタン押せず->選択してから押せばよい(わかりにく...)
-*cli:カウントダウンどうする?
-*cli:ログイン後のwaiting表示/approval表示*
-*cli:切断表示*, onerror, ondisconnect
-*cli:搶槓のみでの和了->point = undefined で返るため、まあ動作に問題ないが要注意。
-
-*srv:立直中の暗槓の禁止 *
-*cli:立直棒と和了放棄の表示#
-*cli:左右ボタンがばぐっている#
-*cli:他人のターンで他人の牌が#、鳴きラグで自分の手牌が選択できちゃう#
-*cli:選択:鳴きなし#,ロンなし#
-*cli:鳴いた次局で立直ボタンが出ない#、立直かけた次の局で立直チェックされてる#
-
-*srv/cli:流し満貫表示 #
-*cli:OKボタンでかくする#
-*cli:宣言を見やすくする。局遷移後に宣言が見えなくなるバグの修正。#
-*cli:左右プレイヤの名前の重なり #
-*cli:右プレイヤの捨牌が上詰めになるもんだい#、捨て牌が18枚しか#
-*srv/cli:終了制御：和了やめ*, 箱割れ*, 南4終了*, その後のインタフェイス#
-
-●未遂チケット(優先度低)
-*cli:自摸切り,自動和了
-*srv:立直中の暗かん → できてた?
-*srv:ぽんちー直後のかん
-*srv:途中流局: 四開かん > 四家立直 > 九種九牌 > 四風連打 → 終了後は無勝負やり直し
-*srv:ルール選択: 喰い替え,赤・花・透明#, 2翻縛
-*srv:借金立直
-
 ●以下、済み(ただしテストコードが要る)：
 *srv:要確認>配牌聴牌で栄和可能か?#
 *srv:うらどら・かんどら＃
@@ -211,6 +340,25 @@ JSONでオブジェクトもらう?
 *srv/cli:錯和の和了放棄# (役なし栄・振聴栄*・不聴立直*) → 鳴きフラグなどのスルー*
 *srv:二家和制御/頭跳ね → 頭跳ね縛り
 *srv:W立直 #
+
+*srv:立直中の暗槓の禁止 *
+*cli:立直棒と和了放棄の表示#
+*cli:左右ボタンがばぐっている#
+*cli:他人のターンで他人の牌が#、鳴きラグで自分の手牌が選択できちゃう#
+*cli:選択:鳴きなし#,ロンなし#
+*cli:鳴いた次局で立直ボタンが出ない#、立直かけた次の局で立直チェックされてる#
+
+*srv/cli:流し満貫表示 #
+*cli:OKボタンでかくする#
+*cli:宣言を見やすくする。局遷移後に宣言が見えなくなるバグの修正。#
+*cli:左右プレイヤの名前の重なり #
+*cli:右プレイヤの捨牌が上詰めになるもんだい#、捨て牌が18枚しか#
+*srv/cli:終了制御：和了やめ*, 箱割れ*, 南4終了*, その後のインタフェイス#
+
+*cli:カウントダウンどうする?
+*cli:ログイン後のwaiting表示/approval表示*
+*cli:切断表示*, onerror, ondisconnect
+*cli:立直チェック時の色付け
 
 <10/14>
 点数計算実装完了

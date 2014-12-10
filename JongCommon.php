@@ -125,9 +125,7 @@ class FinCheck {
   }
 }
 
-function haifu_make_secret($haifu, $wind) {
-  $washizu = false;
-
+function haifu_make_secret($haifu, $wind, $washizu = false) {
   if ($wind == -1) return $haifu;
   if (!preg_match("/^([0-3])(DRAW|DEAL)_([0-9a-f]+)/", $haifu, $ref)) return $haifu;
   if ($ref[0] * 1 == $wind) return $haifu;

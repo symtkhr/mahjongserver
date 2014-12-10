@@ -18,6 +18,7 @@ class JongTable {
   var $lingshang = 4;
   var $banked = 0;
   var $inplay = false;
+  var $tileset_query = "";
   const LAST_ASPECT = 7;
 
   function dump_stat()
@@ -201,6 +202,16 @@ class JongTable {
     return false;
   }
 
+  function tileset($needle = false)
+  {
+    if ($needle) {
+       return in_array($needle, explode(";", $this->tileset_query));
+    } else {
+       return $this->tileset_query;
+    }
+  }
+
+
   function add_player($name, $id)
   {
     if (4 <= $this->jp_size) return alert("This table is full");
@@ -370,7 +381,7 @@ class JongTable {
       $haifu = $jp->reserve_hora(true, $is_yakunashi);
       if ($haifu === false) return alert("Invalid hora");
       $this->make_haifu(($jp->wind) . $haifu);
-      if ($haifu !== "DECLF0") { 
+      if (!preg_match("/^DECLF0/", $haifu)) {
         $this->make_haifu_hand($this->turn);
         $this->is_end = true;
       }
@@ -594,6 +605,7 @@ class JongTable {
     $JpInstance[$this->turn]->draw_tile($target);
     $this->make_haifu(sprintf("%dDRAW_%02x", 
                       $JpInstance[$this->turn]->wind, $target));
+		      echo "connection check";
     if ($JpInstance[$this->turn]->is_connected) return;
     $this->check_timeout(false);
       
@@ -639,6 +651,7 @@ class JongTable {
 
   function check_timeout($is_connect)
   {
+    echo "check_timeout\n";
     if ($this->jp_size < 4) return false;
     $TIME_LIMIT = 15;
     if ($this->pause_since == 0) return false;
@@ -662,7 +675,7 @@ class JongTable {
 
     } else {
       // wait for discard
-      $jp &= $this->jp[$this->turn];
+      $jp = &$this->jp[$this->turn];
       $this->pause_since = 0;
       $target = end($jp->tehai); // last drawn tile
       $qtarget = sprintf("%02x", $target);

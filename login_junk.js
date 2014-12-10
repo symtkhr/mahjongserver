@@ -21,7 +21,7 @@ var socket_open = function(){
       if(c.match(/[ぁぃぅぇぉゃゅょっゎ]/) && i==0) continue;
       name += c;
     }
-    //$("#loginName").val(name);
+    $("#loginName").val(name);
     if(getRequest()) get_stats();
   }
     
@@ -70,7 +70,10 @@ var socket_open = function(){
   
 }
   $(document).ready(function() {
+      if (location.host)
       $("#serverName").val(location.host + ":9000");
+      else
+      $("#serverName").val("localhost:9000");
       socket_open();
     });
 

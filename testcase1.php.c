@@ -1,8 +1,8 @@
 <?
-require_once("JongTable.php.c");
-require_once("JangPlayer.php.c");
-require_once("JongCommon.php.c");
-require_once("SocketHandler.php.c");
+require_once("JongTable.php");
+require_once("JangPlayer.php");
+require_once("JongCommon.php");
+require_once("SocketHandler.php");
 
 define("DEBUG", true);
 
@@ -52,15 +52,16 @@ $fouth = array_merge(array(
 		     make_testcase());
 
 
+//テストケース<4>: 搶槓
 $fouth = array(
-	       "1DEAL_2s3s4s5s6s8s8s8s1p4p5p6p7p",
-	       "2DEAL_2m3m4m5m6m7m8m2p2p4p5phthk",
-	       "3DEAL_2m3m4m5m6m7m8m3p3p4p5p6p7p",
+	       "1DEAL_2s3s4s5s6s8s8s8s1p4p8p6p7p",
+	       "2DEAL_2m3m4m5m6m7m8m2p2p4p8phthk",
+	       "3DEAL_2m3m4m5m6m7m8m3p3p5p5p5p5p",
 	       "0DEAL_2s3s3s4s4s5s1m2m3m1ptohkhk",
 
 	       "0DRAW_ch", "0DISC_ch", 
 	       "1DRAW_3p", "1DISC_3p", 
-	       "3DECLP_3p3p", "3DISC_7p",
+	       "3DECLP_3p3p", "3DISC_8m",
 	       "0DRAW_2p", "0DISC_to",
 	       "1DRAW_ch", "1DISC_ch", 
 	       "2DRAW_ch", "2DISC_ch", 
@@ -226,7 +227,7 @@ $vfouth = array(
 	      );
 
 // テストケース<3>: 三種槓 + 二家搶槓
-$vfouth = array(
+$jfouth = array(
 "0DEAL_0c121426333e454d4f506b6f88",
 "1DEAL_0407133b4a5460626471747d7f",
 "2DEAL_1632383a3f4046525c5d697284",
@@ -398,10 +399,10 @@ array("3DECLF_0", "2DECLF_0"), //→ 栄2・栄3
 $jang_cond = new JongTable;
 $jang_cond->init_members();
 $jang_cond->inplay = true;
-$jang_cond->aspect = 7;
+$jang_cond->aspect = 3;
 $jang_cond->jp_size = 4;
 $bandaid_name = array("SpringFire","SummerWater","AutumnWind","WinterEarth");
-$bandaid_pt = array(0,0,0,0);
+$bandaid_pt = array(-10,-20,30,0);
 for($i = 0; $i < 4; $i++){
   $jang_cond->jp[$i] = new JangPlayer;
   $jang_cond->jp[$i]->name = $bandaid_name[$i];
@@ -411,6 +412,7 @@ for($i = 0; $i < 4; $i++){
 
 if(1) {
   var_dump($fouth);
+  $jang_cond->tileset_query = "red";
   $jang_cond->init_aspects();
   load_haifu_s($fouth);
   make_random_haifu();
@@ -487,7 +489,7 @@ function load_haifu_s($haifu, $is_shown = false) {
           $hainum = cmd2id(substr($target, $i, 2));
           $mai[$hainum]++;
           if ($mai[$hainum] > 4)
-            exit("Invalid haifu:" . substr($target, $i, 2) . "\n");
+            exit("Invalid haifu:" . substr($target, $i, 2) . " in " . $step ."\n");
           $id = $hainum * 4 - 4 + $mai[$hainum];
         }
         array_push($jang_cond->yamahai, $id);

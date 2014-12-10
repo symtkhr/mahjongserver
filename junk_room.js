@@ -1,16 +1,25 @@
+var cmd = [
+	   "back",
+	   "1m","2m","3m","4m","5m","6m","7m","8m","9m",
+	   "1p","2p","3p","4p","5p","6p","7p","8p","9p",
+	   "1s","2s","3s","4s","5s","6s","7s","8s","9s",
+	   "ton","nan","sha","pei","hak","hat","chu"
+	   ];
+
 var jang_cond = new JangTable;
+var jang_disp = new Layout;
 var gPsgID = 0;  
 var gStep = 0;
 var gRtime = 5;
 
 var jang_player_set = function(obj) {
-  if(obj.q === "renew")
+  if (obj.q === "renew")
     jang_cond.jp[obj.wind] = new JangPlayer;
-
+  
   var jpobj = jang_cond.jp[obj.wind];
   jpobj.wind = obj.wind;
-
-  if(obj.q === "calc") {
+  
+  if (obj.q === "calc") {
     jpobj.is_kaihua = obj.is_kaihua;
     jpobj.is_tenho  = obj.is_tenho;
     jpobj.is_reach  = obj.is_reach;
@@ -35,21 +44,28 @@ var jang_player_set = function(obj) {
   */
 };
 
+$.wait = function(msec) {
+  var d = new $.Deferred;
+  setTimeout(function() { d.resolve(); }, msec);
+  return d.promise();
+}
+
 var jang_table_set = function(obj) {
   if (obj.q === "renew") jang_cond = new JangTable;
   jang_cond.aspect = obj.aspect;
-  (new Layout).layout_aspect(obj);
+  jang_cond.apply_tileset(obj.tileset);
+  jang_disp.layout_aspect(obj);
 };
 
 var SocketHandler = function() {
   var wsUri = "ws://" + getRequest().srv;
   var wsUri = getRequest().srv;
-  //var wsUri = "ws://192.168.11.22:9000"; 	
   var websocket = new WebSocket(wsUri); 
-  
+  //var websocket = {onopen:null, onclose:null, onmessage:null};
+
   websocket.onopen = function(ev) {
     $('#sel_haifu').append("<span>Connected!</span>\n");
-    if(getRequest()) get_stats();
+    if (getRequest()) get_stats();
   }
   
   var get_stats = function(){
@@ -60,40 +76,49 @@ var SocketHandler = function() {
   };
   
   var handle_haifu = function(msg) {
-    //jang_table制御
+    var func = [];
     var got_haifu = msg.haifu.split(";");
-    for (var i = 0; i < got_haifu.length; i++){
-      jang_cond.eval_command(got_haifu[i]);
-    }
-
-    (new Layout).display_handle_haifu(got_haifu);
-    
-    //layout制御?
-    var startCount = function() {
-      gRtime = 5;
-      clearInterval(gPsgID);
-      return;
-      gPsgID = setInterval(function() {
-	  $("#count").html(gRtime.toString(10));
-	  gRtime--; 
-	  if (gRtime >= 0) return;
-	  discard_sender();
-	}, 1000);
+    var step = function(haifu) {
+      return function() {
+	$("#sel_haifu").append(haifu);
+	var msec = 100;
+	var d = new $.Deferred;
+	jang_cond.eval_command(haifu);
+	
+	//if (got_haifu.length < 16) {
+	//jang_disp.display_handle_haifu([haifu]);
+	setTimeout(function() { d.resolve(); }, msec);
+	//}
+	return d.promise();
+      };
     };
-    
-    //consider rong or rag
-    if (jang_cond.jp[jang_cond.turn].operable && !jang_cond.is_rag
-       && !jang_cond.is_end
-       ) 
-      startCount();
-    
+
+    var call = $.wait(10);
+    for (var i = 0; i < got_haifu.length; i++){
+      step(got_haifu[i])();
+      //call = call.then(step(got_haifu[i]));
+    }
+    return;
+    jang_disp.display_handle_haifu(got_haifu);
     jang_cond.dump_wangpai();
     jang_cond.check_extra(); // for debug
     $("#step").html(jang_cond.haifu.length); // for debug
     
-    if (jang_cond.is_end) return;
   }
 
+  //layout制御?
+  var startCount = function(timeout_event) {
+    gRtime = 10;
+    clearInterval(gPsgID);
+    //return;
+    gPsgID = setInterval(function() {
+	$("#count").html(gRtime.toString(10));
+	gRtime--; 
+	if (gRtime >= 0) return;
+	timeout_event();
+      }, 1000);
+  };
+  
   var approval_ok = function() {
     var msg = { "q" : "approval" };
     if (getRequest()) msg["id"] = getRequest().token;
@@ -107,27 +132,170 @@ var SocketHandler = function() {
       var msg = jang_cond.msgstock.shift();
       if(getRequest()) msg.id = getRequest().token;
       websocket.send(JSON.stringify(msg));
+      console.log(msg);
     }
   }
 
+  this.unit_test = function () {
+
+    var msg = {wind:0, q:"renew"};
+    for(var i = 0; i < 4; i++) {
+      jang_cond.jp[i] = new JangPlayer;
+      jang_cond.jp[i].wind = i;
+    }
+    $("#reservation").hide();
+
+    jang_cond.jp[2].operable = true;
+
+    var msg = {type: "haifu", haifu:
+	       [
+"0DEAL_0c121426333e454d4f506b6f88",
+"1DEAL_0407133b4a5460626471747d7f",
+"2DEAL_1632383a3f4046525c5d697284",
+"3DEAL_05222d2e3547515658797a8087",
+"xDORA_57",
+
+"0DRAW_0d",
+"0DISC_88",
+"1DRAW_82",
+"1DISC_04",
+"2DRAW_63",
+"2DISC_84",
+"3DRAW_17",
+"3DISC_47",
+"0DRAW_0a",
+"0DISC_6f",
+"1DRAW_55",
+"1DISC_07",
+"2DRAW_75",
+"2DISC_75",
+"3DRAW_39",
+"3DISC_80",
+
+"0DRAW_06",
+"0DISC_6b",
+"1DRAW_81",
+"1DISC_13",
+"0DECLP_1412",
+"0DISC_26",
+"1DRAW_7c",
+"1DISC_7c",
+"3DECLP_797a",
+"3DISC_87",
+"0DRAW_67",
+"0DISC_67",
+"1DRAW_70",
+"1DISC_3b",
+"2DRAW_73",
+"2DISC_69",
+"3DRAW_85",
+"3DISC_85",
+"0DRAW_34",
+"0DISC_3e",
+"1DRAW_59",
+"1DISC_4a",
+"2DRAW_41",
+"2DISC_32",
+"0DECLP_3334",
+"0DISC_0d",
+"1DRAW_7e",
+"1DISC_70",
+"2DRAW_1b",
+"2DISCR_52",
+"3DRAW_0f",
+"3DISC_22",
+"0DRAW_4e",
+"0DECLK_4e",
+"xDORA_03",
+"0DRAW_36",
+"0DISC_06",
+"1DRAW_23",
+"1DISC_23",
+//      "2DRAW_13",
+
+"2DRAW_7b",
+"2DISC_7b",
+"3DRAW_3d",
+"3DISC_58",
+"0DRAW_53",
+"0DISC_53",
+"1DRAW_2a",
+"1DISC_2a",
+"2DRAW_5a",
+"2DISC_5a",
+"3DECLC_5156",
+"3DISC_05",
+"0DRAW_31",
+//*
+"0DECLK_31",
+
+"0DRAW_0b",
+"0DISC_45",
+"xDORA_6e",
+"1DRAW_1c",
+"1DISC_1c",
+"2DRAW_09",
+"2DISC_09",
+
+"0DECLK_0c",
+"0DRAW_21",
+//"0DRAW_".sprintf("%02x", (5+9)*4-1),
+//*
+"0DISC_36",
+"xDORA_28",
+"1DRAW_68",
+"1DISC_64",
+"2DRAW_61",
+"2DISC_61",
+"3DRAW_78",
+"3DISC_78",
+"0DRAW_11",
+"0DECLK_11",
+"3DECLF_0",
+"3HAND_",
+//"0DRAW_24"
+].join(";")
+    };
+    
+    var msgs = [
+    {type:"table", q:"renew", aspect:7, honba:0, banked:-20 },
+    {type:"player", q:"renew", wind:1, pt:10, name:"SpringFire",  operable:false},
+    {type:"player", q:"renew", wind:2, pt:20, name:"SummerWater", operable:false},
+    {type:"player", q:"renew", wind:3, pt:0, name:"AutumnWind",  operable:true },
+    {type:"player", q:"renew", wind:0, pt:-10, name:"WinterEarth", operable:false},
+    {type:"haifu", haifu:"1DEAL_00000000000000000000000000;2DEAL_00000000000000000000000000;3DEAL_060a0e12161a1e2d2e33373a3e;0DEAL_00000000000000000000000000;xDORA_88;0DRAW_00;0DISCT_85;1DRAW_00;1DISCT_2f;3DECLP_2d2e;3DISCT_3e;0DRAW_00;0DISC_6d;1DRAW_00;1DISCT_86;2DRAW_00;2DISCT_87;3DRAW_30"},
+    {type:"layout", op:"DECLK_30;DISC", time:10}];
+    for(var i = 0; i < msgs.length; i++)
+      parse_msg(msgs[i]);
+  }
+
+
   websocket.onmessage = function(ev) {
     var msg = JSON.parse(ev.data);
+    parse_msg(msg);
+  }
+
+  var parse_msg = function(msg) {
     var type = msg.type;
     
+    var res = "";
     for (var i in msg) 
-      $("#sel_haifu").append(i + ":" + msg[i] + "/");
-    $("#sel_haifu").append("\n");
+      res += (i + ":" + msg[i] + "/");
+    $("#sel_haifu").append(res + "\n");
+    console.log(res);
     
     var JpInstance = jang_cond.jp;
     switch (type) {
     case "table":
-      (new Layout).init_layout();
+      jang_disp.init_layout();
       jang_table_set(msg);
       break;
       
     case "player":
       jang_player_set(msg);
       send_msgstock();
+      jang_disp.update_table_info();
+      //alert("stop");
       break;
 
     case  "haifu":
@@ -138,11 +306,9 @@ var SocketHandler = function() {
       layout_set(msg);
       break;
       
-    case "approval":
-      break;
-
     case "disconnect":
       jang_cond.jp[msg.wind].is_connect = false;
+      jang_disp.update_table_info();
       break;
       
     default:
@@ -150,12 +316,14 @@ var SocketHandler = function() {
       for(var key in msg) {
 	$("#sel_haifu").append(key + " = " + msg[key] + "<br>");
       }
+      /*
       for(var i in msg.jp) {
 	for(var key in msg.jp[i]){
 	  $("#sel_haifu").append("jp[" + i + "]."+key + " = " +
 				 msg.jp[i][key] + "<br>");
 	}
       }
+      */
       break;
     }
   };
@@ -163,7 +331,7 @@ var SocketHandler = function() {
   var layout_set = function(obj) {
     switch(obj.op) {
     case "payment":
-      (new Layout).layout_payment(obj);
+      jang_disp.layout_payment(obj);
       $("#approval").click(approval_ok);
       break;
 
@@ -173,7 +341,7 @@ var SocketHandler = function() {
       $("#operation .opc").hide();
       $("#approval").show();
       jang_cond.change_position();
-      (new Layout).update_table_info();
+      jang_disp.update_table_info();
       //Socket制御
       $("#approval").click(approval_ok);
       break;
@@ -201,27 +369,56 @@ var SocketHandler = function() {
       break;
 
     default:
-      (new Layout).show_operation(obj.op);
+      if (jang_cond.is_end) return;
+      jang_disp.show_operation(obj.op);
       $("#rc, #move_l, #move_r, .decl, .inhand").unbind();
-      if (obj.op) {
-	if (obj.op.indexOf("DISC") < 0) {
-	  $(".decl").click(click_declaration);
-	  if ($("#unsteal").attr("checked")) {
-	    $("#DECLK, #DECLC, #DECLP").hide();
-	  }
-	  if ($("#unrong").attr("checked")) {
-	    $("#DECLF").hide();
-	  }
-	  if (auto_pass(obj.op)) declare_sender("DECL0");
+      if (!obj.op) return;
+
+      if (obj.op.indexOf("DISC") < 0) {
+	// Call turn
+	$(".decl").click(click_declaration);
+	if ($("#unsteal").attr("checked")) {
+	  $("#DECLK, #DECLC, #DECLP").hide();
+	}
+	if ($("#unrong").attr("checked")) {
+	  $("#DECLF").hide();
+	}
+	if (auto_pass(obj.op)) {
+	  declare_sender("DECL0");
 	} else {
-	  $(".inhand, #rc").click(inhand_click);
-	  $("#move_l, #move_r").click((new Layout).click_arrow_button);
-	  $(".decl").click(click_declaration);
+	  startCount(declare_sender);
+	  $(".last_discard").css("border", "red 2px solid");
+	  ring_your_turn();
+	}
+      } else {
+	// Discard turn
+	$(".inhand, #rc").click(inhand_click);
+	$("#move_l, #move_r").click(jang_disp.click_arrow_button);
+	$(".decl").click(click_declaration);
+	if (auto_discard(obj.op)) {
+	  discard_sender();
+	} else {
+	  startCount(discard_sender);
+	  ring_your_turn();
 	}
       }
       break;
     }
   };
+
+  var ring_your_turn = function() {
+    var audio = new Audio("./pon.mp3");
+    audio.play();
+  }
+
+  var auto_discard = function(op) {
+    //console.log(jang_cond.turn);
+    //console.log(jang_cond.jp[jang_cond.turn].is_reach);
+
+    if (!jang_cond.jp[jang_cond.turn].is_reach) return false;
+    if ((op.indexOf("DECLF") < 0) && (op.indexOf("DECLK") < 0)) return true;
+    return false;
+  }
 
   var auto_pass = function(op) {
     var unsteal = $("#unsteal").attr("checked");
@@ -233,7 +430,7 @@ var SocketHandler = function() {
   }
 
   var inhand_click = function() {
-    if (!(new Layout).click_inhand($(this))) return false;
+    if (!jang_disp.click_inhand($(this))) return false;
     if ($(".ex_selected").length != 1) return false;   
     discard_sender();
   }
@@ -253,6 +450,7 @@ var SocketHandler = function() {
     var msg = { "size": jang_cond.haifu.length, "h":haifu, "q":"haifu" };
     if (getRequest()) msg["id"] = getRequest().token;
     websocket.send(JSON.stringify(msg));
+    console.log(msg);
 
     // Layout制御
     $("#operation .op").hide();
@@ -272,6 +470,7 @@ var SocketHandler = function() {
     if (!haifu.match(/^[0-3]DECL0/)) return false;
     msg.h += "_0";
     websocket.send(JSON.stringify(msg));
+    console.log(msg);
     $("#message").html("おまちください");
     return true;
   }
@@ -283,6 +482,7 @@ var SocketHandler = function() {
 	msg.h += $(this).attr("id").split("hand_").pop();
       });
     websocket.send(JSON.stringify(msg));
+    console.log(msg);
     $("#message").html("おまちください");
     return true;
   }
@@ -294,24 +494,32 @@ var SocketHandler = function() {
     if (point == 0) msg.h += "0";
     msg.h += "_0";
     websocket.send(JSON.stringify(msg));
+    console.log(msg);
     $("#message").html("おまちください");
     return true;
   }
   
   var kong_process = function(msg) {
     if (!msg.h.match(/DECLK/)) return false;
-    var nakihai = jang_cond.discard_tile_just_now();
     var player = parseInt(msg.h.substr(0, 1));
     var jp = jang_cond.jp[player];
-
+    
     if (jang_cond.turn != jp.wind) {
+      var nakihai = jang_cond.discard_tile_just_now();
       msg.h += "_" + nakihai.toStrByteHex();
     } else {
-      msg.h += "_" + $(this).attr("target");
+      var targets = jp.find_target("DECLK");
+      if ((targets.length != 1)) {
+	$("#message").html("牌を選択してから槓を押してください");
+	jp.show_kong_tile_selection(targets);
+	return true;
+      }
+      msg.h += "_" + targets[0].toStrByteHex();
     }
     websocket.send(JSON.stringify(msg));
+    console.log(msg);
     $("#message").html("おまちください");
-   return true;
+    return true;
   }
 
   var chipong_process = function(msg) {
@@ -320,7 +528,7 @@ var SocketHandler = function() {
     var nakihai = jang_cond.discard_tile_just_now();
     var player = parseInt(msg.h.substr(0, 1));
     var jp = jang_cond.jp[player];
-    var targets = jp.find_target(id2num(nakihai), msg.h.substr(1));
+    var targets = jp.find_target(msg.h, id2num(nakihai));
 
     if (targets.length > 2) {
       jp.show_expose_tile_selection(targets);
@@ -333,7 +541,7 @@ var SocketHandler = function() {
     }
 
     msg.h += "_";
-    for (var i = 0; i < targets.length; i++){
+    for (var i = 0; i < targets.length; i++) {
       msg.h += targets[i].toStrByteHex();
     }
     websocket.send(JSON.stringify(msg));
@@ -346,7 +554,10 @@ var SocketHandler = function() {
   }
 
   var declare_sender = function(op){
+    $(".last_discard").css("border", "none").removeClass("last_discard");
     clearInterval(gPsgID);
+    if (op === undefined) op = "DECL0";
+
     var msg = { "size": jang_cond.haifu.length, 
 		"h": (jp_operable() + op),
 		"q": "haifu"
@@ -372,6 +583,7 @@ var SocketHandler = function() {
 $(document).ready(function(){
     show_rule_yaku();
     var socks = new SocketHandler;
+    //socks.unit_test();
     // for debug
     var id = parseInt(getRequest().token);
     $("#sel_haifu").append(id + "(=" + id.toString(16) + ")\n");
@@ -380,21 +592,25 @@ $(document).ready(function(){
 var show_rule_yaku = function() {
   var yakudef = HandCalc.prototype.yaku_all;
   var yakudis = HandCalc.prototype.yaku_disable; 
-  var yaku_rule = [];
+  var yakulist = [];
 
   for (var yakutag in yakudef){
     if(yakudis[yakutag]) continue;
-    yaku_rule.push(yakudef[yakutag][2] + "(" + yakudef[yakutag][0] + ")");
+    var han = yakudef[yakutag][0];
+    var naki = yakudef[yakutag][1];
+    if (!yakulist[han]) yakulist[han] = [];
+    yakulist[han]
+      .push("<span style='white-space:nowrap;'>" +
+	    yakudef[yakutag][2] + "(" + han +
+	    (naki != han ? ("/" + naki) : "") + ")</span>");
   }
-  $("#yakulist").html(yaku_rule.join(", "));
+  $("#yakulist").html("<ul>");
+  for (var i = 0; i < yakulist.length; i++) {
+    if (!yakulist[i]) continue;
+    var res = yakulist[i].join(", ");
+    $("#yakulist ul").append("<li>" + res + "</li>");
+  }
 }
-
-var cmd = [	 "back",
-		 "1m","2m","3m","4m","5m","6m","7m","8m","9m",
-		 "1p","2p","3p","4p","5p","6p","7p","8p","9p",
-		 "1s","2s","3s","4s","5s","6s","7s","8s","9s",
-		 "ton","nan","sha","pei","hak","hat","chu"
-	  ];
 
 var hi_tag = function(hi){
   var hinamej = new Array

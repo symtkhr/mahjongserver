@@ -2,7 +2,7 @@
 <html lang="ja" dir="ltr" class="client-js ve-not-available">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<script type="text/javascript" src="jquery-1.2.6.js"></script>
+<script type="text/javascript" src="jquery.min.js"></script>
 <link rel="stylesheet" type="text/css" href="haifu_seq.css">
 <style>
 iframe { width:340px; height:480px; scroll:none; }
@@ -30,11 +30,18 @@ $("#open_token").click(function(){
         var id_list = msg.tokens.split(";");
 	alert(id_list);
 	for (var i=0; i < id_list.length; i++){
-	$("#user0" +  (i + 1) + "_frame").attr(
-	   "src", "room_junk.html?" + id_list[i] );
+	var href = "room_junk.html?token=" + id_list[i] + "&" +
+	"srv=" + websocket.url;
+	$("#user0"  + (i + 1) + "_frame").attr("src", href);
+	$("#recon0" + (i + 1)).attr("href", href);
 	}
       }
    }
+});
+
+$("#recon01, #recon02, #recon03, #recon04").click(function() {
+
+
 });
 
 var send_msg = function() {
@@ -82,8 +89,7 @@ $(document).ready(websock);
   <button id="open_token">OpenTokenForDebug</button>
   <input type="textbox" id="sock_msg" value="">
   <button id="sock_send">Send</button>
-
-<br>
+  <br>
   <iframe src="./login_junk.html" id="user01_frame"></iframe>
   <iframe src="./login_junk.html" id="user02_frame"></iframe>
   <iframe src="./login_junk.html" id="user03_frame"></iframe>
@@ -92,11 +98,10 @@ $(document).ready(websock);
   <a href="index.html" target="user02_frame">discon02</a>
   <a href="index.html" target="user03_frame">discon03</a>
   <a href="index.html" target="user04_frame">discon04</a>
-<p>
-  与えられた牌譜に従って場況表示するツールです。<br>
-  このツールはJunkSpaceクライアント動作試験に用いることを意図して作ったため、牌譜ツールとして実用的なものではありません。<br>
-
-</p>
+  <a id="recon01" href="#" target="user01_frame">recon01</a>
+  <a id="recon02" href="#" target="user02_frame">recon02</a>
+  <a id="recon03" href="#" target="user03_frame">recon03</a>
+  <a id="recon04" href="#" target="user04_frame">recon04</a>
 
 <hr>
 

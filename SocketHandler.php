@@ -145,6 +145,9 @@ class SocketHandler{
           $jp->is_connected = false;
           $response = array('type' => 'disconnect', "wind" => $jp->wind);
           $this->send_message($response);
+	  // $this->jang_tables[$num]->check_timeout(false);
+	  echo	  ">>disconnected:\n";
+	  var_dump($jp);
           break;
         }
         var_dump($jp);
@@ -376,7 +379,8 @@ class SocketHandler{
                         "q" => "renew",
                         "aspect" => $jang_cond->aspect,
                         "honba" => $jang_cond->honba,
-                        "banked" => $jang_cond->banked
+                        "banked" => $jang_cond->banked,
+			"tileset" => $jang_cond->tileset(),
                         );
       $this->send_message((object)$send_mes, $id);
 
@@ -425,11 +429,12 @@ class SocketHandler{
       array_push($send_mes, $jang_cond->haifu[$i]);
     }
     
+  if (0 < count($send_mes)) {
     foreach($jang_cond->jp as $j => $jp) {
       if ($j != $playerIndex && $playerIndex != -1) continue;
       $s_haifu = array();
       foreach($send_mes as $haifu) {
-        $haifu = haifu_make_secret($haifu, $jp->wind);
+        $haifu = haifu_make_secret($haifu, $jp->wind, $jang_cond->tileset("transp"));
         array_push($s_haifu, $haifu);
       }
       $json_obj = array('type'=>"haifu", 
@@ -445,6 +450,7 @@ class SocketHandler{
       }
       $this->send_message($json_obj, $jp->token);
     }
+ }
     
     $jang_cond->dump_stat();
     //if(!$jang_cond->is_end) return;
