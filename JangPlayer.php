@@ -26,6 +26,7 @@ class JangPlayer {
   var $is_connected = true;
   var $is_yakunashi = false;
   var $changkong_stolen = -1;
+  var $spare_time = 10;
 
   const BIT_RON = 8;
   const BIT_KAN = 4;
@@ -39,6 +40,7 @@ class JangPlayer {
   const RONG =  6;
   const DISCTYPE_STOLEN = 1;
   const DISCTYPE_REACH =  2;
+  const DEFAULT_SPARE_TIME = 10;
 
   function init_members($wind) {
     $this->wind = $wind;
@@ -58,6 +60,7 @@ class JangPlayer {
     $this->is_nagashi = true;
     $this->bit_naki = 0;
     $this->rsv_naki = array("type"=>0, "target"=>array());
+    $this->spare_time = self::DEFAULT_SPARE_TIME;
   }
 
   function draw_tile($tile) {
@@ -397,15 +400,27 @@ class JangPlayer {
     
   }
 
+  function save_spare_time($time) {
+    if ($time < 0) 
+      $this->spare_time = 0;
+    else if (self::DEFAULT_SPARE_TIME < $time) 
+      $this->spare_time = self::DEFAULT_SPARE_TIME;
+    else
+      $this->spare_time = $time;
+  }
+
   function show_decl_form($for_sock = true){
     $menu = array();
     $mai = array();
     $cmd_sort = "";
 
+    if ($this->is_houki) return "DISC";
+
     // Check Tsumo Flag
-    if ( $this->is_tempai ){
+    if ($this->is_tempai)
+    {
       $hands_check = new FinCheck;
-      if ( $hands_check->agari_hantei($this->tehai) ){
+      if ($hands_check->agari_hantei($this->tehai)) {
         array_push($menu, "DECLF");
       }
     }
@@ -486,11 +501,11 @@ class JangPlayer {
     $str_flag .= $this->rsv_naki["type"] > 0 ? 
       "[rsv".$this->rsv_naki["type"]."]" : "";
 
-    printf(      "%1s:<%04x> %s | %s\n", 
+    printf(      "%1s:<%04x>      %s | %s\n", 
                  $str_news[$this->wind],
                  $this->token, $str_te, $mes);
-    printf( "%3s:%03d%1s %s | %s\n", 
-            $this->name,
+    printf( "%8s:%03d%1s %s | %s\n", 
+            substr($this->name,0,8),
             $this->pt,
             $is_order ? "*" : " ", $num_te, $str_flag);
     

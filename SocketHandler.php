@@ -9,16 +9,19 @@ class SocketHandler{
   var $host = 'localhost'; //host
   var $port = '9000'; //port
   var $users = array();
+  var $reservers = array();
   var $is_in_unit_test = false;
 
   function init_members() {
     $tableInstance = new JongTable;
-    for($i = 0; $i < 10; $i++) {
+    /*
+    for ($i = 0; $i < 10; $i++) {
       $table = new JongTable;
       $table->init_members();
       array_push($this->jang_tables, $table);
     }
-    if($this->is_in_unit_test) {
+    */
+    if ($this->is_in_unit_test) {
       global $jang_cond;
       $this->jang_tables[0] = $jang_cond;
       var_dump($this->jang_tables[0]);
@@ -135,7 +138,7 @@ class SocketHandler{
 
     echo $uid." is disconnected";
 
-    if(isset($this->users[$uid])) {
+    if (isset($this->users[$uid])) {
 
       list($place, $num) = explode("_", $this->users[$uid]["status"], 2);
       if ($place === "TABLE") {
@@ -171,7 +174,7 @@ class SocketHandler{
     }
     $msg = $this->mask(json_encode($obj));
 
-    if($id < 0) {
+    if ($id < 0) {
       foreach($this->cli_socks as $sock) {
         @socket_write($sock, $msg, strlen($msg));
       }
@@ -185,11 +188,11 @@ class SocketHandler{
   //Unmask incoming framed message
   function unmask($text) {
     $length = ord($text[1]) & 127;
-    if($length == 126) {
+    if ($length == 126) {
       $masks = substr($text, 4, 4);
       $data = substr($text, 8);
     }
-    elseif($length == 127) {
+    elseif ($length == 127) {
       $masks = substr($text, 10, 4);
       $data = substr($text, 14);
     }
@@ -250,60 +253,41 @@ class SocketHandler{
     $this->srv_sockrecv_handler($msg, $sock);
   }
 
-
-  function srv_sockrecv_handler($msg, $sock) {
-    $jang_cond = $this->jang_tables[0];   
-    $pre_size = 0;
-
-    /* get_wind_from_token */
-    $playerIndex = -1;
-    if (isset($msg->pindex)) $playerIndex = $msg->pindex;
-    foreach($jang_cond->jp as $i => $jp) {
-      if ($jp->token != $msg->id) continue;
-      $playerIndex = $i;
-    }
-    if ($playerIndex < 0 && $msg->q !== "login")  return alert("No existing player");
-
-    switch($msg->q) {
+  function srv_sockrecv_handler($msg, $sock) 
+  {
+    switch ($msg->q)
+    {
     case "login":
-      // TODO: playerが $jang_cond->jp[x]->token にいるかどうかの確認 */
-      $token = rand(1, 0xffff);
-      // TODO: token が重複しているかどうかの確認
-      $this->users[$token] = Array("status"=>"LOBBY", "name"=>($msg->name));
-      $rmsg = $this->mask(json_encode(array('type'=>'login', 'id'=>$token)));
-      @socket_write($sock, $rmsg, strlen($rmsg));
-      // through
-    case "reserve":
-      $jang_cond->add_player($msg->name, $token);
-      if(DEBUG)
-        echo "<<".($jang_cond->jp_size) ." gatherring...\n";
-
-      $this->users[$token]["status"] = sprintf("RESERVE_%04x", 0);
-      if($jang_cond->jp_size < 4) return;
-      if(DEBUG)
-        var_dump($jang_cond->jp);
-      //$jang_cond->deal_tiles();
-
-      foreach($jang_cond->jp as $i => $JpInst) 
-      {
-        $id = $JpInst->token;
-        $this->users[$id]["status"] = sprintf("TABLE_%04x", 0);
-        /*
-	$send_mes = array();
-	$send_mes["type"] = "player";
-	$send_mes["q"]    = "renew";
-	$send_mes["wind"] = $JpInst->wind;
-	$send_mes["pt"]   = $JpInst->pt;
-	$send_mes["name"] = $JpInst->name;
-	$send_mes["operable"] = ($i == $playerIndex);
-	$this->send_message((object)$send_mes, -1);
-	*/
-        $msg = array( "q"=>"history", "id" => $id );
-        $this->srv_sockrecv_handler((object)$msg, $this->users[$id]["sock"]);	
-      }
+      $this->login_process($msg, $sock);
       return;
 
+    case "reserve":
+      $this->reserve_process($msg);
+      return;
+
+    case "unreserve":
+      $this->unreserve_process($msg);
+      return;
+
+    case "history":
+      $this->history_process($msg, $sock);
+      return;
+      
+    case "approval":
+      $this->approval_process($msg);
+      return;
+
+    case "haifu":
+      $this->haifu_process($msg);
+      return;
+
+    case "calc":
+      $this->calc_process($msg);
+      return;
+
+
     case "debug":
+      $jang_cond = $this->jang_tables[0];
       $tokens = array();
       foreach($jang_cond->jp as $jp) {
         array_push($tokens, $jp->token);
@@ -313,108 +297,113 @@ class SocketHandler{
       @socket_write($sock, $rmsg, strlen($rmsg));
 
       return;
-      
-    case "calc":
-      $point = $msg->p;
-      $wind = $msg->wind;
-      $pt = $jang_cond->reserve_payment($playerIndex, $wind, $point);
-      if(!$pt) return;
-      $json_obj = array('type' => 'layout',
-                        "op" => "payment", 
-                        'next' => $jang_cond->aspect,
-                        'point' => $pt);
-      //$json_obj["point"] = $pt;
-      foreach($jang_cond->jp as $jp)
-        $this->send_message($json_obj, $jp->token); 
-    
-      return;
-
-    case "approval":
-      $jang_cond->jp[$playerIndex]->approval = true;
-      for ($i = 0; $i < 4; $i++) if (!$jang_cond->jp[$i]->approval) return;
-      for ($i = 0; $i < 4; $i++) $jang_cond->jp[$i]->approval = false;
-
-      $jang_cond->commit_payment();
-      if ($jang_cond->commit_continue()) {
-	foreach($jang_cond->jp as $JpInst) 
-	{
-	  $id = $JpInst->token;
-	  $msg = array( "q"=>"history", "id" => $id );
-	  $this->srv_sockrecv_handler((object)$msg, $this->users[$id]["sock"]);	
-	}
-      } else {
-	foreach($jang_cond->jp as $i => $JpInst) 
-	{
-	  $send_mes = array();
-	  $send_mes["type"] = "player";
-	  $send_mes["q"]    = "renew";
-	  $send_mes["wind"] = $JpInst->wind;
-	  $send_mes["pt"]   = $JpInst->pt;
-	  $send_mes["name"] = $JpInst->name;
-	  $this->send_message((object)$send_mes, -1);
-	}
-	$json_obj = array('type' => 'layout',
-			  "op" => "finish");
-	$this->send_message((object)$json_obj, -1);
-	$jang_cond->init_members();
-	$jang_cond->jp_size = 0;
-      }
-      return;
-
-    case "history":
-      if (!isset($msg->size)) $msg->size = 0;
-      $id = $msg->id;
-      $this->users[$id]["sock"] = $sock;
-      $jang_cond->jp[$playerIndex]->is_connected = true;
-
-      if ($jang_cond->jp_size < 4) { 
-        $send_mes = array("type" => "layout", 
-                          "op" => "waiting",
-                          "current" => $jang_cond->jp_size);
-        $this->send_message((object)$send_mes, -1);
-        return;
-      }
-
-      $send_mes = array("type" => "table", 
-                        "q" => "renew",
-                        "aspect" => $jang_cond->aspect,
-                        "honba" => $jang_cond->honba,
-                        "banked" => $jang_cond->banked,
-			"tileset" => $jang_cond->tileset(),
-                        );
-      $this->send_message((object)$send_mes, $id);
-
-      foreach($jang_cond->jp as $i => $JpInst) 
-      {
-        $send_mes = array();
-        $send_mes["type"] = "player";
-        $send_mes["q"]    = "renew";
-        $send_mes["wind"] = $JpInst->wind;
-        $send_mes["pt"]   = $JpInst->pt;
-        $send_mes["name"] = $JpInst->name;
-        $send_mes["operable"] = ($i == $playerIndex);
-        $this->send_message((object)$send_mes, $id);
-      }
-      
-      $this->send_updated_haifu($pre_size, $playerIndex);
-      return;
-      
-    case "haifu":
-      if (isset($msg->h)) {
-      
-        $pre_size = count($jang_cond->haifu);
-        $jang_cond->eval_command($msg->h, $playerIndex);
-      
-      }
-      $this->send_updated_haifu($pre_size, -1);
-      return;
-      break;
     }
-
   }
 
-  function send_updated_haifu($pre_size, $playerIndex) {
-    $jang_cond = $this->jang_tables[0];
+  function haifu_process($msg) {
+    if (!isset($msg->h)) return;
+
+    $jang_cond = $this->belonging_table($msg->id);
+    if (!$jang_cond) return;
+
+    $playerIndex = (isset($msg->pindex)) ? $msg->pindex : 
+      $jang_cond->get_player_index($msg->id);
+
+    $jang_cond->jp[$playerIndex]->save_spare_time($msg->time);
+    $pre_size = count($jang_cond->haifu);
+    $jang_cond->eval_command($msg->h, $playerIndex);
+    $this->send_updated_haifu($pre_size, -1, $jang_cond);
+  }
+
+  function history_process($msg, $sock) {
+    $jang_cond = $this->belonging_table($msg->id);
+    if (!$jang_cond) { 
+      $rmsg = $this->mask(json_encode(array('type' => 'to_gate',
+					    'id' => $msg->id)));
+      @socket_write($sock, $rmsg, strlen($rmsg));
+      return;
+    }
+    $playerIndex = (isset($msg->pindex)) ? $msg->pindex : 
+      $jang_cond->get_player_index($msg->id);
+
+    if (!isset($msg->size)) $msg->size = 0;
+    $id = $msg->id;
+    $this->users[$id]["sock"] = $sock;
+    $jang_cond->jp[$playerIndex]->is_connected = true;
+    
+    //todo:ここではロビーに強制返却するようなメッセージを投げる
+    if ($jang_cond->jp_size() < 4) {
+      $send_mes = array("type" => "layout", 
+			"op" => "waiting",
+			"current" => $jang_cond->jp_size());
+      $this->send_message((object)$send_mes, -1);
+      return;
+    }
+
+    $send_mes = array("type" => "table", 
+		      "q" => "renew",
+		      "aspect" => $jang_cond->aspect,
+		      "honba" => $jang_cond->honba,
+		      "banked" => $jang_cond->banked,
+		      "tileset" => $jang_cond->tileset(),
+		      );
+    $this->send_message((object)$send_mes, $id);
+    
+    foreach($jang_cond->jp as $i => $JpInst) 
+    {
+      $send_mes = array();
+      $send_mes["type"] = "player";
+      $send_mes["q"]    = "renew";
+      $send_mes["wind"] = $JpInst->wind;
+      $send_mes["pt"]   = $JpInst->pt;
+      $send_mes["name"] = $JpInst->name;
+      $send_mes["operable"] = ($i == $playerIndex);
+      $this->send_message((object)$send_mes, $id);
+    }
+    
+    $this->send_updated_haifu(0, $playerIndex, $jang_cond);
+  }
+
+  function approval_process($msg) {
+    $jang_cond = $this->belonging_table($msg->id);
+    if (!$jang_cond) return;
+
+    $playerIndex = (isset($msg->pindex)) ? $msg->pindex : 
+      $jang_cond->get_player_index($msg->id);
+
+    $jang_cond->jp[$playerIndex]->approval = true;
+    for ($i = 0; $i < 4; $i++) if (!$jang_cond->jp[$i]->approval) return;
+    for ($i = 0; $i < 4; $i++) $jang_cond->jp[$i]->approval = false;
+      
+    $jang_cond->commit_payment();
+    if ($jang_cond->commit_continue()) {
+      foreach($jang_cond->jp as $JpInst) 
+      {
+	$id = $JpInst->token;
+	$msg = array( "q"=>"history", "id" => $id );
+	$this->srv_sockrecv_handler((object)$msg, $this->users[$id]["sock"]);	
+      }
+      return;
+    }
+
+    foreach($jang_cond->jp as $i => $JpInst) 
+    {
+      $send_mes = array();
+      $send_mes["type"] = "player";
+      $send_mes["q"]    = "renew";
+      $send_mes["wind"] = $JpInst->wind;
+      $send_mes["pt"]   = $JpInst->pt;
+      $send_mes["name"] = $JpInst->name;
+      $this->send_message((object)$send_mes, -1);
+    }
+    $json_obj = array('type' => 'layout',
+		      "op" => "finish");
+    $this->send_message((object)$json_obj, -1);
+    $jang_cond->init_members();
+  }
+
+  function send_updated_haifu($pre_size, $playerIndex, $jang_cond) {
+    //$jang_cond = $this->jang_tables[$table_no];
     if (!$jang_cond->inplay) {
       //$jang_cond->inplay = true;
       $send_mes = array('type' => 'layout',
@@ -429,28 +418,30 @@ class SocketHandler{
       array_push($send_mes, $jang_cond->haifu[$i]);
     }
     
-  if (0 < count($send_mes)) {
-    foreach($jang_cond->jp as $j => $jp) {
-      if ($j != $playerIndex && $playerIndex != -1) continue;
-      $s_haifu = array();
-      foreach($send_mes as $haifu) {
-        $haifu = haifu_make_secret($haifu, $jp->wind, $jang_cond->tileset("transp"));
-        array_push($s_haifu, $haifu);
+    if (0 < count($send_mes)) 
+    {
+      foreach($jang_cond->jp as $j => $jp) {
+	if ($j != $playerIndex && $playerIndex != -1) continue;
+	$s_haifu = array();
+	foreach($send_mes as $haifu) {
+	  $haifu = haifu_make_secret($haifu, $jp->wind, 
+				     $jang_cond->tileset("transp"));
+	  array_push($s_haifu, $haifu);
+	}
+	$json_obj = array('type'=>"haifu", 
+			  'haifu' => implode(";", $s_haifu));
+	$this->send_message($json_obj, $jp->token);
+	
+	$json_obj = array("type" => "layout", 
+			  "op" => $jp->show_naki_form(true), 
+			  "time" => $jp->spare_time);
+	if (($j == $jang_cond->turn) && !$jang_cond->is_naki_ragging()) {
+	  $json_obj["op"] = $jp->show_decl_form(true);
+	  // var_dump($json_obj["op"]);
+	}
+	$this->send_message($json_obj, $jp->token);
       }
-      $json_obj = array('type'=>"haifu", 
-                        'haifu' => implode(";", $s_haifu));
-      $this->send_message($json_obj, $jp->token);
-      
-      $json_obj = array("type" => "layout", 
-                        "op" => $jp->show_naki_form(true), 
-                        "time" => 10);
-      if (($j == $jang_cond->turn) && !$jang_cond->is_naki_ragging()) {
-        $json_obj["op"] = $jp->show_decl_form(true);
-        // var_dump($json_obj["op"]);
-      }
-      $this->send_message($json_obj, $jp->token);
     }
- }
     
     $jang_cond->dump_stat();
     //if(!$jang_cond->is_end) return;
@@ -485,12 +476,125 @@ class SocketHandler{
                         "op" => "payment",
                         "point" => $pt, 
                         'next' => $jang_cond->aspect,
-                        'call' => $calls,
+                        'call' => (array)$calls,
                         );
       for($i = 0; $i < 4; $i++)
         $this->send_message($json_obj, $jang_cond->jp[$i]->token); 
     }
     return;
   }
+
+  function login_process($msg, $sock)
+  {
+    // TODO: playerが $jang_cond->jp[x]->token にいるかどうかの確認 
+    $token = rand(1, 0xffff);
+    // TODO: token が重複しているかどうかの確認
+    $this->users[$token] = Array("status" => "LOBBY", 
+				 "name" => ($msg->name),
+				 "sock" => $sock,
+				 "reserved" => Array()
+				 );
+    $rmsg = $this->mask(json_encode(array('type' => 'login', 
+					  'id' => $token)));
+    @socket_write($sock, $rmsg, strlen($rmsg));
+  }
+
+  function unreserve_process($msg)
+  {
+    $token = $msg->id;
+    $this->users[$token]["reserved"] = Array();
+    foreach($this->reservers as $table_id => $rsv) {
+      $this->reservers[$table_id] = array_diff($rsv, array($token));
+    }
+    //var_dump($this->reservers);
+    $rmsg = $this->mask(json_encode(array('type' => 'waiting', 
+					  "table" => false,
+					  'id' => $token)));
+    @socket_write($this->users[$token]["sock"], $rmsg, strlen($rmsg));
+  }
+
+  //超分かりにくい
+  //$this->reservers = {"table_id" => [playerId, playerId, ...],
+  //                    "table_id" => [playerId, playerId, ...], }
+  function reserve_process($msg)
+  {
+    $token = $msg->id;
+    $userdata = $this->users[$msg->id];
+    $table_id = $msg->table_id;
+
+    array_push($this->users[$token]["reserved"], $table_id);
+    $this->reservers[$table_id][] = $token;
+
+    $del_rsv = array();
+    foreach ($this->reservers[$table_id] as $token)
+    {
+      if (in_array($table_id, $this->users[$token]["reserved"])) continue;
+      array_push($del_rsv, $token);
+    }
+    $this->reservers[$table_id] = array_diff($this->reservers[$table_id], $del_rsv);
+    if (count($this->reservers[$table_id]) < 4) {
+      $rmsg = $this->mask(json_encode(array('type' => 'waiting', 
+					    'table' => $msg->table_id,
+					    'id' => $token)));
+      @socket_write($this->users[$token]["sock"], $rmsg, strlen($rmsg));
+      return;
+    }
+
+    $table_no = count($this->jang_tables);
+    $this->jang_tables[$table_no] = new JongTable;
+    $jang_cond = $this->jang_tables[$table_no];
+    $jang_cond->tileset_query = $table_id;
+
+    foreach ($this->reservers[$table_id] as $token) {
+      $jang_cond->add_player($this->users[$token]["name"], $token);
+      if (4 <= $jang_cond->jp_size()) break;
+    }
+    foreach ($jang_cond->jp as $i => $JpInst) 
+    {
+      $id = $JpInst->token;
+      $this->users[$id]["status"] = sprintf("TABLE_%04x", $table_no);
+      $this->users[$id]["reserved"] = Array();
+      $rmsg = $this->mask(json_encode(array('type' => 'gathered', 
+					    'id' => $id)));
+      @socket_write($this->users[$id]["sock"], $rmsg, strlen($rmsg));
+    }
+  }
+
+  function belonging_table($uid)
+  {
+    if ($this->is_in_unit_test) return $this->jang_tables[0];
+    if (!isset($this->users[$uid])) return false;
+    if (preg_match("/TABLE_[0-9a-f]+/", $this->users[$uid]["status"] )) 
+    {
+      $tableIndex = hexdec(array_pop(explode("_", $this->users[$uid]["status"])));
+      $ret = $this->jang_tables[$tableIndex];
+      if (isset($ret)) return $ret;
+    }
+    $rmsg = $this->mask(json_encode(array('type' => 'to_lobby',
+					  'id' => $uid,
+					  'name' => $this->users[$uid]["name"],
+					  )));
+    @socket_write($this->users[$uid]["sock"], $rmsg, strlen($rmsg));
+    return false;
+  }
+
+  function calc_process($msg)
+  {
+    $jang_cond = $this->belonging_table($msg->id);
+    $playerIndex = (isset($msg->pindex)) ? $msg->pindex : 
+      $jang_cond->get_player_index($msg->id);
+    $point = $msg->p;
+    $wind = $msg->wind;
+    $pt = $jang_cond->reserve_payment($playerIndex, $wind, $point);
+    if (!$pt) return;
+    $json_obj = array('type' => 'layout',
+		      "op" => "payment", 
+		      'next' => $jang_cond->aspect,
+		      'point' => $pt);
+    foreach($jang_cond->jp as $jp)
+      $this->send_message($json_obj, $jp->token); 
+  }
+
+
 }
 

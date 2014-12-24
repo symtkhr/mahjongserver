@@ -163,10 +163,11 @@ var JangPlayer = function(){
       while(len - this.tehai.length < 1) this.tehai = this.tehai.diff([0]);   
       this.tehai_furo[gaito_furo] = furo_ments;
       this.typfuro[gaito_furo] = KAKAN;
+      this.tehai.sort(function(a, b){ return a - b; });
       return KAKAN;
     }
-    // AnKong
-    else {
+    else 
+    { // AnKong
       if(gaito.length != 4 && this.tehai.index(0) < 0) return false;
       var furo_ments = [];
       for (var i = 0; i < 4; i++) 
@@ -196,14 +197,14 @@ var JangPlayer = function(){
     var targets = [];
     for (var i = 0; i < 34; i++) mai.push(0);
     for (var i = 0; i < this.tehai.length; i++) {
-      mai[id2num(this.tehai[i])]++;
+      mai[id2num(this.tehai[i]) - 1]++;
     }
     for (var i = 0; i < 34; i++)
-      if (mai[i] == 4) targets.push(i * 4);
+      if (mai[i] == 4) targets.push(i * 4 + 1);
     for (var i = 0; i < this.tehai_furo.length; i++) {
-      if (this.typfuro != PONG) continue;
-      var nakinum = id2num(this.tehai_furo[i][0]);
-      if (mai[nakinum] == 1) targets.push(nakinum * 4);
+      if (this.typfuro[i] != PONG) continue;
+      var nakinum = id2num(this.tehai_furo[i][0]) - 1;
+      if (mai[nakinum] == 1) targets.push(nakinum * 4 + 1);
     }
     return targets;
   }
@@ -214,6 +215,7 @@ var JangPlayer = function(){
       var target = this.tehai[i];
       if (sutenum == id2num(target)) targets.push(target);
     }
+    console.log(targets);
     return targets;
   }
   
@@ -236,6 +238,7 @@ var JangPlayer = function(){
     for (var i = 0; i < neighbors.length; i++) {
       targets = targets.concat(neighbors[i]);
     }
+    console.log(targets);
     return targets;
   }
 

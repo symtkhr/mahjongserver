@@ -6,54 +6,13 @@ require_once("SocketHandler.php");
 
 define("DEBUG", true);
 
-function make_testcase() {
-  $fouth = array();
-  $tans = array(
-	       "2m","3m","4m","5m","6m","7m","8m",
-	       "2p","3p","4p","5p","6p","7p","8p",
-	       "2s","3s","4s","5s","6s","7s","8s");
-  $yaos = array(
-	       "1m","1p","1s",
-	       "9m","9p","9s",
-	       "to","na","sh","pe","hk","ht","ch");
-  $q = 0;
-  $t = 0;
+$unit_test = ($argv[1] === "unit");
+$testId = 4;
 
-  for($i = 0; $i < 17; $i++) {
-    for($jp = 0; $jp < 4; $jp++) {
-      if ($jp == 1) {
-	array_push($fouth,
-		   sprintf("%dDRAW_%s", $jp, $tans[$t % 21]),
-		   sprintf("%dDISC_%s", $jp, $tans[$t % 21])); 
-	$t++;
-	
-      } else {
-
-	array_push($fouth,
-		   sprintf("%dDRAW_%s", $jp, $yaos[$q % 13]),
-		   sprintf("%dDISC_%s", $jp, $yaos[$q % 13])); 
-	$q++;
-      }
-    }
-  }
-  array_push($fouth, "0DRAW_ch");
-  //array_push($fouth, "0DRAW_8p", "0DISC_8p", "1DRAW_ch");
- 
-  return $fouth;
-}
-
-
-$fouth = array_merge(array(
-	       "0DEAL_2s2s3s3s4s4s5s5s6s6s7s7s8s",
-	       "1DEAL_2s3s4s5s6s7s8s8s3p4p5p6p7p",
-	       "2DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
-	       "3DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
-			   ),
-		     make_testcase());
-
-
-//ÉeÉXÉgÉPÅ[ÉX<4>: ùèû»
-$fouth = array(
+switch($testId) {
+  //ÉeÉXÉgÉPÅ[ÉX<4>: ùèû»
+ case 4:
+   $fouth = array(
 	       "1DEAL_2s3s4s5s6s8s8s8s1p4p8p6p7p",
 	       "2DEAL_2m3m4m5m6m7m8m2p2p4p8phthk",
 	       "3DEAL_2m3m4m5m6m7m8m3p3p5p5p5p5p",
@@ -67,37 +26,85 @@ $fouth = array(
 	       "2DRAW_ch", "2DISC_ch", 
 	       "3DRAW_3p", //"3DECLK_3p",*/
 	       );
+   break;
 
-// ÉeÉXÉgÉPÅ[ÉX<1>: ï°çáñ¬Ç´ÉtÉâÉO 
-$sfouth = array(
-"0DEAL_060b0a10111226303a444d4f58",
-"1DEAL_010203131c1e24292c3c3d3e4c",
-"2DEAL_080c3132333f41475d62687273",
-//"2DEAL_080c0d3132333f41475d62687a",
-"3DEAL_0407152d2e3539454e50566a6f",
-"0DRAW_34",
-"0DISC_26",
-"1DRAW_5e",
-//"1DISC_01",//êlòa
-"1DISC_4c", 
-//"2DRAW_0d", //ínòa
+   // ÉeÉXÉgÉPÅ[ÉX<1>: ï°çáñ¬Ç´ÉtÉâÉO 
+ case 1:
+   $fouth = array(
+		  "0DEAL_060b0a10111226303a444d4f58",
+		  "1DEAL_010203131c1e24292c3c3d3e4c",
+		  "2DEAL_080c3132333f41475d62687273",
+		  //"2DEAL_080c0d3132333f41475d62687a",
+		  "3DEAL_0407152d2e3539454e50566a6f",
+		  "0DRAW_34",
+		  "0DISC_26",
+		  "1DRAW_5e",
+		  //"1DISC_01",//êlòa
+		  "1DISC_4c", 
+		  //"2DRAW_0d", //ínòa
+		  
+		  "2DRAW_19",
+		  "2DISCR_19",
+		  "3DRAW_5b",
+		  "3DISC_04",
+		  //*/
+		  );
 
-"2DRAW_19",
-"2DISCR_19",
-"3DRAW_5b",
-"3DISC_04",
-//*/
-);
+   if ($unit_test) {
 
-$sfouth = array(
+  $test_case = array(
+		     array("0DECLC_060a", "1DECLK_01", "2DECLF_0"),//Å® âh
+		     array("1DECLK_01", "0DECLC_060a", "2DECLF_0"), //Å® âh
+		     array("0DECL0_0", "1DECLK_01", "2DECLF_0"), //Å® âh
+		     array("1DECLK_01", "0DECL0_0", "2DECLF_0"), //Å® âh
+		     array("1DECLK_01", "2DECLF_0"      ), //Å® âh
+		     array("0DECLC_060a", "1DECL0_0", "2DECLF_0"), //Å® âh
+		     array("1DECL0_0", "0DECLC_060a", "2DECLF_0"), //Å® âh
+		     array("0DECL0_0", "1DECL0_0", "2DECLF_0"), //Å® âh
+		     array("1DECL0_0", "0DECL0_0", "2DECLF_0"), //Å® âh
+		     array("1DECL0_0", "2DECLF_0"      ), //Å® âh
+		     array("0DECLC_060a", "2DECLF_0"      ), //Å® âh
+		     array("0DECL0_0", "2DECLF_0"      ), //Å® âh
+		     array("2DECLF_0"            ), //Å® âh
+		     array("0DECLC_060a", "1DECLK_01", "2DECL0_0"), //Å® û»
+		     array("0DECLC_060a", "2DECL0_0", "1DECLK_01"), //Å® û»
+		     array("1DECLK_01", "0DECLC_060a", "2DECL0_0"), //Å® û»
+		     array("1DECLK_01", "2DECL0_0"), //Å® û»
+		     array("2DECL0_0", "0DECLC_060a", "1DECLK_01"), //Å® û»
+		     array("0DECL0_0", "1DECLK_01", "2DECL0_0"), //Å® û»
+		     array("0DECL0_0", "2DECL0_0", "1DECLK_01"), //Å® û»
+		     array("1DECLK_01", "0DECL0_0", "2DECL0_0"), //Å® û»
+		     array("2DECL0_0", "0DECL0_0", "1DECLK_01"), //Å® û»
+		     array("2DECL0_0", "1DECLK_01"      ), //Å® û»
+		     array("0DECLC_060a", "1DECL0_0", "2DECL0_0"), //Å® ãh
+		     array("0DECLC_060a", "2DECL0_0", "1DECL0_0"), //Å® ãh
+		     array("1DECL0_0", "0DECLC_060a", "2DECL0_0"), //Å® ãh
+		     array("1DECL0_0", "2DECL0_0", "0DECLC_060a"), //Å® ãh
+		     array("2DECL0_0", "0DECLC_060a", "1DECL0_0"), //Å® ãh
+		     array("2DECL0_0", "1DECL0_0", "0DECLC_060a"), //Å® ãh
+		     array("0DECL0_0", "1DECL0_0", "2DECL0_0"), //Å® (éüèÑ)
+		     array("0DECL0_0", "2DECL0_0", "1DECL0_0"), //Å® (éüèÑ)
+		     array("1DECL0_0", "0DECL0_0", "2DECL0_0"), //Å® (éüèÑ)
+		     array("1DECL0_0", "2DECL0_0", "0DECL0_0"), //Å® (éüèÑ)
+		     array("2DECL0_0", "0DECL0_0", "1DECL0_0"), //Å® (éüèÑ)
+		     array("2DECL0_0", "1DECL0_0", "0DECL0_0"), //Å® (éüèÑ)
+                     array(),
+		     );
+   }
+   break;
+
+ case 6:
+     $fouth = array(
 	       "0DEAL_1p9p1s9s1m9m9mtotonanashhk",
 	       "1DEAL_1p9p1s9s1m9m9mtotonanashhk",
 	       "2DEAL_1p1p9p9p1s9s1mshshpepehkhk",
 	       "3DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
        );
+     break;
 
-// ÇƒÉXÉgÉPÅ[ÉX<2>: èIèÑêßå‰
-$vfouth = array(
+   //ÇƒÉXÉgÉPÅ[ÉX<2>: èIèÑêßå‰
+ case 2:
+   $fouth = array(
  /*sending 0:*/ "0DEAL_01070c1b1c1e21233449667e86",
  /*sending 1:*/ "1DEAL_151725262e303340415a61646e",
  /*sending 2:*/ "2DEAL_0d0e1f2b2f323b4254575f637a",
@@ -227,7 +234,8 @@ $vfouth = array(
 	      );
 
 // ÉeÉXÉgÉPÅ[ÉX<3>: éOéÌû» + ìÒâ∆ùèû»
-$jfouth = array(
+ case 3:
+   $fouth = array(
 "0DEAL_0c121426333e454d4f506b6f88",
 "1DEAL_0407133b4a5460626471747d7f",
 "2DEAL_1632383a3f4046525c5d697284",
@@ -333,67 +341,37 @@ $jfouth = array(
 //"0DRAW_24"
 /**/	       );
 
+   if($unit_test) {
+     $test_case = array(
+			array("2DECL0_0", "3DECL0_0"), //Å® 0DRAW_ó‰è„
+			array("2DECLF_0", "3DECL0_0"), //Å® âh2
+			array("2DECL0_0", "3DECLF_0"), //Å® âh3
+			array("2DECLF_0", "3DECLF_0"), //Å® âh2ÅEâh3
+			array("3DECL0_0", "2DECL0_0"), //Å® 0DRAW_ó‰è„
+			array("3DECLF_0", "2DECL0_0"), //Å® âh3
+			array("3DECL0_0", "2DECLF_0"), //Å® âh2
+			array("3DECLF_0", "2DECLF_0"), //Å® âh2ÅEâh3
+			);
+   }
+   break;
+   
+   //ÉeÉXÉgÉPÅ[ÉX<5>: ó¨Çµñûä—
+ case 5:
+   $fouth = array_merge(array(
+	       "0DEAL_2s2s3s3s4s4s5s5s6s6s7s7s8s",
+	       "1DEAL_2s3s4s5s6s7s8s8s3p4p5p6p7p",
+	       "2DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
+	       "3DEAL_2m3m4m5m6m7m8m2p3p4p5p6p7p",
+			      ),
+			make_testcase());
+   
+   break; 
+ }
 
-$unit_test = ($argv[1] === "unit");
-if($unit_test) {
-  // for ìÒâ∆òaùèû»
-$test_case = array(
-array("2DECL0_0", "3DECL0_0"), //Å® 0DRAW_ó‰è„
-array("2DECLF_0", "3DECL0_0"), //Å® âh2
-array("2DECL0_0", "3DECLF_0"), //Å® âh3
-array("2DECLF_0", "3DECLF_0"), //Å® âh2ÅEâh3
-array("3DECL0_0", "2DECL0_0"), //Å® 0DRAW_ó‰è„
-array("3DECLF_0", "2DECL0_0"), //Å® âh3
-array("3DECL0_0", "2DECLF_0"), //Å® âh2
-array("3DECLF_0", "2DECLF_0"), //Å® âh2ÅEâh3
-);
-
-  // for ï°çáñ¬Ç´ÉtÉâÉO
-  $jtest_case = array(
-		     array("0DECLC_060a", "1DECLK_01", "2DECLF_0"),//Å® âh
-		     array("1DECLK_01", "0DECLC_060a", "2DECLF_0"), //Å® âh
-		     array("0DECL0_0", "1DECLK_01", "2DECLF_0"), //Å® âh
-		     array("1DECLK_01", "0DECL0_0", "2DECLF_0"), //Å® âh
-		     array("1DECLK_01", "2DECLF_0"      ), //Å® âh
-		     array("0DECLC_060a", "1DECL0_0", "2DECLF_0"), //Å® âh
-		     array("1DECL0_0", "0DECLC_060a", "2DECLF_0"), //Å® âh
-		     array("0DECL0_0", "1DECL0_0", "2DECLF_0"), //Å® âh
-		     array("1DECL0_0", "0DECL0_0", "2DECLF_0"), //Å® âh
-		     array("1DECL0_0", "2DECLF_0"      ), //Å® âh
-		     array("0DECLC_060a", "2DECLF_0"      ), //Å® âh
-		     array("0DECL0_0", "2DECLF_0"      ), //Å® âh
-		     array("2DECLF_0"            ), //Å® âh
-		     array("0DECLC_060a", "1DECLK_01", "2DECL0_0"), //Å® û»
-		     array("0DECLC_060a", "2DECL0_0", "1DECLK_01"), //Å® û»
-		     array("1DECLK_01", "0DECLC_060a", "2DECL0_0"), //Å® û»
-		     array("1DECLK_01", "2DECL0_0"), //Å® û»
-		     array("2DECL0_0", "0DECLC_060a", "1DECLK_01"), //Å® û»
-		     array("0DECL0_0", "1DECLK_01", "2DECL0_0"), //Å® û»
-		     array("0DECL0_0", "2DECL0_0", "1DECLK_01"), //Å® û»
-		     array("1DECLK_01", "0DECL0_0", "2DECL0_0"), //Å® û»
-		     array("2DECL0_0", "0DECL0_0", "1DECLK_01"), //Å® û»
-		     array("2DECL0_0", "1DECLK_01"      ), //Å® û»
-		     array("0DECLC_060a", "1DECL0_0", "2DECL0_0"), //Å® ãh
-		     array("0DECLC_060a", "2DECL0_0", "1DECL0_0"), //Å® ãh
-		     array("1DECL0_0", "0DECLC_060a", "2DECL0_0"), //Å® ãh
-		     array("1DECL0_0", "2DECL0_0", "0DECLC_060a"), //Å® ãh
-		     array("2DECL0_0", "0DECLC_060a", "1DECL0_0"), //Å® ãh
-		     array("2DECL0_0", "1DECL0_0", "0DECLC_060a"), //Å® ãh
-		     array("0DECL0_0", "1DECL0_0", "2DECL0_0"), //Å® (éüèÑ)
-		     array("0DECL0_0", "2DECL0_0", "1DECL0_0"), //Å® (éüèÑ)
-		     array("1DECL0_0", "0DECL0_0", "2DECL0_0"), //Å® (éüèÑ)
-		     array("1DECL0_0", "2DECL0_0", "0DECL0_0"), //Å® (éüèÑ)
-		     array("2DECL0_0", "0DECL0_0", "1DECL0_0"), //Å® (éüèÑ)
-		     array("2DECL0_0", "1DECL0_0", "0DECL0_0"), //Å® (éüèÑ)
-                     array(),
-		     );
-  //array_push($fouth,"DECK_".str_repeat("44", count($test_case)));
-
- } else {
+if (!$unit_test) {
   array_push($fouth,"DECK_4444");
   $test_case = array(array());
-}
-//var_dump($test_case);
+ }
 
 //ÉeÉXÉgèåè
 $jang_cond = new JongTable;
@@ -403,7 +381,8 @@ $jang_cond->aspect = 3;
 $jang_cond->jp_size = 4;
 $bandaid_name = array("SpringFire","SummerWater","AutumnWind","WinterEarth");
 $bandaid_pt = array(-10,-20,30,0);
-for($i = 0; $i < 4; $i++){
+for ($i = 0; $i < 4; $i++)
+{
   $jang_cond->jp[$i] = new JangPlayer;
   $jang_cond->jp[$i]->name = $bandaid_name[$i];
   $jang_cond->jp[$i]->token = rand(0, 0xffff);
@@ -412,7 +391,7 @@ for($i = 0; $i < 4; $i++){
 
 if(1) {
   var_dump($fouth);
-  $jang_cond->tileset_query = "red";
+  $jang_cond->tileset_query = "red;transp;notan;east";
   $jang_cond->init_aspects();
   load_haifu_s($fouth);
   make_random_haifu();
@@ -434,13 +413,49 @@ if(1) {
     echo "\n";
   }
 }
-
+//exit;
 if($unit_test)
    cmd_debug();
 
 $socks = new SocketHandler;
 $socks->is_in_unit_test = true;
 $socks->start_server();
+
+function make_testcase() {
+  $fouth = array();
+  $tans = array(
+	       "2m","3m","4m","5m","6m","7m","8m",
+	       "2p","3p","4p","5p","6p","7p","8p",
+	       "2s","3s","4s","5s","6s","7s","8s");
+  $yaos = array(
+	       "1m","1p","1s",
+	       "9m","9p","9s",
+	       "to","na","sh","pe","hk","ht","ch");
+  $q = 0;
+  $t = 0;
+
+  for($i = 0; $i < 16; $i++) {
+    for($jp = 0; $jp < 4; $jp++) {
+      if ($jp == 1) {
+	array_push($fouth,
+		   sprintf("%dDRAW_%s", $jp, $tans[$t % 21]),
+		   sprintf("%dDISC_%s", $jp, $tans[$t % 21])); 
+	$t++;
+	
+      } else {
+
+	array_push($fouth,
+		   sprintf("%dDRAW_%s", $jp, $yaos[$q % 13]),
+		   sprintf("%dDISC_%s", $jp, $yaos[$q % 13])); 
+	$q++;
+      }
+    }
+  }
+  array_push($fouth, "0DRAW_ch");
+  //array_push($fouth, "0DRAW_8p", "0DISC_8p", "1DRAW_ch");
+ 
+  return $fouth;
+}
 
 function make_random_haifu() {
   global $jang_cond;

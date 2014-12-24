@@ -1,11 +1,11 @@
 <?php
 
 // this is for CML debug
-if(isset($argv[1]) && $argv[1] === "DEBUG") {
+if(isset($argv[1]) && $argv[1] === "unit") {
   $jang_cond = NULL;
   $jang_cond = new JongTable;
   
-  debug_mode($argv);
+  
 
   function debug_mode($argv) {
     global $jang_cond;
@@ -20,7 +20,7 @@ if(isset($argv[1]) && $argv[1] === "DEBUG") {
       $jang_cond = new JongTable;
       //$jang_cond->load_haifu();
       for ($i = 0; $i < 4; $i++) $jang_cond->jp[$i] = new JangPlayer; 
-      require_once("testcase1.php.c");
+      //require_once("testcase1.php.c");
       if($_GET["q"]==="init"){
         $jang_cond->deal_tiles(); 
       }
@@ -28,7 +28,7 @@ if(isset($argv[1]) && $argv[1] === "DEBUG") {
     cmd_debug();
   }
   
-  
+
   function  cmd_debug() {
     global $jang_cond;
     while(1) {
@@ -40,6 +40,8 @@ if(isset($argv[1]) && $argv[1] === "DEBUG") {
       $jang_cond->dump_stat();
     }
   }
+  //debug_mode($argv);
+
 }
 
 // TempCheck

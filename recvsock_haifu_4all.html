@@ -62,9 +62,17 @@ var send_msg = function() {
 
 $("#sock_send").click(send_msg);
 
+$(window).keydown(function(e) {
+  if(e.keyCode == 0x5a) w = top.user01_frame.focus(); //"z"
+  if(e.keyCode == 0x58) w = top.user02_frame.focus(); //"x"
+  if(e.keyCode == 0x43) w = top.user03_frame.focus(); //"c"
+  if(e.keyCode == 0x56) w = top.user04_frame.focus(); //"v"
+
+});
+
 $("#sock_msg").keydown(function(e){ 
 //alert("OK");
- if(e.keyCode != 0x0d) return;
+ //if(e.keyCode != 0x0d) return;
  $(this).val();
  $(this).val("");
  send_msg();

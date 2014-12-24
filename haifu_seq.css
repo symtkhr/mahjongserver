@@ -13,13 +13,20 @@ furo(kong): 18*3+24 = 78px → 1枚あたり3pxかぶせると 66px
 div#right_column {float:right; margin-left:10px;}
 #jang_table, .payment {border: solid brown 3px;}
 #jang_table {
-    background-color:#ada; border-collapse:collapse; position:relative;
-    width:314px; height:366px; float:left;}
+    background-color:#ada; 
+    border-collapse:collapse; 
+    position:relative;
+    width:314px; 
+    height:366px; 
+    float:left;
+}
 #jang_table tbody td {padding:0;}
 
 #fuoh {padding:0; margin:0;
        border: solid brown 3px;  font-size:10pt;
-       position:absolute; top:100px; left:100px; right:100px; bottom:127px;}
+       position:absolute; top:100px; left:100px; right:100px; bottom:127px;
+       background-color:#cdc;
+}
 #fuoh .ch {font-size:14pt;}
 #wangpai {white-space:nowrap; height:25px; border: solid brown 3px;
 	  position:absolute; bottom:100px; right:100px;}
@@ -31,6 +38,17 @@ div#right_column {float:right; margin-left:10px;}
 #wind_right,
 #wind_bottom
 {/*width:40px;*/ position:absolute; padding:1px;}
+
+#fuohbase {
+    opacity:.5;
+    position:absolute; 
+    left:0; right:0; top:0; bottom:0; 
+    z-index:0;
+    border-right: 54px solid #fdd; /* 314 - 100 - 100 - 3 - 3 = 108 */ 
+    border-bottom:66px solid #dfd; 
+    border-left:  54px solid #ddf; 
+    border-top:   66px solid green; /* 366 - 100 - 127 - 3 - 3 = 133 */ 
+}
 
 #call_top,
 #call_left,
@@ -149,6 +167,11 @@ opacity:.8; font-size:14pt;}/*border:1px solid blue;}*/
 #inhand_right  {position:absolute; bottom:10px; right:0;}
 #inhand_left   {position:absolute;    top:10px;  left:0;}
 
+#inhand_top    .last_margin {margin-right: 5px;}
+#inhand_bottom .last_margin {margin-left:  5px;}
+#inhand_right  .last_margin {margin-bottom:5px;}
+#inhand_left   .last_margin {margin-top:   5px;}
+
 #furo_top0, #furo_top1, #furo_top2, #furo_top3
 {float:left;  height:25px; width:67px; display:none;
 text-align:left; white-space:nowrap;}
@@ -223,8 +246,9 @@ button#auto_step
     position:relative;
     float:left;
 }
-.op  { width:50px; height:72px; float:left; text-align:center; display:none; }
-.ops { width:60px; height:55px; float:left; text-align:center; display:none; }
+.op  { width:50px; height:72px; float:left; text-align:center; /*display:none;*/ }
+.ops { width:60px; height:55px; float:left; text-align:center; /*display:none;*/ }
+.ops:focus {border:red solid 1px;}
 #rc { border:solid red 2px;  background-color:green; width:56px;}
 .opc { width:78px; height:34px; 
        border:solid gray 1px; background-color:#ccc; display:block;}
@@ -234,6 +258,10 @@ button#auto_step
 }
 #message {
     position:absolute; left:0; bottom:0; background:#ecc; width:240px;
+}
+#count {
+    position:absolute; left:60px; bottom:55px; background:#ecc; width:60px;
+    left:50px; bottom:0;
 }
 
 .payment {
@@ -258,23 +286,29 @@ button#auto_step
 #reservation
 {
     background:white;
-    opacity: .9;
+    opacity: .3;
 }
-#stat_top, #stat_bottom, #stat_left, #stat_right 
+#reach_top, #reach_bottom, #reach_left, #reach_right,
+#abandon_top, #abandon_bottom, #abandon_left, #abandon_right 
 {
     position: absolute; 
     opacity: .6;
+    /*background:white;*/
 }
+#reach_top    { height:15px; top:0px;    right:0px; left:0px; }
+#reach_bottom { height:15px; bottom:0px; right:0px; left:0px; }
+#reach_left   { width:15px; top:12px; bottom:12px; left:0; }
+#reach_right  { width:15px; top:12px; bottom:12px; right:0; }
+#abandon_top    { width:30px; height:30px; top:25px;    left:40px; }
+#abandon_bottom { width:30px; height:30px; bottom:25px; right:40px;}
+#abandon_left   { width:30px; height:30px; bottom:50px; left:20px; }
+#abandon_right  { width:30px; height:30px; top:50px;    right:20px;}
+
 .ex_selected {
     border: 2px solid red;
 }
 
-#stat_top    { height:25px; top:0px;    right:0px; left:0px; }
-#stat_bottom { height:25px; bottom:0px; right:0px; left:0px; }
-#stat_left   { width:25px; top:0px; bottom:0px; left:0; }
-#stat_right  { width:25px; top:0px; bottom:0px; right:0; }
-
-#rule ul  {padding-left:1.5em; margin:0;}
-#rule li  {padding:0; margin:0;}
+#rule_detail ul  {padding-left:1.5em; margin:0;}
+#rule_detail li  {padding:0; margin:0;}
 
 h3 {background:#afc; margin:10px 0; padding:2px; border-left:10px green solid}

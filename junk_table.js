@@ -2,21 +2,26 @@ var Layout = function() {
   var op2str = {
     "DECLC":"吃", "DECLP":"碰", "DECLK":"槓", "DECL0":"パス",
     "DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"立直",
-    "DISCT":"(自摸切)", "DECLF0" : "錯和", "DISCR0" : "不聴"};
-  var wind2name = ["東","南", "西", "北"];  
-  
+    "DISCT":"(自摸切)", "DECLF0_bad":"錯和(0翻)", "DECLF0_f": "錯和(振聴)", 
+    "DISCR0" : "不聴"};
+  var wind2name = ["東","南", "西", "北"];
+  this.is_loading = false;
+
+  // 開局時の初期化
   this.init_layout = function() {
-    for(var j = 0; j < 4; j++) {
-      for(var i = 0; i < 4; i++) {
+    for (var j = 0; j < 4; j++) {
+      for (var i = 0; i < 4; i++) {
         $("#furo_" + posname[j] + i).hide();
       }
       for (var i = 0; i < 3; i++) {
 	$("#discard_" + posname[j] + i + " span").html("");
       }
-      $("#call_" + posname[j]).html("").hide();
+      $("#call_" + posname[j]  + ", " + 
+	"#reach_" + posname[j] + ", " + 
+	"#abandon_" + posname[j]).html("").hide();
     }
-    $("#point_table, #reservation").hide();
-    $("#point_table").html("");
+    $(".last_margin").removeClass("last_margin");
+    $("#reservation").hide();
     $("#reach").attr("disabled", false);
     $("#reach, #unsteal, #unrong").parent()
       .css("color", "black").css("background", "#ccc");
@@ -28,9 +33,11 @@ var Layout = function() {
 	  $(this).parent().css("background", "#ccc");
 	}
       });
-
+    var res = "<div id='point_calc' class='payment'>[配牌中...]</div>";
+    $("#point_table").html(res).show();
   };
-    
+
+  // 操作ボタン表示
   this.show_operation = function(op) {
     $("#operation .op").hide();
     $("#operation .ops").hide();
@@ -44,37 +51,49 @@ var Layout = function() {
 
     if (0 <= menu.index("DISC")) {
       $("#move_l, #move_r, #rc").show();
+      $("#count").css("bottom", 0);
       if (jp.is_reach) {
 	$("#reach").parent().css("color", "blue");
 	$("#reach").attr("checked", true);
 	$("#reach").attr("disabled", true);
-	$("#inhand_" + posname[jp.pos] + " img:last").addClass("inhand");
+	//$("#inhand_" + posname[jp.pos] + " img.last_margin").addClass("inhand");
       } else {
-	$("#inhand_" + posname[jp.pos] + " img").addClass("inhand");
+	//$("#inhand_" + posname[jp.pos] + " img").addClass("inhand");
         var is_menzen = true;
         for (var i = 0; i < jp.furo_from.length; i++) {
           if (jp.furo_from[i] == 0) continue;
           is_menzen = false;
         }
-        if (is_menzen) {
-
-        } else {
+        if (!is_menzen) {
           $("#reach").attr("disabled", true);
 	  $("#reach").parent().css("color", "gray");
         }
       }
+    } else {
+      $("#count").css("bottom", "55px");
     }
 
-    for (i = 0; i < menu.length; i++) {
+    for (var i = 0; i < menu.length; i++) {
       if (menu[i] === "DISC") continue;
       $("#" + menu[i].split("_").shift()).show();
     }
   };
 
+  // 終局時ボタン表示
+  this.showtable_button = function() {
+    $("#show_table").show().unbind().click(function() { 
+	if ($(this).hasClass("showTable")) {
+	  $(this).html("卓表示").removeClass("showTable");
+	  $("#point_table").fadeIn();
+	} else {
+	  $(this).html("点数表示").addClass("showTable");
+	  $("#point_table").fadeOut();
+	}
+      });
+  };
+
+  // 宣言一括
   this.set_call_info = function(call, qplayer) {
-    console.log(typeof jang_cond.jp[qplayer]);
-    console.log(qplayer);
-    console.log(call);
     var jp = jang_cond.jp[qplayer];
     var this_pos = posname[jp.pos];
     $("#call_" + this_pos).html(call).show();
@@ -83,77 +102,57 @@ var Layout = function() {
 
   this.update_call_info = function(qplayer, op) {
     var jp = jang_cond.jp[qplayer];
-    var str_flag = "";
     var this_pos = posname[jp.pos];
-    var is_horizon = (jp.pos == ePos.left  || jp.pos == ePos.right);
-    var is_reverse = (jp.pos == ePos.right || jp.pos == ePos.top);
 
+    // 卓央表示
     if (jp.is_reach) {
-      var path = is_horizon ? "trans/reach-" : "reach";
+      var is_horizon = (jp.pos == ePos.left  || jp.pos == ePos.right);
+      var path = is_horizon ? "reach-" : "reach";
       path = "../kappa12/haiga/" + path + ".png";
-      str_flag += '<img src="' + path + '">';
-
+      $("#reach_" + this_pos).html('<img src="' + path + '">').show();
     }
-    if (jp.is_houki) {
-      str_flag += "[放棄]";
-    }
-
-    $("#stat_" + this_pos).html(str_flag);
-    //str_flag += jp.is_1patsu  ? "[即]" : "";
-    //str_flag += jp.is_furiten ? "[振]" : "";
-    //str_flag += jp.tempai_target.length > 0  ? "[聴]" : "";
-    str_flag = jp.is_hora ? "和了" : "";
-    
-    if ((op.indexOf("DISC") != -1) || (op.indexOf("DECLK") != -1)) {
-      for(var i = 0; i < 4; i++) {
-	var jpi = jang_cond.jp[i];
-	$("#call_" + posname[jpi.pos]).html("").hide();
-      }
+    if (jp.is_houki) { 
+      var str_flag = "<img src='../kappa12/haiga/houki.svg' width=30 height=30>";
+      $("#abandon_" + this_pos).html(str_flag).show();
     }
 
-    console.log(op);
-    //if (jang_cond.turn == qplayer && op2str[op]) 
-    { 
-      var obj =  $("#call_" + this_pos);
-      if (op.match(/^DECL/)) {
-	obj.append(" " + op2str[op]);
+    // 吹き出し表示
+    if ((op.indexOf("DISC") != -1) || (op.indexOf("DECLK") != -1) || true) {
+      for (var i = 0; i < 4; i++)
+	$("#call_" + posname[jang_cond.jp[i].pos]).html("").hide();
+    }
+    //if (jang_cond.turn != qplayer || !op2str[op]) return;
+    var obj =  $("#call_" + this_pos);
+    if (op.match(/^DECL/)) {
+      obj.html(" " + op2str[op]).css("font-size", "50pt")
+	.css("height", "72px").css("width", "144px");
+      obj.animate({"font-size":"14pt"}, {duration: 600, queue:false})
+	.animate({"height":"24px", "width":"48px"}, {duration: 600, queue:false});
+    }
+    if (op.match(/^DISC/)) {
+      obj.html("");
+      if (0 < op.indexOf("R0")) {
+	obj.append(" " + op2str["DISCR0"]).css("font-size", "50pt")
+	  .css("height", "72px").css("width", "144px");
       }
-      if (op.match(/^DISC/)) {
-	if (0 < op.indexOf("R0")) obj.append(" " + op2str["DISCR0"]);
-	if (0 < op.indexOf("R")) obj.append(" " + op2str["DISCR"]);
-	if (0 < op.indexOf("T")) obj.append(" " + op2str["DISCT"]);
+      if (0 < op.indexOf("R")) {
+	obj.append(" " + op2str["DISCR"]).css("font-size", "50pt")
+	  .css("height", "72px").css("width", "144px");
+      obj.animate({"font-size":"14pt"}, {duration: 600, queue:false})
+	.animate({"height":"24px", "width":"48px"}, {duration: 600, queue:false});
       }
-      if (obj.html())
-	obj.show();
-      else 
-	obj.hide();
-      /*
-      var func1 = function() {
-	var d = new $.Deferred;
-	$(".wind_" + this_pos + " .pt").animate({"font-size":"24pt"},
-	{complete: function(){ d.resolve(); }} ); 
-	return d.promise();
-      };
-      var func0 = function() { 
-	var d = new $.Deferred;
-	$(".wind_" + this_pos + " .ch").animate({"font-size":"24pt"},
-	{complete: function(){ d.resolve(); }} ); 
-	return d.promise();
-      };
-      var func2 = function() {
-	var d = new $.Deferred;
-	$("#call_" + this_pos).animate({"font-size": "24pt"}, 
-	{complete: function(){ d.resolve(); }} ); 
-	return d.promise();
-      };
-      var call = func0();
-      call = call.then(func1);
-      call.then(func2);
-      */
+      if (0 < op.indexOf("T")) 
+	obj.append(' <span style="font-size:10pt; white-space:nowrap;">' + 
+		   op2str["DISCT"] + "</span>");
+    }
+    if (obj.html()) {
+      obj.show();
+    } else {
+      obj.hide();
     }
   };
 
-  //卓表示(全簡易)
+  //卓央表示(全簡易)
   this.update_table_info = function() {
     if (jang_cond.jp.length != 4) return; //todo:2->3->0->1の格納がありえる
     jang_cond.change_position(); // 要整理:Layout制御
@@ -168,37 +167,42 @@ var Layout = function() {
 
       $(".wind_" + this_pos + " .pt").html(jp.pt.toString(10));
       $(".wind_" + this_pos + " .ch").html(wind2name[jp.wind]);
-      $(".wind_" + this_pos + " .name").html(jp.name);
       var obj = $(".wind_" + this_pos + " .name");
+      obj.html(jp.name);
       obj.css("color", jp.is_connect ? "" : "red");
     }
   };
   
 
-  //卓表示(単詳細)
+  //卓央表示(単詳細)
   this.update_table_info_inplay = function() {
-    for(var qplayer = 0; qplayer < 4; qplayer++) {
+    for (var qplayer = 0; qplayer < 4; qplayer++) {
       var jp = jang_cond.jp[qplayer];
       var this_pos = posname[jp.pos];
       var inturn = (jang_cond.turn == jp.wind);
       
-      // Table info
-      if (0) {
-	$(".wind_" + this_pos + " .pt").html(jp.pt.toString(10));
-	$(".wind_" + this_pos + " .ch").html(wind2name[jp.wind]);
-	var obj = $(".wind_" + this_pos + " .name");
-	obj.html(jp.name);
-      }
-      
       var obj = $(".wind_" + this_pos + " .name");
       obj.css("color", jp.is_connect ? "" : "red");
       var obj = $(".wind_" + this_pos);
-      obj.css("background-color", inturn ? "green" : "")
-      .css("color", inturn ? "white" : "black");
+      if (inturn) 
+	obj.addClass("inturn");
+      else
+	obj.removeClass("inturn");
+      obj//.css("background-color", inturn ? "green" : "")
+      $("#hand_" + this_pos).css("background-color", inturn ? "green" : "")
+
+      .css("color", inturn ? "white" : "black"); // 要css化
+      $("#fuohbase").css("border-" + this_pos + "-color", 
+			 inturn ? "green" : "transparent");
       if (jp.is_hora) {
-	obj.css("background-color","yellow").css("color", "black");
+	$("#fuohbase").css("border-" + this_pos + "-color", "yellow");
+	obj.css("color", "black");
+	//obj.css("background-color","yellow").css("color", "black");
+	$("#hand_" + this_pos).css("background-color", "yellow");
+	
       }
-      $(".wind_" + this_pos).css("z-index", inturn ? 0 : 1);  
+
+      $(".wind_" + this_pos).css("z-index", inturn ? 0 : 1);
     }
   };
 
@@ -220,6 +224,8 @@ var Layout = function() {
     var imgname = cmd;
     var expander = ".gif";
   }
+
+  //牌画表示
   var proto_imgpath = function(is_vertical) {
     return function(id, is_yoko) 
     {
@@ -234,7 +240,7 @@ var Layout = function() {
       } else {
 	if (jang_cond.is_red(id)) cmd0 += "r";
 	if (is_trans) cmd0 += "-";
-	if (jang_cond.is_black(id)) attr.style += "-webkit-filter:brightness(50%);";
+	if (jang_cond.is_black(id)) attr.style += "-webkit-filter:brightness(70%);";
       }
       attr.src = haiga_dir + cmd0 + expander;
       return attr;
@@ -253,23 +259,31 @@ var Layout = function() {
     var imgpath = proto_imgpath(is_vertical);
     
     var objarr = [];
+    var obj = $("#inhand_" + this_pos);
     for (var i = 0; i < jp.tehai.length; i++) {
       var is_last = (i == jp.tehai.length - 1);
-      //var is_discardable = (inturn && (!jp.is_reach || is_last));
       var id = jp.tehai[i];
       var attr = imgpath(id);
       attr.id = jp.wind + "hand_" + id.toStrByteHex();
-      if (inturn && is_last && is_last_margin) objarr.push(sp);
-      objarr.push($("<img>").attr(attr));
+      var n = (is_reverse) ? (13 - i) : i;
+      attr.class = (jp.operable) ? "inhand" : "";
+      if (inturn && is_last && is_last_margin) attr.class += " last_margin";
+      obj.children("img").eq(n).attr(attr);
     }
+    for (var i = jp.tehai.length; i < 14; i++) {
+      var n = (is_reverse) ? (13 - i) : i;
+      obj.children("img").eq(n).attr("src", "").hide().removeClass("inhand");
+    }
+    $(".ex_selected").removeClass("ex_selected");
 
+    /*
     var obj = $("#inhand_" + this_pos);
-    obj.html("");
-    for(var n = 0; n < objarr.length; n++) {
+    for (var n = 0; n < objarr.length; n++) {
       var i = (is_reverse) ? (objarr.length - n - 1) : n;
-      obj.append(objarr[i]);
-      if (is_vertical) obj.append("<br>");
+      obj.children("img").eq(i).attr(objarr[i]);
+      //if (is_vertical) obj.append("<br>");
     }
+    */
 
     for (var i = 0; i < jp.tehai_furo.length; i++) {
       var objarr = [];
@@ -277,10 +291,12 @@ var Layout = function() {
       for (var j = 0; j < furo.length; j++) {
         var id = furo[j];
         if(jp.typfuro[i] == ANKAN){
-          var attr = (j == 1 || j == 2) ? imgpath(0) : imgpath(id);
+          var attr = ((j == 1) || (j == 2)) ? imgpath(0) : imgpath(id);
         } else if(furo.length == 4) {
-          var attr = (j == 3 && jp.furo_from[i] == 3) || 
-            (j != 2 && j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
+          var attr = 
+	    ((j == 3) && (jp.furo_from[i] == 3)) || 
+            ((j != 2) && (j + 1 == jp.furo_from[i])) ? 
+	    imgpath(id, true) : imgpath(id);
         } else {
           var attr = (j + 1 == jp.furo_from[i]) ? imgpath(id, true) : imgpath(id);
         }
@@ -302,15 +318,6 @@ var Layout = function() {
       }
     }
     $("#deck").html("残" + jang_cond.yama);
-  };
-
-  //全表示
-  this.dump_stat = function(qplayer, haifu){
-    var op = haifu.replace(/[^A-Z]/g,"");
-    this.update_table_info_inplay(qplayer);
-    this.update_call_info(qplayer, op);
-    this.update_hand(qplayer, (op === "DRAW" || op === "HAND"));
-    this.update_discard(qplayer);
   };
 
   //捨牌表示
@@ -371,9 +378,15 @@ var Layout = function() {
     $("#message").html("");
   };
 
-  this.discard_motion = function(qplayer, op) {
-    
-
+  this.discard_motion = function(qplayer, op, qtarget) {
+    var is_tsumogiri = (op.index("T") != 0);
+    var obj = $("#" + qplayer + "hand_"  + qtarget.toStrByteHex());
+    var jp = jang_cond.jp[qplayer];
+    var this_pos = posname[jp.pos];
+    var is_vertical = (jp.pos == ePos.left  || jp.pos == ePos.right);
+    var is_reverse = (jp.pos == ePos.right || jp.pos == ePos.top);
+    var sp = is_vertical ? "<br>" : " ";
+    var len = jp.sutehai.length;
   };
 
   this.steal_motion = function(qplayer, op, stolen) {
@@ -391,7 +404,7 @@ var Layout = function() {
   }
 
   var selected_object = function (is_to_left) {
-    if($(".ex_selected").length == 0) {
+    if ($(".ex_selected").length == 0) {
       return  $(".inhand:last");
     }
 
@@ -407,8 +420,9 @@ var Layout = function() {
   }
 
 
-  this.click_arrow_button = function(button_id) {
-    var obj = selected_object($(this).attr("id") === "move_l");
+  this.click_arrow_button = function(dom_id) {
+    if (dom_id === undefined) dom_id = $(this).attr("id");
+    var obj = selected_object(dom_id === "move_l");
     // todo: css除去
     $(".inhand").removeClass("ex_selected").css("border","none");
     $("#rc").html(obj.clone().attr("id", "").attr("class", "")
@@ -424,8 +438,8 @@ var Layout = function() {
     $("#aspect").html(str_fuwo);
   };
 
+  /*
   this.display_handle_haifu = function(got_haifu) {
-    //var newest_haifu = got_haifu[got_haifu.length - 1];
     var JpInstance = jang_cond.jp;
     for (var j = 0; j < got_haifu.length; j++) {
       if (0 < got_haifu.length) j = got_haifu.length - 1;
@@ -433,6 +447,7 @@ var Layout = function() {
 	this.dump_stat(i, got_haifu[j]);
       }
     }
+  */
     /*
     var JpInstance = jang_cond.jp;
     if (not_history) {
@@ -448,7 +463,7 @@ var Layout = function() {
     }
     this.dump_stat(all);
     */
-  }
+  //}
   
   this.layout_payment = function(msg) {
     if (msg.point) {
@@ -494,7 +509,8 @@ var Layout = function() {
     $("#point_table").append(res);
     
     if (msg.call) {
-      for (var i = 0; i < 4 && 0 < msg.call.length; i++) {
+      $("#call_top, #call_left, #call_right, #call_bottom").show();
+      for (var i = 0; i < 4; i++) {
 	this.set_call_info(msg.call[i], i);
       }
     }
@@ -506,25 +522,16 @@ var Layout = function() {
       $("#point_table").append(res);
     }
     $("#point_table").fadeIn();
-    $("#call_top, #call_left, #call_right, #call_bottom").show();
     $("#operation .op").hide();
     $("#operation .ops").hide();
     $("#approval").show();
     this.showtable_button();
   };
 
-  this.showtable_button = function() {
-    $("#show_table").show().unbind().click(function() { 
-	if($(this).hasClass("showTable")) {
-	  $(this).html("卓表示").removeClass("showTable");
-	  $("#point_table").fadeIn();
-	} else {
-	  $(this).html("点数表示").addClass("showTable");
-	  $("#point_table").fadeOut();
-	}
-      });
-  };
-
+  var round_fu = function(fu) {
+    if (fu == 25) return 25;
+    return (10 * Math.ceil(fu / 10));
+  }
 
   this.show_handcalc = function(CalcObj, point) {
     // 点数表示
@@ -534,7 +541,7 @@ var Layout = function() {
     if (0 < CalcObj.dora) res += ", ドラ" + CalcObj.dora;
     res += "<br>";
     res += "= " + CalcObj.han() + "翻";
-    res += (10 * Math.ceil(CalcObj.fu() / 10)) + "符";
+    res += round_fu(CalcObj.fu()) + "符";
     if (point.length == 1)
       res += " = <b>" + CalcObj.point(0) + "点</b>";
     else if (point.length == 2) 
@@ -547,7 +554,7 @@ var Layout = function() {
     //王牌表示
     $("#doradisp").append("<b>王牌</b><br>");
     for (var i = 0; i < jang_cond.dora.length; i++) {
-      if (i * 2 == jang_cond.dora.length && CalcObj.reach > 0) 
+      if ((i * 2 == jang_cond.dora.length) && (0 < CalcObj.reach))
 	$("#doradisp").append("<br>");
       var id = jang_cond.dora[i];
       var attr = proto_imgpath(false)(id);
@@ -555,6 +562,7 @@ var Layout = function() {
     }
   };
 
+  //王牌表示
   this.dump_wangpai = function(){
     var obj = $("#wangpai");
     for (var i = 0; i < 7; i++) {
@@ -564,6 +572,23 @@ var Layout = function() {
       obj0.attr(proto_imgpath(false)(id));
     }
   }
+
+  //全表示
+  this.dump_stat = function(haifu) {
+    var reg = haifu.match(/^([0-3x])([A-Z0]+)_([0-9a-f]+)$/);
+    var op = (reg) ? reg[2] : "";
+  
+    for (var qplayer = 0; qplayer < 4; qplayer++) {
+      var jp = jang_cond.jp[qplayer];
+      this.update_table_info_inplay(qplayer);
+      this.update_hand(qplayer, (op === "DRAW" || (op === "HAND" && jp.is_hora)));
+      this.update_discard(qplayer);
+      if ((qplayer == jang_cond.turn) || jp.is_hora)
+	this.update_call_info(qplayer, op);
+    }
+    this.dump_wangpai();
+
+  };
 };
 
 
@@ -583,6 +608,8 @@ var JangTable = function(){
   this.is_haitei = false;
   this.red_enable = false;
   this.transp_enable = false;
+  this.kuitan_enable = true;
+  this.tonpu = false;
   this.aspect = 0;
 
   this.apply_tileset = function(tilesets) {
@@ -590,7 +617,15 @@ var JangTable = function(){
     for (var i = 0; i < q.length; i++) {
       if (q[i] === "red") this.red_enable = true;
       if (q[i] === "transp") this.transp_enable = true;
+      if (q[i] === "notan") this.kuitan_enable = false;
+      if (q[i] === "east") this.tonpu = true;
     }
+    $("#rule").html((this.kuitan_enable ? "喰" : "") + 
+		    (this.red_enable ? "赤" : "") +
+		    (this.transp_enable ? "透" : "") +
+		    (true ? "頭" : "") +
+		    (this.tonpu ? "東" : "南") 
+		    );
   }
 
   this.is_ryukyoku = function() {
@@ -662,17 +697,17 @@ var JangTable = function(){
 
   this.change_position = function() {
     if (this.jp.length != 4) return;
-    var JpInstance = this.jp;
     var myself = -1;
-    for (var i = 0; i < JpInstance.length; i++) {
-      if (!JpInstance[i].operable) continue;
+    for (var i = 0; i < this.jp.length; i++) {
+      if (typeof this.jp[i] === "undefined") return;
+      if (!this.jp[i].operable) continue;
       myself = i;
       break;
     }
-    JpInstance[myself].pos = ePos.bottom;
-    JpInstance[(myself + 1) % 4].pos = ePos.right;
-    JpInstance[(myself + 2) % 4].pos = ePos.top;
-    JpInstance[(myself + 3) % 4].pos = ePos.left;
+    this.jp[myself].pos = ePos.bottom;
+    this.jp[(myself + 1) % 4].pos = ePos.right;
+    this.jp[(myself + 2) % 4].pos = ePos.top;
+    this.jp[(myself + 3) % 4].pos = ePos.left;
   };
     
   this.eval_command = function(haifu){
@@ -691,9 +726,11 @@ var JangTable = function(){
 
     switch(op){
     case "DEAL":
-      for (var i = 0; i < 13; i++)
-        jp.tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
-      jang_disp.update_hand(qplayer, false);
+      for (var i = 0; i < 13 * 2; i += 2)
+        jp.tehai.push(parseInt(qtarget.substr(i, 2), 16));
+      if (!jang_disp.is_loading) {
+	jang_disp.update_hand(qplayer, false);
+      }
       break;
 
     case "DRAW":
@@ -701,15 +738,19 @@ var JangTable = function(){
       jp.draw_tile(parseInt(qtarget, 16));
       this.is_rag = false;
       this.yama--;
-      jang_disp.update_call_info(qplayer, op);
-      jang_disp.update_hand(qplayer, true);
-      jang_disp.update_table_info_inplay();
+      if (!jang_disp.is_loading) {
+	jang_disp.update_call_info(qplayer, op);
+	jang_disp.update_hand(qplayer, true);
+	jang_disp.update_table_info_inplay();
+      }
       break;
 
     case "DORA":
       for (var i = 0; i < qtarget.length; i += 2)
         this.dora.push(parseInt(qtarget.substr(i, 2), 16));
-      jang_disp.dump_wangpai();
+      if (!jang_disp.is_loading) {
+	jang_disp.dump_wangpai();
+      }
       break;
 
     case "DISC":
@@ -723,31 +764,39 @@ var JangTable = function(){
       var is_valid = jp.discard(target, op);
       if (!is_valid) return alert("invalid target");
       this.is_rag = true;
-      jang_disp.update_call_info(qplayer, op);
-      jang_disp.update_discard(qplayer);
-      jang_disp.update_hand(qplayer, false);
+      if (!jang_disp.is_loading) {
+	jang_disp.update_call_info(qplayer, op);
+	jang_disp.update_discard(qplayer);
+	jang_disp.update_hand(qplayer, false);
+      }
       break;
       
     case "DECLF":
       jp.declare_hora(this.turn);
-      jang_disp.update_call_info(qplayer, op);
-      jang_disp.update_discard(this.turn);
-      jang_disp.update_table_info_inplay();
+      if (!jang_disp.is_loading) {
+	jang_disp.update_call_info(qplayer, op);
+	jang_disp.update_discard(this.turn);
+	jang_disp.update_table_info_inplay();
+      }
       break;
 
     case "DECLF0":
       jp.declare_chombo(qtarget);
-      jang_disp.update_call_info(qplayer, op);
+      if (!jang_disp.is_loading) {
+	jang_disp.update_call_info(qplayer, op + "_" + qtarget);
+      }
       break;
 
     case "DECLK":
       if (qplayer == this.turn) {
         var naki_type = jp.declare_own_kong(qtarget);
         if (!naki_type) return alert("Invalid kong"); 
-	jang_disp.update_hand(qplayer, false);
-	jang_disp.update_call_info(qplayer, op);
-	if (op === "DECLK") this.lingshang--; // [todo: needs after kong flag? 
-      } 
+	if (!jang_disp.is_loading) {
+	  jang_disp.update_hand(qplayer, false);
+	  jang_disp.update_call_info(qplayer, op);
+	}
+	break;
+      }
       // through
     case "DECLC":
     case "DECLP":
@@ -757,19 +806,22 @@ var JangTable = function(){
       jp.expose_tiles(this.turn, nakihai, op, qtarget);
       nakare.sutehai_type[pos_discard] |= DISCTYPE_STOLEN;
       this.turn = qplayer;
-      jang_disp.update_discard(nakare.wind);
-      jang_disp.update_hand(qplayer, false);
-      jang_disp.update_call_info(qplayer, op);
-      jang_disp.update_table_info_inplay();
-      if (op === "DECLK") this.lingshang--; // [todo: needs after kong flag? 
+      if (!jang_disp.is_loading) {
+	jang_disp.update_call_info(qplayer, op);
+	jang_disp.update_table_info_inplay();
+	jang_disp.update_discard(nakare.wind);
+	jang_disp.update_hand(qplayer, false);
+      }
       break;
 
     case "HAND":
       jp.tehai = [];
-      for(var i = 0; i < qtarget.length / 2; i++)
-        jp.tehai.push(parseInt(qtarget.substr(i * 2, 2), 16));
-      jang_disp.update_hand(qplayer, true);
-      jang_disp.update_table_info_inplay();
+      for (var i = 0; i < qtarget.length; i += 2)
+        jp.tehai.push(parseInt(qtarget.substr(i, 2), 16));
+      if (!jang_disp.is_loading) {
+	jang_disp.update_hand(qplayer, jp.is_hora);
+	jang_disp.update_table_info_inplay();
+      }
       break;
 
     default:
@@ -803,6 +855,7 @@ var JangTable = function(){
 
   this.translate_to_handset = function(jp) {
     var HandObj = new HandSet();
+
     for (var i = 0; i < jp.tehai.length; i++){
       HandObj.addhi(id2num(jp.tehai[i]) - 1, -1);
     }
@@ -866,6 +919,8 @@ var JangTable = function(){
     var HandObj = this.translate_to_handset(jp);
 
     var CalcObj = new HandCalc();
+
+    CalcObj.yaku_all["TAN"][1] = (this.kuitan_enable) ? 1 : 0; // 喰断の翻
     CalcObj.ba_kz = Math.floor(this.aspect / 4); // 場 [0-4=東南西北]
     CalcObj.ch_kz = jp.wind; // 家 [0-4=東南西北]
 

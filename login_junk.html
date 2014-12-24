@@ -34,13 +34,11 @@ h4 {
   margin-right: 10px;
   //margin: 0 auto;  
 }
-#titlebox, #presentation {
+#titlebox, #robby_room {
   clear:both;
   width:100%;
   display:table;
   height: 300px;
-}
-#titlebox, #config {
   background-color: #9d5;
 }
 #presentation, #config {}
@@ -200,52 +198,49 @@ src="../kappa12/haiga/8s.gif" alt="8s" height=24 width=18><img
 src="../kappa12/haiga/9s.gif" alt="9s" height=24 width=18>
 </div><!-- id="title"-->
 </div><!-- id="titlebox"-->
-<div id="presentation" style="display:none;">
-  <div id="lobby" style="border:1px solid red; height:100%;">
-  </div>
-  <div id="make_hands">
-    <div id="user_handset">
-      <li id="stat_p1"></li>
-      <li id="stat_p2"></li>
-      <li id="stat_p0"></li>
-      <h4>手牌</h4>
-      <div id="handset" style="clear:both; height:60px;"></div>
-    </div>
-    <h4>配牌</h4>
-    <div id="dealt"><ol style="height:120px;"></ol></div><!-- id="dealt"-->
-    <div id="input_column">
-      <input type="button" id="start" name="st_button"  class="ui" value="Set" /> 
-      <input type="button" id="clear" class="ui" value="Clear" />
-      <input type="button" id="sort" class="ui" value="Sort" />
-    </div><!-- id="input_column" -->
-  </div><!-- id="make_hands"-->
-  
-  <div id="discard_tiles" style="clear:both;">
-    <div id="p0" class="turn"><li class="name"></li><li class="river"></li>
-      <div class="handset"></div><hr />
-    </div>
-    <div id="p1" class="turn"><li class="name"></li><li class="river"></li>
-      <div class="handset"></div>
-      <div class="discard"></div><hr />
-    </div>
-    <div id="p2" class="turn"><li class="name"></li><li class="river"></li>
-      <div class="handset"></div>
-      <div class="discard"></div><hr />
-    </div>
-    
-    <h4>打牌候補</h4>
-    <div id="discard0"><ol style="height:120px;"></ol></div>
-    <div style="clear:both;"></div>
-    <div id="askron"> 和了する?
-      <input type="button" class="yes" value="Yes" />
-      <input type="button" class="no"   value="No" />
-    </div>
-    <div id="askcontinue"> 続行する?
-      <input type="button" class="yes" value="Yes" />
-      <input type="button" class="no"   value="No" />
-    </div>
-  </div>
-</div><!-- id="presentation" -->
+
+<div id="robby_room" style="display:none;">
+<table>
+<tr>
+  <th>喰断</th>
+  <th>牌種</th>
+  <th>二家和</th>
+  <th>東風戦</th>
+  <th>東南戦</th>
+</tr>
+<tr>
+  <td>なし</td>
+  <td>通常</td>
+  <td>頭撥ね</td>
+  <td><input type="button" id="notan_east" class="reserve" value="予約"></td>
+  <td><input type="button" id="notan_south" class="reserve" value="予約"></td>
+</tr>
+<tr>
+  <td>あり</td>
+  <td>通常</td>
+  <td>頭撥ね</td>
+  <td><input type="button" id="east" class="reserve" value="予約"></td>
+  <td><input type="button" id="south" class="reserve" value="予約"></td>
+</tr>
+<tr>
+  <td>あり</td>
+  <td>赤</td>
+  <td>頭撥ね</td>
+  <td><input type="button" id="red_east" class="reserve" value="予約"></td>
+  <td><input type="button" id="red_south" class="reserve" value="予約"></td>
+</tr>
+<tr>
+  <td>なし</td>
+  <td>3/4透明</td>
+  <td>頭撥ね</td>
+  <td><input type="button" id="transp_notan_east" class="reserve" value="予約"></td>
+  <td><input type="button" id="transp_notan_south" class="reserve" value="予約"></td>
+</tr>
+</table>
+<input type="button" id="unreserve" value="取消"></td>
+
+</div><!--robby_room-->
+
 
 <div id="ui" style="padding:3px; background:#ccc;">
   [Server]
@@ -253,15 +248,16 @@ src="../kappa12/haiga/9s.gif" alt="9s" height=24 width=18>
   <span id="connectForm">(Unconnected)
     <input id="serverName" type="text" value="localhost:19000" 
 	   style="width:100%; border: solid 1px blue; font-size:150%;">
-    <button id="connection" style="width:100%; font-size:150%;">Connect</button>
-  </span>
-  <br>
-  <span id="loginForm" style="display:none;">
+      <button id="connection" style="width:100%; font-size:150%;">Connect</button>
+    </span>
+    <br>
+    <span id="loginForm" style="display:none;">
     [UserName]
     <input id="loginName" type="text" maxlength=7
 	   style="width:100%; font-size:150%; border: solid 1px blue;" value="">
       <button id="login" style="width:100%; font-size:150%;">Login</button>
   </span>
+  <div id="error_message"></div>
 </div>
 <div style="both:clear; background-color:#ccc;">
   <div id="loginState"></div>

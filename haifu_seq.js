@@ -16,7 +16,7 @@ var main = function(index) {
     return;
   }
 
-  for(var j = gStep; j < full_step; j++) {
+  for (var j = gStep; j < full_step; j++) {
     var obj = $("#sel_haifu span").eq(j);
     var pos = obj.position().top - $("#sel_haifu span").eq(0).position().top;
     $("#sel_haifu").scrollTop(pos - $("#sel_haifu").height() / 2);

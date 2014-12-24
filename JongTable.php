@@ -1,11 +1,10 @@
-<? 
+<?php
 
 class JongTable {
   var $yamahai = array();
   var $wangpai = array();
   var $turn = 0;
   var $jp = array();
-  var $jp_size = 0;
   var $aspect = -1;
   var $dora = 0;
   var $honba = 0;
@@ -173,7 +172,6 @@ class JongTable {
   function make_rank()
   {
     foreach ($this->jp as &$jp) {
-      //$jp->pt
     }
   }
 
@@ -211,18 +209,26 @@ class JongTable {
     }
   }
 
+  function jp_size() 
+  {
+    $jp_size = 0;
+    foreach ($this->jp as $jp) 
+      if (0 < $jp->token) $jp_size++;
+    return $jp_size;
+  }
 
   function add_player($name, $id)
   {
-    if (4 <= $this->jp_size) return alert("This table is full");
     if (count($this->jp) < 4) $this->init_members();
-    $order = rand(0, 4 - 1 - $this->jp_size);
+    $jp_size = $this->jp_size();
+    if (4 <= $jp_size) return alert("This table is full");
+
+    $order = rand(0, 4 - 1 - $jp_size);
     for ($i = 0; $i < 4; $i++) {
       if (0 < $this->jp[$i]->token) continue;
       if ($order == 0) {
         $this->jp[$i]->name = $name;
         $this->jp[$i]->token = $id;
-        $this->jp_size++;
         break; 
       }
       $order--;
@@ -322,9 +328,10 @@ class JongTable {
   function make_haifu_hand($player)
   {
     $tehai = $this->jp[$player]->tehai;
-    if ($this->turn == $player) $tsumohai = array_pop($tehai);
+    $is_tsumo = ($this->jp[$player]->is_hora && ($this->turn == $player));
+    if ($is_tsumo) $tsumohai = array_pop($tehai);
     sort($tehai); 
-    if ($this->turn == $player) array_push($tehai, $tsumohai);
+    if ($is_tsumo) array_push($tehai, $tsumohai);
     $wind = $this->jp[$player]->wind;
 
     if ($this->jp[$player]->is_reach) {
@@ -477,8 +484,9 @@ class JongTable {
 
   function pass_process($playerIndex)
   {
-    if ($playerIndex == $this->turn) return;
+    if ($playerIndex == $this->turn) return alert("Invalid pass");
     $jp =& $this->jp[$playerIndex];
+    if ($jp->bit_naki == 0) return alert("Invalid pass");
     if ($jp->bit_naki & JangPlayer::BIT_RON) $jp->is_furiten = true;
     $jp->bit_naki = 0;
     if ($this->check_simultaneous($playerIndex)) return;
@@ -595,7 +603,7 @@ class JongTable {
   {
     $JpInstance =& $this->jp;
     for ($i = 0; $i < 4; $i++) if ($JpInstance[$i]->bit_naki > 0) return;
-    if (count($this->yamahai) <= 0){ 
+    if (count($this->yamahai) <= 0) { 
       $this->end_kyoku();
       return;
     } 
@@ -605,7 +613,7 @@ class JongTable {
     $JpInstance[$this->turn]->draw_tile($target);
     $this->make_haifu(sprintf("%dDRAW_%02x", 
                       $JpInstance[$this->turn]->wind, $target));
-		      echo "connection check";
+    //echo "connection check\n";
     if ($JpInstance[$this->turn]->is_connected) return;
     $this->check_timeout(false);
       
@@ -652,7 +660,7 @@ class JongTable {
   function check_timeout($is_connect)
   {
     echo "check_timeout\n";
-    if ($this->jp_size < 4) return false;
+    if ($this->jp_size() < 4) return false;
     $TIME_LIMIT = 15;
     if ($this->pause_since == 0) return false;
     if (microtime(true) - $this->pause_since < $TIME_LIMIT && $is_connect) { 
@@ -739,6 +747,15 @@ class JongTable {
     fputs($fp, $fout."\n");
     fclose($fp);
   }
+
+  function get_player_index($token)
+  {
+    foreach ($this->jp as $playerIndex => $jp) {
+      if ($jp->token == $token) return $playerIndex;
+    }
+    return -1;
+  }
+
 }
 
 ?>
