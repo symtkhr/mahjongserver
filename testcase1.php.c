@@ -7,9 +7,28 @@ require_once("SocketHandler.php");
 define("DEBUG", true);
 
 $unit_test = ($argv[1] === "unit");
-$testId = 4;
+$testId = 7;
 
 switch($testId) {
+  //テストケース: 三家和
+ case 7:
+   $fouth = array(
+	       "0DEAL_2s3s4s5s6s7s8s8s8s6p7p8pto",
+	       "1DEAL_1m9m1p1p1s9stonashpehkhtch",
+	       "2DEAL_2m3m4m5m5m6m7m8mchchch7p8p",
+	       "3DEAL_2s3s3s4s4s5s1m2m3m1ptohkhk",
+
+	       "0DRAW_ht", "0DISC_ht", 
+	       "1DRAW_hk", "1DISC_hk", 
+	       "3DECLP_hkhk", "3DISC_to",
+	       "0DRAW_9p", "0DISCR_to",
+	       "1DRAW_sh", "1DISC_sh", 
+	       "2DRAW_sh", "2DISC_sh", 
+	       "3DRAW_9p", //"3DECLK_3p",*/
+	       );
+   break;
+
+
   //テストケース<4>: 搶槓
  case 4:
    $fouth = array(
@@ -377,10 +396,12 @@ if (!$unit_test) {
 $jang_cond = new JongTable;
 $jang_cond->init_members();
 $jang_cond->inplay = true;
-$jang_cond->aspect = 3;
+$jang_cond->aspect = 4;
 $jang_cond->jp_size = 4;
 $bandaid_name = array("SpringFire","SummerWater","AutumnWind","WinterEarth");
 $bandaid_pt = array(-10,-20,30,0);
+$jang_cond->banked = 20;
+$jang_cond->honba = 4;
 for ($i = 0; $i < 4; $i++)
 {
   $jang_cond->jp[$i] = new JangPlayer;
@@ -391,7 +412,7 @@ for ($i = 0; $i < 4; $i++)
 
 if(1) {
   var_dump($fouth);
-  $jang_cond->tileset_query = "red;transp;notan;east";
+  $jang_cond->tileset_query = "red;transp;notan;south";
   $jang_cond->init_aspects();
   load_haifu_s($fouth);
   make_random_haifu();
@@ -499,23 +520,28 @@ function load_haifu_s($haifu, $is_shown = false) {
     case "DRAW":
     case "DECK":
       for($i = 0; $i < strlen($target); $i += 2) {
-        $id = hexdec(substr($target, $i, 2));
-        if (1) {
-          $hainum = cmd2id(substr($target, $i, 2));
-          $mai[$hainum]++;
-          if ($mai[$hainum] > 4)
-            exit("Invalid haifu:" . substr($target, $i, 2) . " in " . $step ."\n");
-          $id = $hainum * 4 - 4 + $mai[$hainum];
+	$cmd = substr($target, $i, 2);
+	if (preg_match("/^[0-9a-f]+$/", $cmd)) {
+	  if ($target)
+	    $id = hexdec($cmd);
+	} else {
+	  $hainum = cmd2id($cmd);
+	  $mai[$hainum]++;
+	  if (4 < $mai[$hainum])
+	    exit("Invalid haifu:" . $cmd . " in " . $step ."\n");
+	  $id = $hainum * 4 - 4 + $mai[$hainum];
         }
         array_push($jang_cond->yamahai, $id);
       }
       break;
     case "DORA":
-      $id = hexdec($target);
-      if (1) {
+      if (preg_match("/^[0-9a-f]+$/", $target)) {
+	$id = hexdec($target);
+      } else {
         $hainum = cmd2id($target);
         $mai[$hainum]++;
-        if ($mai[$hainum] > 4) exit("Invalid haifu:" . $hainum . "\n");
+        if ($mai[$hainum] > 4) 
+	  exit("Invalid haifu:" . $hainum . "\n");
         $id = $hainum * 4 - 4 + $mai[$hainum];
       }
       array_push($jang_cond->wangpai, $id);
@@ -590,6 +616,9 @@ function load_haifu_s($haifu, $is_shown = false) {
 }
 
 function translate_haifu($tehai, $target, $step){
+  if (preg_match("/^[0-9a-f]+$/", $target)) {
+    return $step;
+  }
   $targetId = "";
   $nums = array();
   for($i = 0; $i < strlen($target); $i += 2) {

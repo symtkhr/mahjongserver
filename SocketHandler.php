@@ -376,7 +376,8 @@ class SocketHandler{
     for ($i = 0; $i < 4; $i++) $jang_cond->jp[$i]->approval = false;
       
     $jang_cond->commit_payment();
-    if ($jang_cond->commit_continue()) {
+    if ($jang_cond->commit_continue())
+    {
       foreach($jang_cond->jp as $JpInst) 
       {
 	$id = $JpInst->token;
@@ -458,10 +459,11 @@ class SocketHandler{
                         'is_1patsu' => $jp->is_1patsu,
                         'changkong' => $target
                         );
-      $this->send_message($json_obj, $playerIndex < 0 ? -1 : $jang_cond->jp[$playerIndex]->token); 
+      $this->send_message($json_obj, $playerIndex < 0 ? 
+			  -1 : $jang_cond->jp[$playerIndex]->token);
     }
     
-    if($jang_cond->is_ryukyoku) {
+    if ($jang_cond->is_ryukyoku) {
       $calls = array();
       foreach($jang_cond->jp as $jp) {
         if ($jp->is_nagashi)
@@ -581,20 +583,23 @@ class SocketHandler{
   function calc_process($msg)
   {
     $jang_cond = $this->belonging_table($msg->id);
-    $playerIndex = (isset($msg->pindex)) ? $msg->pindex : 
-      $jang_cond->get_player_index($msg->id);
-    $point = $msg->p;
-    $wind = $msg->wind;
-    $pt = $jang_cond->reserve_payment($playerIndex, $wind, $point);
-    if (!$pt) return;
+    if (!$jang_cond->is_all_finishers_reserved()) 
+    {
+      $playerIndex = (isset($msg->pindex)) ? $msg->pindex : 
+	$jang_cond->get_player_index($msg->id);
+      $point = $msg->p;
+      $wind = $msg->wind;
+      $jang_cond->reserve_payment($playerIndex, $wind, $point);
+      if (!$jang_cond->is_all_finishers_reserved()) return;
+      $jang_cond->reserve_kyotaku();
+    }
+
     $json_obj = array('type' => 'layout',
 		      "op" => "payment", 
 		      'next' => $jang_cond->aspect,
-		      'point' => $pt);
+		      'point' => $jang_cond->return_point());
     foreach($jang_cond->jp as $jp)
       $this->send_message($json_obj, $jp->token); 
   }
-
-
 }
 

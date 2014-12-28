@@ -1,3 +1,35 @@
+<12/28>
+和了手表示と点数計算の再考
+[現状->問題点]
+蔵c→:   {q:haifu, haifu:"cDECLF_0"}
+蔵d→:   {q:haifu, haifu:"dDECLF_0"}
+→蔵a-d: {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx;dHAND:xxxxx;END", id:xx}
+→蔵a-d: {type:player, q:calc, wind:c, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵a-d: {type:player, q:calc, wind:d, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+蔵c→:   {q:calc, wind:xx, p:[x,x,x]}
+蔵d→:   {q:calc, wind:xx, p:[x,x,x]}
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+
+->鯖は和了者でないソケットについてpaymentの応答をしない。(途中復活時にOKが押せない)
+->鯖がWロンに対して後出しで上書きしてしまう。
+
+[改善策]
+rsv返しをするとか
+多数決制の導入とか何か考える。
+
+→蔵a-d: {type:player, q:calc, wind:c, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵a-d: {type:player, q:calc, wind:d, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+蔵a-d→:   {q:calc, wind:c, p:[x,x,x]}
+蔵a-d→:   {q:calc, wind:d, p:[x,x,x]}
+(srv: is_finであるプレイヤ全員のrsv_ptがあるかどうかチェックし,
+      揃ってから以下のパケットを投げる)
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+
+
 <12/20>
 inhandと矢印キー再考
 [現状->問題点] 
@@ -191,18 +223,15 @@ case "player":
    送 {q:"calc", p:point, wind:wind}
    srv 和了者でないので応答しない
    という設計になっているため。rsv返しをするとか多数決制の導入とか何か考える。
-*cli:吃フラグ中の他家和了時にカウントダウンが止まらない
+*cli:鳴きフラグ中の他家和了時にカウントダウンが止まらない
 *cli:和了時にターン者のキーイベントが残ったまま
-*cli:立直・錯和ふきだしの表示ウェイトがほしい
-*cli:配牌中の"おまちください"表示
 *cli:和了時の#hand_xxxに[ツモ][ロン]表示
 ・ロビィルームでのソケットエラー表示
 ・副露牌選択のキー操作
-*srv:不正なuserIDでアクセスするとget_player_index()でエラー吐いて止まる
-→ 一応対策済み
+*srv:不正なuserIDでアクセスするとget_player_index()でエラー吐いて止まる　→ 一応対策済み
+*cli:二家和対応 → ひとりぶんしか適用されない, 裏どらの非共有
 
 ●未遂チケット(優先度中)
-*srv:二家和対応
 ・cli:鳴きラグは打牌直後に欲しいよね?
 ・cli:Deferredなど動的表示
 ・ゼロサムしない問題?
@@ -229,12 +258,15 @@ case "player":
 *srv:おーぷん
 
 ●完了
+*cli:立直・錯和ふきだしの表示ウェイトがほしい → 入れた
+*cli:配牌中の"おまちください"表示
+*srv:二家和対応 → 鯖側済み
 ・予備カウントダウン → ほぼ済み
 ・卓種の表示(喰断,牌種,東南とか)
 ・キー操作
 -> ターン中でないときにキー操作すると多牌でこける
 -> "R":立直, "N":鳴きなし, "CPKO":槓,石並,吃,パス
--> 短い手牌で矢印キーが透明牌にフォーカスしてしまう(済み)
+-> 短い手牌で矢印キーがhidden牌にフォーカスしてしまう(済み)
 *srv:不正なタイミングで"DECL0"を発行すると多牌/少牌扱いされて止まる → おそらく済み
 *cli:錯和がわかりにくい → 済み
 ・加槓ボタンが反応しないときがある → 済み

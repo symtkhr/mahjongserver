@@ -535,8 +535,9 @@ var Layout = function() {
 
   this.show_handcalc = function(CalcObj, point) {
     // 点数表示
-    var res = '<div class="payment" id="point_calc">';
-    res += '<div style="float:right;" id="doradisp"></div>';
+    var wind = CalcObj.ch_kz;
+    var res = '<div class="payment" id="point_calc' + wind + '">';
+    res += '<div style="float:right;" class="doradisp"></div>';
     res += CalcObj.yaku().join(", ");
     if (0 < CalcObj.dora) res += ", ドラ" + CalcObj.dora;
     res += "<br>";
@@ -552,13 +553,21 @@ var Layout = function() {
     $("#point_table").append(res);
 
     //王牌表示
-    $("#doradisp").append("<b>王牌</b><br>");
+    var obj = $("#point_calc" + wind + " .doradisp");
+    obj.html("<b>王牌</b><br>");
     for (var i = 0; i < jang_cond.dora.length; i++) {
-      if ((i * 2 == jang_cond.dora.length) && (0 < CalcObj.reach))
-	$("#doradisp").append("<br>");
       var id = jang_cond.dora[i];
       var attr = proto_imgpath(false)(id);
-      $("#doradisp").append($("<img>").attr(attr));
+      obj.append($("<img>").attr(attr));
+    }
+    if (0 < CalcObj.reach) {
+      obj.append("<br>");
+      var wind = CalcObj.ch_kz;
+      for (var i = 0; i < jang_cond.jp[wind].dora.length; i++) {
+	var id = jang_cond.jp[wind].dora[i];
+	var attr = proto_imgpath(false)(id);
+	obj.append($("<img>").attr(attr));
+      }
     }
   };
 
@@ -611,6 +620,7 @@ var JangTable = function(){
   this.kuitan_enable = true;
   this.tonpu = false;
   this.aspect = 0;
+  this.double_rong = false;
 
   this.apply_tileset = function(tilesets) {
     var q = tilesets.split(";");
@@ -619,11 +629,12 @@ var JangTable = function(){
       if (q[i] === "transp") this.transp_enable = true;
       if (q[i] === "notan") this.kuitan_enable = false;
       if (q[i] === "east") this.tonpu = true;
+      if (q[i] === "wron") this.double_rong = true;
     }
     $("#rule").html((this.kuitan_enable ? "喰" : "") + 
 		    (this.red_enable ? "赤" : "") +
 		    (this.transp_enable ? "透" : "") +
-		    (true ? "頭" : "") +
+		    (this.double_rong ? "" : "頭") +
 		    (this.tonpu ? "東" : "南") 
 		    );
   }
@@ -719,7 +730,7 @@ var JangTable = function(){
     
     var reg = haifu.match(/^([0-3x])([A-Z0]+)_([0-9a-f]+)$/);
     if (!reg) return alert("Invalid format:" + reg);
-    var qplayer = reg[1] * 1;
+    var qplayer = (reg[1] === 'x') ? -1 : (reg[1] * 1);
     var op = reg[2];
     var qtarget = reg[3];
     var jp = this.jp[qplayer];
@@ -746,8 +757,12 @@ var JangTable = function(){
       break;
 
     case "DORA":
-      for (var i = 0; i < qtarget.length; i += 2)
-        this.dora.push(parseInt(qtarget.substr(i, 2), 16));
+      for (var i = 0; i < qtarget.length; i += 2) {
+	if (qplayer < 0)
+	  this.dora.push(parseInt(qtarget.substr(i, 2), 16));
+        else 
+	  this.jp[qplayer].dora.push(parseInt(qtarget.substr(i, 2), 16));
+      }
       if (!jang_disp.is_loading) {
 	jang_disp.dump_wangpai();
       }
@@ -898,17 +913,36 @@ var JangTable = function(){
     return redlen;
   }
 
-  this.dora_length = function(mai) {
+  this.dora_length = function(mai, doradisp) {
     var doralen = 0;
-    for (var j = 0; j < this.dora.length; j++) {
-      var dora = id2num(this.dora[j]) - 1;
+    for (var j = 0; j < doradisp.length; j++) {
+      var dora = id2num(doradisp[j]) - 1;
       if(dora % 9 == 8) dora -= 8;
-      else if(dora == hi.pei) dora = hi.ton;
-      else if(dora == hi.chu) dora = hi.hak;
+      else if (dora == hi.pei) dora = hi.ton;
+      else if (dora == hi.chu) dora = hi.hak;
       else dora++;
       doralen += mai[dora];
     }
     return doralen;
+  }
+
+  // 立直 [0=ダマ, 1=立直, 2=立直一発, 3=W立直, 4=W立直一発]
+  this.translate_to_reach = function(jp) {
+    var ret = (jp.is_reach == 2) ? 3 : jp.is_reach;
+    if (0 < ret) ret += jp.is_1patsu ? 1 : 0;
+    return ret;
+  }
+
+
+  // 和了り方 [0=ロン, 1=ツモ, 2=牌底ロン, 3=牌底ツモ, 
+  //          4=搶槓ロン, 5=嶺上ツモ, 6=配牌ロン, 7=配牌ツモ]
+  this.translate_to_tsumo = function(jp) {
+    var ret = (this.turn == jp.wind);
+    if (jp.is_kaihua) ret = 5;
+    else if (jp.is_changkong > 0) ret = 4;
+    else if (this.yama <= 0) ret += 2;
+    else if (jp.is_tenho) ret += 6;
+    return ret;
   }
 
   this.calc_payment = function(wind, is_display){
@@ -917,29 +951,19 @@ var JangTable = function(){
 
     var target = this.finish_target(jp);
     var HandObj = this.translate_to_handset(jp);
-
     var CalcObj = new HandCalc();
 
     CalcObj.yaku_all["TAN"][1] = (this.kuitan_enable) ? 1 : 0; // 喰断の翻
     CalcObj.ba_kz = Math.floor(this.aspect / 4); // 場 [0-4=東南西北]
     CalcObj.ch_kz = jp.wind; // 家 [0-4=東南西北]
-
-    // 和了り方 [0=ロン, 1=ツモ, 2=牌底ロン, 3=牌底ツモ, 
-    //          4=搶槓ロン, 5=嶺上ツモ, 6=配牌ロン, 7=配牌ツモ]
-    CalcObj.tsumo = (this.turn == jp.wind);
-    if (jp.is_kaihua) CalcObj.tsumo = 5;
-    else if (jp.is_changkong > 0) CalcObj.tsumo = 4;
-    else if (this.yama <= 0) CalcObj.tsumo += 2;
-    else if (jp.is_tenho) CalcObj.tsumo += 6;
-
-    // 立直 [0=ダマ, 1=立直, 2=立直一発, 3=W立直, 4=W立直一発]
-    CalcObj.reach = (jp.is_reach == 2) ? 3 : jp.is_reach;
-    if (CalcObj.reach > 0) CalcObj.reach += jp.is_1patsu ? 1 : 0;
-
+    CalcObj.tsumo = this.translate_to_tsumo(jp);
+    CalcObj.reach = this.translate_to_reach(jp);
     CalcObj.tsumi = 0; // 積み棒
     CalcObj.aghi = id2num(target) - 1; // 和了牌
     HandObj.addhi(CalcObj.aghi, -1);
-    CalcObj.dora = this.dora_length(HandObj.mai()) + this.red_length(jp);
+    CalcObj.dora = 
+      this.dora_length(HandObj.mai(), jp.dora.concat(this.dora)) 
+    + this.red_length(jp);
 
     var ResObj  = new JangResult();
     ResObj.get_result_by_hand(HandObj, CalcObj);

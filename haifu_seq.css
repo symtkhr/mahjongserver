@@ -276,7 +276,8 @@ button#auto_step
     text-align:right; white-space:nowrap;
     line-height:18px;
 }
-#point_calc {
+#point_calc, #point_calc0, #point_calc1, #point_calc2, #point_calc3
+{
     background:white; top:0; right:0; left:0; height:69px; padding:2px;
 }
 #point_table, #reservation {

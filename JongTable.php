@@ -18,7 +18,7 @@ class JongTable {
   var $banked = 0;
   var $inplay = false;
   var $tileset_query = "";
-  const LAST_ASPECT = 7;
+  //var $double_enable = true;
 
   function dump_stat()
   {
@@ -63,24 +63,40 @@ class JongTable {
     }
   }
 
+  function is_all_finishers_reserved()
+  {
+    foreach($this->jp as $jp) {
+      if ($jp->is_hora && ($jp->rsv_pay[0] == 0)) return false;
+    }
+    return true;
+  }
+
   function reserve_payment($player, $wind, $payments)
   {
-    echo "(".$player."declared finish!)\n";
+    if (DEBUG) {
+      echo "(" . $player . "declared finish!)\n";
+    }
     if (($this->jp[$player]->wind != $wind) || (!$this->jp[$player]->is_hora))
       return alert("Not finshed!");
-    foreach ($this->jp as &$jp) $jp->rsv_pay = array(0, 0, 0);
+
+    if (0 < $this->jp[$player]->rsv_pay[0]) {
+      return alert("Already got");
+    }
+
+    //foreach ($this->jp as &$jp) $jp->rsv_pay = array(0, 0, 0);
     $this->jp[$player]->rsv_pay[0] = $payments[0] / 100;
     $this->jp[$player]->rsv_pay[1] = $this->honba * 3;
-    $this->jp[$player]->rsv_pay[2] = $this->banked;
-    $this->banked = 0;
     
     if ($this->turn != $player) {
       /* case: RONG */
-      $this->jp[$this->turn]->rsv_pay[0] = -$payments[0] / 100;
-      $this->jp[$this->turn]->rsv_pay[1] = -$this->honba * 3;
-    } else {
+      $this->jp[$this->turn]->rsv_pay[0] -= $payments[0] / 100;
+      $this->jp[$this->turn]->rsv_pay[1] -= $this->honba * 3;
+    }
+    else 
+    {
       /* case: TSUMO */
-      foreach($this->jp as $i => &$jp){
+      foreach ($this->jp as $i => &$jp)
+      {
         if ($i == $player) continue;
         $jp->rsv_pay[0] = 
           (($jp->wind == 0) ? -$payments[2] : -$payments[1]) / 100;
@@ -88,14 +104,52 @@ class JongTable {
       }
     }
 
+    return;
+
     // case: common_get
-    foreach($this->jp as $i => &$jp) {
-      if ($i == $player) continue;
-      if ($jp->is_reach) { 
-        $jp->rsv_pay[2] = -10;
-        $this->jp[$player]->rsv_pay[2] += 10;
+    if ($this->jp[$player]->is_kamicha())
+    {
+      $this->jp[$player]->rsv_pay[2] = $this->banked;
+      $this->banked = 0;
+      foreach ($this->jp as $i => &$jp)
+      {
+	if ($jp->is_hora) continue;
+	if ($jp->is_reach) 
+	{ 
+	  $jp->rsv_pay[2] = -10;
+	  $this->jp[$player]->rsv_pay[2] += 10;
+	}
       }
     }
+    return;
+  }
+
+  function reserve_kyotaku()
+  {
+    $player = -1;
+    for ($i = 1; $i < 4; $i++)
+    {
+      $player = ($this->turn + $i) % 4;
+      if ($this->jp[$player]->is_hora) break;
+    }
+    if ($player < 0) return alert("nobody calls hora");
+
+    $this->jp[$player]->rsv_pay[2] = $this->banked;
+    $this->banked = 0;
+
+    foreach ($this->jp as $i => &$jp)
+    {
+      if ($jp->is_hora) continue;
+      if ($jp->is_reach) 
+      { 
+	$jp->rsv_pay[2] = -10;
+	$this->jp[$player]->rsv_pay[2] += 10;
+      }
+    }
+  }
+
+  function return_point()
+  {
     $ret_array = array();
     foreach($this->jp as &$jp)
       $ret_array = array_merge($ret_array, $jp->rsv_pay);
@@ -185,9 +239,9 @@ class JongTable {
       if (50 <= $jp->pt) $is_top = true;
     }
     if ($is_hako) return true;
-    if (self::LAST_ASPECT < $this->aspect/* && $is_top */) return true;
+    if ($this->last_aspect() < $this->aspect) return true;
     // 和了やめ
-    if (self::LAST_ASPECT == $this->aspect) {
+    if ($this->last_aspect() == $this->aspect) {
       foreach ($this->jp as &$jp) {
         if ($jp->wind == 0) $parent_pt = $jp->pt;
       }
@@ -207,6 +261,12 @@ class JongTable {
     } else {
        return $this->tileset_query;
     }
+  }
+
+  function last_aspect()
+  {
+    if ($this->tileset("east")) return 3;
+    return 7;
   }
 
   function jp_size() 
@@ -515,6 +575,11 @@ class JongTable {
   {
     $stolen_jp =& $this->jp[$this->turn];
 
+    echo "TEST:"; 
+    var_dump($this->jp[2]->rsv_naki);
+    var_dump($this->jp[3]->rsv_naki);
+    echo "==============\n";
+
     foreach ($this->jp as $i => &$jp) {
       $naki_type = $jp->rsv_naki["type"];
       $haifu = $jp->make_rsv_haifu();
@@ -635,17 +700,23 @@ class JongTable {
       
     $ret = false;
       
-    foreach($this->jp as $i => &$other_jp) {
+    foreach ($this->jp as $i => &$other_jp) {
       if ($i == $nakare || $i == $playerIndex) continue;
       if ($naki_type == JangPlayer::RONG) {
+	if ($other_jp->rsv_naki["type"] == JangPlayer::RONG) continue;
         if ($other_jp->bit_naki & JangPlayer::BIT_RON) {
-          if ((4 + $i - $nakare) % 4 < (4 + $playerIndex - $nakare) % 4) {
-            //if the other player is_kamicha(頭跳ね)
+	  if ($this->tileset("wron")) {
+	    $ret = true;
+	    continue;
+	  } 
+	  else if ((4 + $i - $nakare) % 4 < (4 + $playerIndex - $nakare) % 4) 
+	  {
+            //if ($other_jp->is_kamicha(頭跳ね))
             $ret = true;
             continue;
           }
         }
-      } else if (($naki_type < $other_jp->bit_naki)) {
+      } else if ($naki_type < $other_jp->bit_naki) {
         $ret = true; 
         continue;
       }
@@ -692,34 +763,6 @@ class JongTable {
     return true;
   }
   
-  ////// [[End]] //////
-  function end_kyoku()
-  {
-    for ($i = 0; $i < 4; $i++) {
-      if ($this->jp[$i]->is_tempai) $this->make_haifu_hand($i);
-    }
-    $this->make_haifu("END");
-    $this->is_ryukyoku = true;
-    return;
-    $player_hoju = $this->turn;
-    //$player_hora = $this->my_turn;
-    $this->save_jokyo();
-    $fp = fopen("jokyo.dat","w");
-    fclose($fp);
-    print'GO NEXT';
-    die;
-  }
-
-  function go_next_kyoku()
-  {
-    $this->save_jokyo();
-    $fp = fopen("jokyo.dat","w");
-    fclose($fp);
-    $jang_cond = new JongTable;
-    $jang_cond->set_values();
-    die;
-  }
-  
   ////// [[Save all situation]] //////
   function save_jokyo()
   {
@@ -746,6 +789,16 @@ class JongTable {
     foreach($this->yamahai as $yamahai) $fout .= sprintf("%02x", $yamahai);
     fputs($fp, $fout."\n");
     fclose($fp);
+  }
+
+  function end_kyoku()
+  {
+    for ($i = 0; $i < 4; $i++) {
+      if ($this->jp[$i]->is_tempai) $this->make_haifu_hand($i);
+    }
+    $this->make_haifu("END");
+    $this->is_ryukyoku = true;
+    return;
   }
 
   function get_player_index($token)

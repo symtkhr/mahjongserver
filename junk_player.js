@@ -58,6 +58,7 @@ var JangPlayer = function(){
   this.is_connect = true;
   this.is_houki = false;
   this.bit_naki = 0;
+  this.dora = [];
   this.token;
 
   this.draw_tile = function(tile){

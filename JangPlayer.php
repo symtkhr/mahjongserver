@@ -18,7 +18,7 @@ class JangPlayer {
   var $is_tenho = true;
   var $bit_naki = 0;
   var $rsv_naki = array("type" => 0, "target" => array());
-  var $rsv_pay = 0;
+  var $rsv_pay = array(0, 0, 0);
   var $token;
   var $approval;
   var $is_houki = false;
