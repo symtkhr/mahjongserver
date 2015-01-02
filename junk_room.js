@@ -50,7 +50,7 @@ var jang_table_set = function(obj) {
 var SocketHandler = function() {
   var wsUri = "ws://" + getRequest().srv;
   var wsUri = getRequest().srv;
-  var websocket = new WebSocket(wsUri); 
+  var websocket = new WebSocket(wsUri);
   //var websocket = {onopen:null, onclose:null, onmessage:null};
   var gSpareTime = 10;
   var gPassTime = 3;
@@ -70,7 +70,6 @@ var SocketHandler = function() {
   };
   
   var handle_haifu = function(msg) {
-    // console.log(msg);
     var func = [];
     var got_haifu = msg.haifu.split(";");
     var step = function(haifu) {
@@ -107,18 +106,19 @@ var SocketHandler = function() {
   }
 
   //layout制御?
-  var startCount = function(timeout_event, timer, is_naki) {
+  var startCount = function(timeout_event, timer, is_long) {
     gSpareTime = timer;
-    gPassTime = is_naki ? 2 : 5;
+    gPassTime = is_long ? 11 : 6;
     clearInterval(gPsgID);
     //return;
     gPsgID = setInterval(function() {
-	$("#count").show().html(gPassTime.toString(10) + "+" + gSpareTime.toString(10));
-	if (gPassTime > 0) 
+	if (0 < gPassTime) 
 	  gPassTime--;
 	else
 	  gSpareTime--; 
-	if (gPassTime + gSpareTime >= 0) return;
+	$("#count").show().html(gPassTime.toString(10) + "+" + 
+				gSpareTime.toString(10));
+	if (0 <= gPassTime + gSpareTime) return;
 	timeout_event();
       }, 1000);
   };
@@ -127,7 +127,7 @@ var SocketHandler = function() {
     var msg = { "q" : "approval" };
     if (getRequest()) msg["id"] = getRequest().token;
     websocket.send(JSON.stringify(msg));
-    $("#approval").unbind().hide(); //attr("disabled", true);
+    $("#approval").unbind().attr("disabled", true);
     $("#message").html("おまちください");
   };
 
@@ -140,138 +140,6 @@ var SocketHandler = function() {
     }
   }
 
-  this.unit_test = function () {
-
-    var msg = {wind:0, q:"renew"};
-    for(var i = 0; i < 4; i++) {
-      jang_cond.jp[i] = new JangPlayer;
-      jang_cond.jp[i].wind = i;
-    }
-    $("#reservation").hide();
-
-    jang_cond.jp[2].operable = true;
-
-    var msg = {type: "haifu", haifu:
-	       [
-"0DEAL_0c121426333e454d4f506b6f88",
-"1DEAL_0407133b4a5460626471747d7f",
-"2DEAL_1632383a3f4046525c5d697284",
-"3DEAL_05222d2e3547515658797a8087",
-"xDORA_57",
-
-"0DRAW_0d",
-"0DISC_88",
-"1DRAW_82",
-"1DISC_04",
-"2DRAW_63",
-"2DISC_84",
-"3DRAW_17",
-"3DISC_47",
-"0DRAW_0a",
-"0DISC_6f",
-"1DRAW_55",
-"1DISC_07",
-"2DRAW_75",
-"2DISC_75",
-"3DRAW_39",
-"3DISC_80",
-
-"0DRAW_06",
-"0DISC_6b",
-"1DRAW_81",
-"1DISC_13",
-"0DECLP_1412",
-"0DISC_26",
-"1DRAW_7c",
-"1DISC_7c",
-"3DECLP_797a",
-"3DISC_87",
-"0DRAW_67",
-"0DISC_67",
-"1DRAW_70",
-"1DISC_3b",
-"2DRAW_73",
-"2DISC_69",
-"3DRAW_85",
-"3DISC_85",
-"0DRAW_34",
-"0DISC_3e",
-"1DRAW_59",
-"1DISC_4a",
-"2DRAW_41",
-"2DISC_32",
-"0DECLP_3334",
-"0DISC_0d",
-"1DRAW_7e",
-"1DISC_70",
-"2DRAW_1b",
-"2DISCR_52",
-"3DRAW_0f",
-"3DISC_22",
-"0DRAW_4e",
-"0DECLK_4e",
-"xDORA_03",
-"0DRAW_36",
-"0DISC_06",
-"1DRAW_23",
-"1DISC_23",
-//      "2DRAW_13",
-
-"2DRAW_7b",
-"2DISC_7b",
-"3DRAW_3d",
-"3DISC_58",
-"0DRAW_53",
-"0DISC_53",
-"1DRAW_2a",
-"1DISC_2a",
-"2DRAW_5a",
-"2DISC_5a",
-"3DECLC_5156",
-"3DISC_05",
-"0DRAW_31",
-//*
-"0DECLK_31",
-
-"0DRAW_0b",
-"0DISC_45",
-"xDORA_6e",
-"1DRAW_1c",
-"1DISC_1c",
-"2DRAW_09",
-"2DISC_09",
-
-"0DECLK_0c",
-"0DRAW_21",
-//"0DRAW_".sprintf("%02x", (5+9)*4-1),
-//*
-"0DISC_36",
-"xDORA_28",
-"1DRAW_68",
-"1DISC_64",
-"2DRAW_61",
-"2DISC_61",
-"3DRAW_78",
-"3DISC_78",
-"0DRAW_11",
-"0DECLK_11",
-"3DECLF_0",
-"3HAND_",
-//"0DRAW_24"
-].join(";")
-    };
-    
-    var msgs = [
-    {type:"table", q:"renew", aspect:7, honba:0, banked:-20 },
-    {type:"player", q:"renew", wind:1, pt:10, name:"SpringFire",  operable:false},
-    {type:"player", q:"renew", wind:2, pt:20, name:"SummerWater", operable:false},
-    {type:"player", q:"renew", wind:3, pt:0, name:"AutumnWind",  operable:true },
-    {type:"player", q:"renew", wind:0, pt:-10, name:"WinterEarth", operable:false},
-    {type:"haifu", haifu:"1DEAL_00000000000000000000000000;2DEAL_00000000000000000000000000;3DEAL_060a0e12161a1e2d2e33373a3e;0DEAL_00000000000000000000000000;xDORA_88;0DRAW_00;0DISCT_85;1DRAW_00;1DISCT_2f;3DECLP_2d2e;3DISCT_3e;0DRAW_00;0DISC_6d;1DRAW_00;1DISCT_86;2DRAW_00;2DISCT_87;3DRAW_30"},
-    {type:"layout", op:"DECLK_30;DISC", time:10}];
-    for(var i = 0; i < msgs.length; i++)
-      parse_msg(msgs[i]);
-  }
   var msglist = [];
   var undealt_haifu = [];
   var is_waiting = false;
@@ -286,7 +154,6 @@ var SocketHandler = function() {
     for (var i in msg) 
       res += (i + ":" + msg[i] + "/");
     $("#sel_haifu").append(res + "\n");
-    console.log(msg);  
   }
 
   var parse_msg = function() {
@@ -323,7 +190,7 @@ var SocketHandler = function() {
       break;
       
     case "to_gate":
-      //location.href = "login_junk.html";
+      location.href = "login_junk.html";
       break;
 
     default:
@@ -347,30 +214,28 @@ var SocketHandler = function() {
   var layout_set = function(obj) {
     switch(obj.op) {
     case "payment":
+      $(window).unbind("keydown"); 
+      count_stop();
       jang_disp.layout_payment(obj);
-      $("#approval").click(approval_ok).focus();
+      $("#approval").show().unbind().click(approval_ok).focus().attr("disabled", false);
       break;
 
     case "approval":
       //Layout制御
       $(".op, .ops, #show_table").hide();
       $("#operation .opc").hide();
-      $("#approval").show().focus();
       jang_cond.change_position();
       jang_disp.update_table_info();
-      var res = "<div id='point_calc' class='payment'>[半荘開始]</div>";
-      res += "<div id='point_agenda' class='payment'>";
-      res += "[OK]ボタンをおしてください。"
-      res += "</div>";
-      $("#point_table").html(res).show();
+      $("#point_calc").html("[半荘開始]").show();
+      $("#point_agenda").html("[OK]ボタンをおしてください。").show();
 
       //Socket制御
-      $("#approval").click(approval_ok);
+      $("#approval").show().unbind().click(approval_ok).focus().attr("disabled", false);
       break;
 
     case "waiting":
-      $("#reservation").show().html("予約中です... (現在:"  + obj.current + "人)");
-      $("#operation .opc").hide();
+      $(".op, .opc, .ops").hide();
+      $("#message").html("予約中です...");
       break;
 
     case "finish":
@@ -378,23 +243,26 @@ var SocketHandler = function() {
 	  return jang_cond.jp[b].pt - jang_cond.jp[a].pt; 
 	});
 
-      var res = "<div id='point_calc' class='payment'>[半荘終了]</div>";
-      res += "<div id='point_agenda' class='payment'>";
-      res += "<ol>";
+      var res = ""; // "<ol>";
       for (var i = 0; i < 4; i++){
-	res += "<li>" + jang_cond.jp[rank[i]].name;
-	res += " (" + jang_cond.jp[rank[i]].pt + ")</li>";
+	res += "[" + (i + 1) + "位] ";
+	//res += "<li>" 
+	res += jang_cond.jp[rank[i]].name;
+	res += " (" + jang_cond.jp[rank[i]].pt + ")<br>";
       }
-      res += "</ol>";
-      res += "</div>";
-      $("#point_table").html(res);
+      //res += "</ol>";
+      $(".payment").hide();
+      $("#point_calc").html("[半荘終了]").show();
+      $("#point_agenda").html(res).show();
+      $("#message").html('<a href="login_junk.html">トップに戻る</a>');
       break;
 
     default:
+      count_stop();
       if (jang_cond.is_end) return;
       jang_disp.show_operation(obj.op);
       $("#rc, #move_l, #move_r, .decl, .inhand").unbind();
-    $("#point_table").html("").hide();
+      $("#point_table, .payment").hide();
 
       $(window).unbind("keydown"); 
       $(window).keydown(function(e) {
@@ -424,7 +292,7 @@ var SocketHandler = function() {
 	  declare_sender("DECL0");
 	  return;
 	}
-	startCount(declare_sender, obj.time, true);
+	startCount(declare_sender, obj.time, false);
 	$(".last_discard").css("border", "red 2px solid");
 	ring_your_turn();
 	$(window).keydown(function(e) {
@@ -435,7 +303,7 @@ var SocketHandler = function() {
 	    if (e.keyCode == "H".charCodeAt(0)) declare_sender("DECLF");
 
 	    if (0 < $(".ops:focus").length) {
-	      console.log($(".ops:focus").next().attr("id"));
+	      //console.log($(".ops:focus").next().attr("id"));
 	      if (e.keyCode == 0x27) $(".ops:focus").next().focus();
 	      if (e.keyCode == 0x25) $(".ops:focus").prev().focus();
 	    } else {
@@ -450,7 +318,9 @@ var SocketHandler = function() {
 	  discard_sender();
 	} else {
 	  $(".inhand, #rc").click(inhand_click);
-	  $("#move_l, #move_r").click(jang_disp.click_arrow_button);
+	  $("#move_l, #move_r").click(function() {
+	      jang_disp.click_arrow_button($(this).attr("id"));
+	  });
 	  startCount(discard_sender, obj.time, false);
 	  ring_your_turn();
 	  
@@ -469,15 +339,12 @@ var SocketHandler = function() {
   };
 
   var ring_your_turn = function() {
-    return;
+    //return;
     var audio = new Audio("./pon.mp3");
     audio.play();
   }
 
   var auto_discard = function(op) {
-    //// console.log(jang_cond.turn);
-    //// console.log(jang_cond.jp[jang_cond.turn].is_reach);
-
     if (!jang_cond.jp[jang_cond.turn].is_reach) return false;
     if ((op.indexOf("DECLF") < 0) && (op.indexOf("DECLK") < 0)) return true;
     return false;
@@ -499,8 +366,7 @@ var SocketHandler = function() {
   }
   
   var discard_sender = function() {
-    clearInterval(gPsgID);
-    $("#count").hide();
+    count_stop();
 
     //layout制御
     var obj = ($(".ex_selected").length != 1) ? 
@@ -515,7 +381,7 @@ var SocketHandler = function() {
       "size": jang_cond.haifu.length, 
       "h": haifu, 
       "q":"haifu",
-      "time" : gSpareTime,
+      "time" : gSpareTime + (gPassTime == 6 ? 1 : 0),
     };
 
     if (getRequest()) msg["id"] = getRequest().token;
@@ -539,8 +405,7 @@ var SocketHandler = function() {
     if (!haifu.match(/^[0-3]DECL0/)) return false;
     msg.h += "_0";
     websocket.send(JSON.stringify(msg));
-    // console.log(msg);
-    $("#message").html("おまちください");
+    waiting_message(msg);
     return true;
   }
 
@@ -552,8 +417,7 @@ var SocketHandler = function() {
 	msg.h += $(this).attr("id").split("hand_").pop();
       });
     websocket.send(JSON.stringify(msg));
-    // console.log(msg);
-    $("#message").html("おまちください");
+    waiting_message(msg);
     return true;
   }
   
@@ -564,9 +428,14 @@ var SocketHandler = function() {
     if (point == 0) msg.h += "0";
     msg.h += "_0";
     websocket.send(JSON.stringify(msg));
+    waiting_message(msg);
+    return true;
+  }
+
+  var waiting_message = function(msg) {
     // console.log(msg);
     $("#message").html("おまちください");
-    return true;
+    $(".last_discard").css("border", "none").removeClass("last_discard");
   }
   
   var kong_process = function(msg) {
@@ -579,22 +448,23 @@ var SocketHandler = function() {
       msg.h += "_" + nakihai.toStrByteHex();
     } else {
       var targets = jp.find_target("DECLK");
-      console.log(targets);
-      if ((targets.length != 1)) {
-	$("#message").html("牌選択 → 槓");
+      //console.log(targets);
+      if (targets.length != 1) 
+      {
 	jp.show_kong_tile_selection(targets);
+	$("#message").html("牌選択 → 槓");
+	$(".decl").attr("disabled", false);
+	startCount(discard_sender, msg.time, false);
 	return true;
       }
       msg.h += "_" + targets[0].toStrByteHex();
     }
     websocket.send(JSON.stringify(msg));
-    // console.log(msg);
-    $("#message").html("おまちください");
+    waiting_message(msg);
     return true;
   }
 
   var chipong_process = function(msg) {
-    console.log("chipong_process");
     if (!msg.h.match(/DECL[CP]/)) return false;
 
     var nakihai = jang_cond.discard_tile_just_now();
@@ -602,13 +472,16 @@ var SocketHandler = function() {
     var jp = jang_cond.jp[player];
     var targets = jp.find_target(msg.h, id2num(nakihai));
 
-    if (targets.length > 2) {
+    if (2 < targets.length) {
       jp.show_expose_tile_selection(targets);
+      $("#message").html("牌選択 → " + (msg.h.match(/DECLP/) ? "碰" : "吃"));
+      $(".decl").attr("disabled", false);
+      startCount(declare_sender, msg.time, true);
       return true;
     }
 
     if (targets.length != 2) {
-      alert(targets); 
+      $("#message").html("不正な宣言:" + targets.join(";")); 
       return true;
     }
 
@@ -617,8 +490,7 @@ var SocketHandler = function() {
       msg.h += targets[i].toStrByteHex();
     }
     websocket.send(JSON.stringify(msg));
-    console.log(msg);
-    $("#message").html("おまちください");
+    waiting_message(msg);
     return true;
   }
   
@@ -626,12 +498,18 @@ var SocketHandler = function() {
     declare_sender($(this).attr("id"));
   }
 
-  var declare_sender = function(op){
-    $(".last_discard").css("border", "none").removeClass("last_discard");
+  var count_stop = function() {
     clearInterval(gPsgID);
     $("#count").hide();
+    $(".decl").attr("disabled", true);
+    $("#count, #move_l, #move_r, #rc").hide();
+  }
 
+  var declare_sender = function(op){
     if (op === undefined) op = "DECL0";
+    if ($("#" + op).is(":hidden")) return;
+
+    count_stop();
 
     var msg = { 
       "size": jang_cond.haifu.length, 
@@ -653,9 +531,144 @@ var SocketHandler = function() {
     $('#message').append('通信エラー発生(' + ev.data + ")");
   }; 
   websocket.onclose = function(ev){
-    $('#reservation').show().html('接続が切れました。再読込してください');
+    var res = "[切断]<br>接続が切れました。<br>再読込してください。";
+    $('#point_calc').show().html(res);
+    $("#point_table").show();
   }; 
 };
+
+SocketHandler.prototype.unit_test = function ()
+{
+  var msg = {wind:0, q:"renew"};
+  for(var i = 0; i < 4; i++) {
+    jang_cond.jp[i] = new JangPlayer;
+    jang_cond.jp[i].wind = i;
+  }
+  $("#reservation").hide();
+  
+  jang_cond.jp[2].operable = true;
+  
+  var msg = {type: "haifu", haifu:
+  [
+   "0DEAL_0c121426333e454d4f506b6f88",
+   "1DEAL_0407133b4a5460626471747d7f",
+   "2DEAL_1632383a3f4046525c5d697284",
+   "3DEAL_05222d2e3547515658797a8087",
+   "xDORA_57",
+   
+   "0DRAW_0d",
+   "0DISC_88",
+   "1DRAW_82",
+   "1DISC_04",
+   "2DRAW_63",
+   "2DISC_84",
+   "3DRAW_17",
+   "3DISC_47",
+   "0DRAW_0a",
+   "0DISC_6f",
+   "1DRAW_55",
+   "1DISC_07",
+   "2DRAW_75",
+   "2DISC_75",
+   "3DRAW_39",
+   "3DISC_80",
+   
+"0DRAW_06",
+   "0DISC_6b",
+   "1DRAW_81",
+   "1DISC_13",
+   "0DECLP_1412",
+   "0DISC_26",
+   "1DRAW_7c",
+   "1DISC_7c",
+   "3DECLP_797a",
+   "3DISC_87",
+   "0DRAW_67",
+   "0DISC_67",
+   "1DRAW_70",
+   "1DISC_3b",
+   "2DRAW_73",
+   "2DISC_69",
+   "3DRAW_85",
+   "3DISC_85",
+   "0DRAW_34",
+   "0DISC_3e",
+   "1DRAW_59",
+   "1DISC_4a",
+   "2DRAW_41",
+   "2DISC_32",
+   "0DECLP_3334",
+   "0DISC_0d",
+   "1DRAW_7e",
+   "1DISC_70",
+   "2DRAW_1b",
+   "2DISCR_52",
+   "3DRAW_0f",
+   "3DISC_22",
+   "0DRAW_4e",
+   "0DECLK_4e",
+   "xDORA_03",
+   "0DRAW_36",
+   "0DISC_06",
+   "1DRAW_23",
+   "1DISC_23",
+   //      "2DRAW_13",
+   
+   "2DRAW_7b",
+   "2DISC_7b",
+   "3DRAW_3d",
+   "3DISC_58",
+   "0DRAW_53",
+   "0DISC_53",
+   "1DRAW_2a",
+   "1DISC_2a",
+   "2DRAW_5a",
+   "2DISC_5a",
+   "3DECLC_5156",
+   "3DISC_05",
+   "0DRAW_31",
+   //*
+   "0DECLK_31",
+   
+   "0DRAW_0b",
+   "0DISC_45",
+   "xDORA_6e",
+   "1DRAW_1c",
+   "1DISC_1c",
+   "2DRAW_09",
+   "2DISC_09",
+   
+   "0DECLK_0c",
+   "0DRAW_21",
+   //"0DRAW_".sprintf("%02x", (5+9)*4-1),
+   //*
+   "0DISC_36",
+   "xDORA_28",
+   "1DRAW_68",
+   "1DISC_64",
+   "2DRAW_61",
+   "2DISC_61",
+   "3DRAW_78",
+   "3DISC_78",
+   "0DRAW_11",
+   "0DECLK_11",
+   "3DECLF_0",
+   "3HAND_",
+   //"0DRAW_24"
+   ].join(";")
+  };
+  
+  var msgs = [
+  {type:"table", q:"renew", aspect:7, honba:0, banked:-20 },
+  {type:"player", q:"renew", wind:1, pt:10, name:"SpringFire",  operable:false},
+  {type:"player", q:"renew", wind:2, pt:20, name:"SummerWater", operable:false},
+  {type:"player", q:"renew", wind:3, pt:0, name:"AutumnWind",  operable:true },
+  {type:"player", q:"renew", wind:0, pt:-10, name:"WinterEarth", operable:false},
+  {type:"haifu", haifu:"1DEAL_00000000000000000000000000;2DEAL_00000000000000000000000000;3DEAL_060a0e12161a1e2d2e33373a3e;0DEAL_00000000000000000000000000;xDORA_88;0DRAW_00;0DISCT_85;1DRAW_00;1DISCT_2f;3DECLP_2d2e;3DISCT_3e;0DRAW_00;0DISC_6d;1DRAW_00;1DISCT_86;2DRAW_00;2DISCT_87;3DRAW_30"},
+  {type:"layout", op:"DECLK_30;DISC", time:10}];
+  for(var i = 0; i < msgs.length; i++)
+    parse_msg(msgs[i]);
+}
   
 $(document).ready(function(){
     show_rule_yaku();
@@ -664,7 +677,7 @@ $(document).ready(function(){
     // for debug
     var id = parseInt(getRequest().token);
     $("#sel_haifu").append(id + "(=" + id.toString(16) + ")\n");
-  });
+});
 
 var show_rule_yaku = function() {
   var yakudef = HandCalc.prototype.yaku_all;
@@ -687,6 +700,13 @@ var show_rule_yaku = function() {
     var res = yakulist[i].join(", ");
     $("#yakulist ul").append("<li>" + res + "</li>");
   }
+  $("#open_rule").click(function() { 
+      var obj = $("#rule_detail");
+      if (obj.is(":hidden")) 
+	obj.show();
+      else
+	obj.hide(); 
+  });
 }
 
 var hi_tag = function(hi){

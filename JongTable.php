@@ -103,7 +103,6 @@ class JongTable {
         $jp->rsv_pay[1] = -$this->honba;
       }
     }
-
     return;
 
     // case: common_get
@@ -127,7 +126,7 @@ class JongTable {
   function reserve_kyotaku()
   {
     $player = -1;
-    for ($i = 1; $i < 4; $i++)
+    for ($i = 0; $i < 4; $i++)
     {
       $player = ($this->turn + $i) % 4;
       if ($this->jp[$player]->is_hora) break;
@@ -197,19 +196,22 @@ class JongTable {
   
   function commit_continue() {
     $this->honba++;
-    foreach ($this->jp as &$jp) {
+
+    //連荘
+    foreach ($this->jp as $jp) {
       if ($jp->wind != 0) continue;
       $is_renchang = $jp->is_hora;
       $is_renchang |= ($this->is_ryukyoku && $jp->is_tempai);
       if (!$is_renchang) continue;
-      if ($this->check_finish_table($renchang)) return $this->gameover();
+      if ($this->check_finish_table(true)) return $this->gameover();
       $this->deal_tiles();
       return true;
     }
 
+    //局遷移
     $this->aspect++;
     if (!$this->is_ryukyoku) $this->honba = 0;
-    if ($this->check_finish_table($renchang)) return $this->gameover();
+    if ($this->check_finish_table(false)) return $this->gameover();
     $this->inplay = true;
     $this->deal_tiles();
     return true;
@@ -230,28 +232,27 @@ class JongTable {
   }
 
 
-  function check_finish_table()
+  function check_finish_table($is_renchang)
   {
-    $is_hako = false;
-    $is_top = false;
-    foreach ($this->jp as &$jp) {
-      if ($jp->pt < -250) $is_hako = true;
-      if (50 <= $jp->pt) $is_top = true;
+    // 箱割れ
+    foreach ($this->jp as $jp) {
+      if ($jp->pt < -250) return true;
     }
-    if ($is_hako) return true;
+
+    // オーラス終了
     if ($this->last_aspect() < $this->aspect) return true;
+
+    // 通常局遷移
+    if ($this->last_aspect() != $this->aspect) return false;
+
     // 和了やめ
-    if ($this->last_aspect() == $this->aspect) {
-      foreach ($this->jp as &$jp) {
-        if ($jp->wind == 0) $parent_pt = $jp->pt;
-      }
-      foreach ($this->jp as &$jp) {
-        if ($jp->wind == 0) continue;
-        if ($parent_pt <= $jp->pt) return false; 
-      }
-      return true;
+    if (!$is_renchang) return false;
+    foreach ($this->jp as $jp) if ($jp->wind == 0) $parent_pt = $jp->pt;
+    if ($parent_pt < 50) return false;
+    foreach ($this->jp as $jp) {
+      if (($jp->wind != 0) && ($parent_pt <= $jp->pt)) return false; 
     }
-    return false;
+    return true;
   }
 
   function tileset($needle = false)
@@ -702,8 +703,11 @@ class JongTable {
       
     foreach ($this->jp as $i => &$other_jp) {
       if ($i == $nakare || $i == $playerIndex) continue;
-      if ($naki_type == JangPlayer::RONG) {
-	if ($other_jp->rsv_naki["type"] == JangPlayer::RONG) continue;
+      if ($naki_type == JangPlayer::RONG) 
+      {
+	if ($this->tileset("wron") && 
+	    $other_jp->rsv_naki["type"] == JangPlayer::RONG)
+	  continue;
         if ($other_jp->bit_naki & JangPlayer::BIT_RON) {
 	  if ($this->tileset("wron")) {
 	    $ret = true;
@@ -720,7 +724,6 @@ class JongTable {
         $ret = true; 
         continue;
       }
-      //if ($ret) continue;
       if ($naki_type == 0) continue;
       $other_jp->bit_naki = 0;
       $other_jp->rsv_naki["type"] = 0;

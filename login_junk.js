@@ -36,7 +36,7 @@ var socket_open = function(){
   {
     var msg = JSON.parse(ev.data);
     var type = msg.type;
-    console.log(msg);
+    //console.log(msg);
 
     if (msg.type === "login") {
       show_robby_room();
@@ -44,7 +44,7 @@ var socket_open = function(){
     }
     if (msg.type === "waiting") {
       if (msg.table)
-	$("#" + msg.table.replace(";", "_")).attr("disabled", true);
+	$("#" + msg.table.split(";").join("_")).attr("disabled", true);
       else 
 	$(".reserve").attr("disabled", false);
     }
@@ -62,7 +62,7 @@ var socket_open = function(){
     $(".reserve").click(function(){
 	var msg = {"q" : "reserve",
 		   "id": token,
-		   "table_id": $(this).attr("id").replace("_", ";")
+		   "table_id": $(this).attr("id").split("_").join(";")
 	};
 	console.log(msg);
 	websocket.send(JSON.stringify(msg));
@@ -85,10 +85,10 @@ var socket_open = function(){
 
     
   websocket.onerror = function(ev){
-    $('#alert_mes').append('<div class="system_error">Error:' + ev.data + "</div>");
+    $('#error_message').append('[エラー] ' + ev.data + "<br>");
   }; 
   websocket.onclose = function(ev){
-    $('#alert_mes').append('<div class="system_msg">Disconnected</div>');
+    $('#error_message').append('[切断] 接続が切れました。再接続してください。<br>');
   }; 
   
 }

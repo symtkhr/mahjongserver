@@ -21,7 +21,7 @@ var Layout = function() {
 	"#abandon_" + posname[j]).html("").hide();
     }
     $(".last_margin").removeClass("last_margin");
-    $("#reservation").hide();
+    $("#reservation, .payment, #approval, #show_table").hide();
     $("#reach").attr("disabled", false);
     $("#reach, #unsteal, #unrong").parent()
       .css("color", "black").css("background", "#ccc");
@@ -33,8 +33,7 @@ var Layout = function() {
 	  $(this).parent().css("background", "#ccc");
 	}
       });
-    var res = "<div id='point_calc' class='payment'>[配牌中...]</div>";
-    $("#point_table").html(res).show();
+    $("#point_calc").html("[配牌中...]").show();
   };
 
   // 操作ボタン表示
@@ -75,7 +74,7 @@ var Layout = function() {
 
     for (var i = 0; i < menu.length; i++) {
       if (menu[i] === "DISC") continue;
-      $("#" + menu[i].split("_").shift()).show();
+      $("#" + menu[i].split("_").shift()).show().attr("disabled", false);
     }
   };
 
@@ -155,15 +154,15 @@ var Layout = function() {
   //卓央表示(全簡易)
   this.update_table_info = function() {
     if (jang_cond.jp.length != 4) return; //todo:2->3->0->1の格納がありえる
-    jang_cond.change_position(); // 要整理:Layout制御
+    try { 
+      jang_cond.change_position(); // 要整理:Layout制御
+    } catch(e) { return; }
 
     for (var i = 0; i < 4; i++) {
       var jp = jang_cond.jp[i];
       try {
 	var this_pos = posname[jp.pos];
-      } catch(e) {
-	break;
-      }
+      } catch(e) { break; }
 
       $(".wind_" + this_pos + " .pt").html(jp.pt.toString(10));
       $(".wind_" + this_pos + " .ch").html(wind2name[jp.wind]);
@@ -171,6 +170,9 @@ var Layout = function() {
       obj.html(jp.name);
       obj.css("color", jp.is_connect ? "" : "red");
     }
+    var sum = jang_cond.sum_of_points();
+    if (sum)
+    $("#sum_pt").html("計" + sum).css("color", "red");
   };
   
 
@@ -188,7 +190,7 @@ var Layout = function() {
 	obj.addClass("inturn");
       else
 	obj.removeClass("inturn");
-      obj//.css("background-color", inturn ? "green" : "")
+      //obj.css("background-color", inturn ? "green" : "")
       $("#hand_" + this_pos).css("background-color", inturn ? "green" : "")
 
       .css("color", inturn ? "white" : "black"); // 要css化
@@ -421,7 +423,6 @@ var Layout = function() {
 
 
   this.click_arrow_button = function(dom_id) {
-    if (dom_id === undefined) dom_id = $(this).attr("id");
     var obj = selected_object(dom_id === "move_l");
     // todo: css除去
     $(".inhand").removeClass("ex_selected").css("border","none");
@@ -435,6 +436,7 @@ var Layout = function() {
     var str_fuwo = strwind[parseInt(obj.aspect / 4)] + (obj.aspect % 4 + 1) + "-";
     str_fuwo += (obj.honba);
     str_fuwo += " 供" + (obj.banked);
+    str_fuwo += '<span id="sum_pt"></span>'
     $("#aspect").html(str_fuwo);
   };
 
@@ -479,8 +481,8 @@ var Layout = function() {
       ptr[wind] = jang_cond.jp[wind].pt + msg.point[pindex * 3] 
 	+ msg.point[pindex * 3 + 1] + msg.point[pindex * 3 + 2];
     }
-    
-    var res = "<div id='point_agenda' class='payment'><table><tr>";
+
+    var res = "<table><tr>";
     res += "<td></td><td></td>";
     res += "<td>" + (jang_cond.is_ryukyoku() ? "聴牌" : "和了") + "</td>";
     res += "<td>本場</td>";
@@ -505,8 +507,12 @@ var Layout = function() {
       res += "<th>" + ptr[wind] + "</th>";
       res += "</tr>";
     }
-    res += "</table></div>";
-    $("#point_table").append(res);
+    res += "</table>";
+    $("#point_agenda").html(res).show();
+    if (jang_cond.is_ryukyoku())
+      $("#point_calc").html("[流局]").show();
+    else 
+      $("#point_calc").html("").hide();
     
     if (msg.call) {
       $("#call_top, #call_left, #call_right, #call_bottom").show();
@@ -519,12 +525,13 @@ var Layout = function() {
       var res = "NEXT = ";
       var strwind = ["T","N","S","P"];
       res += strwind[parseInt(msg.next / 4)] + (msg.next % 4 + 1);
-      $("#point_table").append(res);
+      $("#point_agenda").append(res);
     }
     $("#point_table").fadeIn();
     $("#operation .op").hide();
     $("#operation .ops").hide();
-    $("#approval").show();
+    $("#operation .opc").hide();
+    $("#approval").show().attr("disabled", false);
     this.showtable_button();
   };
 
@@ -536,8 +543,7 @@ var Layout = function() {
   this.show_handcalc = function(CalcObj, point) {
     // 点数表示
     var wind = CalcObj.ch_kz;
-    var res = '<div class="payment" id="point_calc' + wind + '">';
-    res += '<div style="float:right;" class="doradisp"></div>';
+    var res = '<div style="float:right;" class="doradisp"></div>';
     res += CalcObj.yaku().join(", ");
     if (0 < CalcObj.dora) res += ", ドラ" + CalcObj.dora;
     res += "<br>";
@@ -549,8 +555,7 @@ var Layout = function() {
       res += " = <b>" + point[1] + "点オール</b>";
     else if (point.length == 3)
       res += " = <b>" + point[1] + " / " + point[2] + "点</b>";
-    res += "</div>";
-    $("#point_table").append(res);
+    $("#point_calc" + wind).html(res).show();
 
     //王牌表示
     var obj = $("#point_calc" + wind + " .doradisp");
@@ -622,6 +627,16 @@ var JangTable = function(){
   this.aspect = 0;
   this.double_rong = false;
 
+  this.sum_of_points = function() {
+    try {
+      var sum = 0;
+      for (var i = 0; i < 4; i++) sum += this.jp[i].pt;
+    } catch(e) {
+      return false;
+    }
+    return sum + this.banked;
+  }
+
   this.apply_tileset = function(tilesets) {
     var q = tilesets.split(";");
     for (var i = 0; i < q.length; i++) {
@@ -636,7 +651,7 @@ var JangTable = function(){
 		    (this.transp_enable ? "透" : "") +
 		    (this.double_rong ? "" : "頭") +
 		    (this.tonpu ? "東" : "南") 
-		    );
+    );
   }
 
   this.is_ryukyoku = function() {
@@ -846,24 +861,16 @@ var JangTable = function(){
   }
 
   this.finish_target = function(jp) {
-    if (jp.is_changkong > 0) {
+    if (0 < jp.is_changkong) {
       return jp.is_changkong;
     } 
-    var stolen_jp = this.jp[this.turn];
-    if(this.turn == jp.wind) {
-      var target = stolen_jp.tehai.pop(); 
-      stolen_jp.tehai.push(target);
-      return target;
-    }
-    var target = stolen_jp.sutehai.pop();
-    stolen_jp.sutehai.push(target);
-    return target;
+    return ((this.turn == jp.wind) ? jp.tehai : this.jp[this.turn].sutehai).last();
   }
 
   var type_format_to_handset = function(type) {
     if (type == CHI) return typ.chi;
     if (type == PONG) return typ.pon;
-    if (type == DMK || type == KAKAN) return typ.kan;
+    if ((type == DMK) || (type == KAKAN)) return typ.kan;
     if (type == ANKAN) return typ.ankan;
     return false;
   }
@@ -938,10 +945,10 @@ var JangTable = function(){
   //          4=搶槓ロン, 5=嶺上ツモ, 6=配牌ロン, 7=配牌ツモ]
   this.translate_to_tsumo = function(jp) {
     var ret = (this.turn == jp.wind);
-    if (jp.is_kaihua) ret = 5;
-    else if (jp.is_changkong > 0) ret = 4;
-    else if (this.yama <= 0) ret += 2;
-    else if (jp.is_tenho) ret += 6;
+    if (jp.is_kaihua) return 5;
+    if (jp.is_changkong > 0) return 4;
+    if (this.yama <= 0) return (ret + 2);
+    if (jp.is_tenho) return (ret + 6);
     return ret;
   }
 
@@ -961,9 +968,8 @@ var JangTable = function(){
     CalcObj.tsumi = 0; // 積み棒
     CalcObj.aghi = id2num(target) - 1; // 和了牌
     HandObj.addhi(CalcObj.aghi, -1);
-    CalcObj.dora = 
-      this.dora_length(HandObj.mai(), jp.dora.concat(this.dora)) 
-    + this.red_length(jp);
+    CalcObj.dora = this.dora_length(HandObj.mai(), jp.dora.concat(this.dora)) 
+                 + this.red_length(jp);
 
     var ResObj  = new JangResult();
     ResObj.get_result_by_hand(HandObj, CalcObj);

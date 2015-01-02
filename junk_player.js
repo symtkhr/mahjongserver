@@ -15,6 +15,9 @@ Array.prototype.diff = function(arr){
   }
   return this;
 };
+Array.prototype.last = function() {
+  return this[this.length - 1];
+}
 Number.prototype.toStrByteHex = function(){
   var s = this.toString(16);
   return (this < 0x10) ? ("0" + s) : s;
@@ -34,7 +37,7 @@ var DISCTYPE_STOLEN = 1;
 var DISCTYPE_REACH  = 2;
 
 var exit = function(str){
-  alert(str);
+  $("#message").html(str);
   stop_by_undefined_call();
 }
 
@@ -216,7 +219,7 @@ var JangPlayer = function(){
       var target = this.tehai[i];
       if (sutenum == id2num(target)) targets.push(target);
     }
-    console.log(targets);
+    //console.log(targets);
     return targets;
   }
   
@@ -239,7 +242,7 @@ var JangPlayer = function(){
     for (var i = 0; i < neighbors.length; i++) {
       targets = targets.concat(neighbors[i]);
     }
-    console.log(targets);
+    //console.log(targets);
     return targets;
   }
 

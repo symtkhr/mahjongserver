@@ -63,11 +63,10 @@ var send_msg = function() {
 $("#sock_send").click(send_msg);
 
 $(window).keydown(function(e) {
-  if(e.keyCode == 0x5a) w = top.user01_frame.focus(); //"z"
-  if(e.keyCode == 0x58) w = top.user02_frame.focus(); //"x"
-  if(e.keyCode == 0x43) w = top.user03_frame.focus(); //"c"
-  if(e.keyCode == 0x56) w = top.user04_frame.focus(); //"v"
-
+ 	if (e.keyCode == "1".charCodeAt(0)) w = top.user01_frame.focus();
+	if (e.keyCode == "2".charCodeAt(0)) w = top.user02_frame.focus();
+	if (e.keyCode == "3".charCodeAt(0)) w = top.user03_frame.focus();
+	if (e.keyCode == "4".charCodeAt(0)) w = top.user04_frame.focus();
 });
 
 $("#sock_msg").keydown(function(e){ 
@@ -97,11 +96,6 @@ $(document).ready(websock);
   <button id="open_token">OpenTokenForDebug</button>
   <input type="textbox" id="sock_msg" value="">
   <button id="sock_send">Send</button>
-  <br>
-  <iframe src="./login_junk.html" id="user01_frame"></iframe>
-  <iframe src="./login_junk.html" id="user02_frame"></iframe>
-  <iframe src="./login_junk.html" id="user03_frame"></iframe>
-  <iframe src="./login_junk.html" id="user04_frame"></iframe>
   <a href="index.html" target="user01_frame">discon01</a>
   <a href="index.html" target="user02_frame">discon02</a>
   <a href="index.html" target="user03_frame">discon03</a>
@@ -109,8 +103,12 @@ $(document).ready(websock);
   <a id="recon01" href="#" target="user01_frame">recon01</a>
   <a id="recon02" href="#" target="user02_frame">recon02</a>
   <a id="recon03" href="#" target="user03_frame">recon03</a>
-  <a id="recon04" href="#" target="user04_frame">recon04</a>
+  <a id="recon04" href="#" target="user04_frame">recon04</a><br>
 
+  <iframe src="./login_junk.html" id="user01_frame"></iframe>
+  <iframe src="./login_junk.html" id="user02_frame"></iframe>
+  <iframe src="./login_junk.html" id="user03_frame"></iframe>
+  <iframe src="./login_junk.html" id="user04_frame"></iframe>
 <hr>
 
 </body></html>

@@ -24,7 +24,7 @@ switch($testId) {
 	       "0DRAW_9p", "0DISCR_to",
 	       "1DRAW_sh", "1DISC_sh", 
 	       "2DRAW_sh", "2DISC_sh", 
-	       "3DRAW_9p", //"3DECLK_3p",*/
+	       "3DRAW_9p", "3DISC_9p",
 	       );
    break;
 
@@ -251,7 +251,7 @@ switch($testId) {
  /*sending 124:*/ "3DISC_67",
  /*sending 125:*/ "0DRAW_22",
 	      );
-
+   break;
 // テストケース<3>: 三種槓 + 二家搶槓
  case 3:
    $fouth = array(
@@ -396,11 +396,11 @@ if (!$unit_test) {
 $jang_cond = new JongTable;
 $jang_cond->init_members();
 $jang_cond->inplay = true;
-$jang_cond->aspect = 4;
+$jang_cond->aspect = 2;
 $jang_cond->jp_size = 4;
 $bandaid_name = array("SpringFire","SummerWater","AutumnWind","WinterEarth");
-$bandaid_pt = array(-10,-20,30,0);
-$jang_cond->banked = 20;
+$bandaid_pt = array(-50,-86,180,-44);
+$jang_cond->banked = 0;
 $jang_cond->honba = 4;
 for ($i = 0; $i < 4; $i++)
 {
@@ -412,7 +412,7 @@ for ($i = 0; $i < 4; $i++)
 
 if(1) {
   var_dump($fouth);
-  $jang_cond->tileset_query = "red;transp;notan;south";
+  $jang_cond->tileset_query = "red;east;wron";
   $jang_cond->init_aspects();
   load_haifu_s($fouth);
   make_random_haifu();
