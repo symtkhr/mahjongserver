@@ -1,3 +1,50 @@
+<1/27>
+ソケットクラスの見直し
+[現状]
+class SocketHandler
+  private function init_members() 
+  private function init_server() 
+  public function start_server() 
+  private function check_all_timers_flag()
+  private function check_new_connected_client(&$chgclients) 
+  private function check_incoming_data($sock) 
+  private function check_disconnected_client($sock) 
+  private function unmask($text) 
+  private function perform_handshaking($receved_header, $client_conn, $host, $port)
+  private function handle_incoming_data($msg, $sock)
+  private function mask($text)
+  public function send_message($obj, $id = -1)
+
+class JongHouse
+  function __construct($sock) 
+  public function srv_sockrecv_handler($msg, $sock) 
+  public function disconnect_user($sock)
+  private function login_process($msg, $sock)
+  private function unreserve_process($msg)
+  private function reserve_process($msg)
+  private function haifu_process($msg) 
+  private function history_process($msg, $sock) 
+  private function calc_process($msg)
+  private function approval_process($msg) 
+  private function send_updated_haifu($pre_size, $playerIndex, $jang_cond) 
+  private function belonging_table($uid)
+
+[理想]
+class SocketListenServer
+  private function init_members() 
+  private function init_server() 
+  public function start_server() 
+  private function check_new_connected_client(&$chgclients) 
+  private function check_disconnected_client($sock) 
+  private function perform_handshaking($receved_header, $client_conn, $host, $port)
+
+class SocketHandler
+  private function unmask($text) 
+  private function mask($text)
+  public function send_message($obj, $id = -1)
+  private function check_incoming_data($sock) 
+
+
 <12/28>
 和了手表示と点数計算の再考
 [現状->問題点]
@@ -214,19 +261,26 @@ case "player":
 
 ●未遂チケット(優先度高)
 ・副露牌選択のキー操作
-・鳴きラグ時に無関係な宣言キーを押すとアラート吐いたりしてやばい
 ・接続断したユーザの復活時に赤消し
+*srv:立直中の暗槓
+*srv:ぽんちー直後のかん不可
+*srv:途中流局: 四開かん > 四家立直 > 九種九牌 > 四風連打 → 終了後は無勝負やり直し
+*srv:借金立直不可
+*srv:喰い替え不可
+
+・どら増え問題?
 ・ゼロサムしない問題? → ゼロさむしなくなったタイミングで赤表示
 
 ・srv:自摸切りbot → 済み.ただし自巡中に落ちた場合は進まない。
-・cli:"おまちください"を消したい
 *cli:和了時の#hand_xxxに[ツモ][ロン]表示
 ・ロビィルームでのソケットエラー表示
 
 ・cli:PC版の横ボタン
-・南3で半荘終了する問題?
 
 ○たぶん済み
+・cli:"おまちください"を消したい
+・南3で半荘終了する問題?
+・鳴きラグ時に無関係な宣言キーを押すとアラート吐いたりしてやばい
 ・cli:搶槓ロンで振聴錯和した場合に捨牌がこける
 ・cli:左遷移ボタンきかねえ → 済み
 ・cli:カウントダウンきつくね?
@@ -253,7 +307,7 @@ case "player":
 ・srv:和了時にlayout:paymentが4本とんでくる。各家が放るcalcにすべて反応するため。
 ・cli:鳴きラグは打牌直後に欲しいよね?
 ・cli:Deferredなど動的表示
-・どら増え問題?
+
 *srv/cli:メンバの値を自由に変えられるインタフェイス
 *cli:振り込み者の色付け
 *cli:流局時聴牌を見やすくする。色付けとか。→ layout_payment
@@ -267,12 +321,7 @@ case "player":
 *cli:選択肢複数時の自槓ボタン->青枠が出るが押すと赤枠になり切れる。
 *cli:自摸切り,自動和了
 *cli:自摸牌をあらかじめ選択しておく
-*srv:立直中の暗かん → できてた?
-*srv:ぽんちー直後のかん不可
-*srv:途中流局: 四開かん > 四家立直 > 九種九牌 > 四風連打 → 終了後は無勝負やり直し
 *srv:2翻縛
-*srv:借金立直不可
-*srv:喰い替え不可
 *srv:おーぷん
 
 ●完了

@@ -42,6 +42,10 @@ class JangPlayer {
   const DISCTYPE_REACH =  2;
   const DEFAULT_SPARE_TIME = 10;
 
+  const HORA_ZEROHAN = 0xdead;
+  const HORA_FURITEN = 0xbeef;
+  const HORA_VARID = 1;
+
   function init_members($wind) {
     $this->wind = $wind;
     $this->tehai = array();
@@ -230,27 +234,28 @@ class JangPlayer {
       if (!$hands_check->agari_hantei($this->tehai)) return false;
       if (!$this->check_yaku(true, $is_yakunashi)) {
         $this->is_houki = true;
-        return "DECLF0_bad";
+        return self::HORA_ZEROHAN;
       } else {
         $this->is_hora = true;
-        return "DECLF_0";
+        return self::HORA_VARID;
       }
     }
     // Rong
     if (!($this->bit_naki & self::BIT_RON)) return false;
     if ($this->is_furiten) {
       $this->is_houki = true;
-      $haifu = "DECLF0_f";
       $this->bit_naki = 0;
-    } else if (!$this->check_yaku(false, $is_yakunashi)) {
+      return self::HORA_FURITEN;
+    } 
+    
+    if (!$this->check_yaku(false, $is_yakunashi)) {
       $this->is_houki = true;
       $this->bit_naki = 0;
-      $haifu = "DECLF0_bad";
-    } else {
-      $this->set_reservation(self::RONG, null);
-      $haifu = "";
+      return self::HORA_ZEROHAN;
     }
-    return $haifu;
+
+    $this->set_reservation(self::RONG, null);
+    return self::HORA_VARID;
   }
 
   function is_menzen() {
@@ -357,24 +362,6 @@ class JangPlayer {
     return true;
   }
 
-  function make_rsv_haifu(){
-    switch($this->rsv_naki["type"]) {
-    case self::DMK:  $op = "K"; break;
-    case self::CHI:  $op = "C"; break;
-    case self::RONG: $op = "F"; break;
-    case self::PONG: $op = "P"; break;
-    default: return false;
-    }
-
-    $haifu = sprintf("%01dDECL%s_", $this->wind, $op);
-    if (is_array($this->rsv_naki["target"])) 
-      foreach($this->rsv_naki["target"] as $targetj) 
-        $haifu .= sprintf("%02x", $targetj);
-    else
-      $haifu .= "0";//sprintf("%02x", $target);
-    return $haifu;
-  }
-  
   function show_naki_form($for_sock = true){
     if ($this->bit_naki == 0){ return; }
     

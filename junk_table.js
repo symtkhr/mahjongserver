@@ -4,7 +4,7 @@ var Layout = function() {
     "DECLF":"和了", "DRAW":"摸", "DISC":"打", "DISCR":"立直",
     "DISCT":"(自摸切)", "DECLF0_bad":"錯和(0翻)", "DECLF0_f": "錯和(振聴)", 
     "DISCR0" : "不聴"};
-  var wind2name = ["東","南", "西", "北"];
+  var wind2name = ["東", "南", "西", "北"];
   this.is_loading = false;
 
   // 開局時の初期化
@@ -40,43 +40,44 @@ var Layout = function() {
   this.show_operation = function(op) {
     $("#operation .op").hide();
     $("#operation .ops").hide();
-    if(op == null) {
-      return;
-    }
+    if (op == null) return;
+
     for (var i = 0; i < jang_cond.jp.length; i++)
       if (jang_cond.jp[i].operable) break;
     var jp = jang_cond.jp[i];
     var menu = op.split(";");
 
-    if (0 <= menu.index("DISC")) {
-      $("#move_l, #move_r, #rc").show();
-      $("#count").css("bottom", 0);
-      if (jp.is_reach) {
-	$("#reach").parent().css("color", "blue");
-	$("#reach").attr("checked", true);
-	$("#reach").attr("disabled", true);
-	//$("#inhand_" + posname[jp.pos] + " img.last_margin").addClass("inhand");
-      } else {
-	//$("#inhand_" + posname[jp.pos] + " img").addClass("inhand");
-        var is_menzen = true;
-        for (var i = 0; i < jp.furo_from.length; i++) {
-          if (jp.furo_from[i] == 0) continue;
-          is_menzen = false;
-        }
-        if (!is_menzen) {
-          $("#reach").attr("disabled", true);
-	  $("#reach").parent().css("color", "gray");
-        }
-      }
-    } else {
-      $("#count").css("bottom", "55px");
-    }
+    layout_discard_turn(jp, menu);
 
     for (var i = 0; i < menu.length; i++) {
       if (menu[i] === "DISC") continue;
       $("#" + menu[i].split("_").shift()).show().attr("disabled", false);
     }
   };
+
+  var layout_discard_turn = function(jp, menu) {
+    if (menu.index("DISC") < 0) return;
+    $("#move_l, #move_r, #rc").show();
+
+    if (jp.is_reach) {
+      $("#reach").parent().css("color", "blue");
+      $("#reach").attr("checked", true);
+      $("#reach").attr("disabled", true);
+      return;
+    } 
+
+    var is_menzen = true;
+    for (var i = 0; i < jp.furo_from.length; i++) {
+      if (jp.furo_from[i] == 0) continue;
+      is_menzen = false;
+    }
+    if (!is_menzen) reach_button_disabled();
+  }
+
+  var reach_button_disabled = function() {
+    $("#reach").attr("disabled", true);
+    $("#reach").parent().css("color", "gray");
+  }
 
   // 終局時ボタン表示
   this.showtable_button = function() {
@@ -172,7 +173,7 @@ var Layout = function() {
     }
     var sum = jang_cond.sum_of_points();
     if (sum)
-    $("#sum_pt").html("計" + sum).css("color", "red");
+      $("#sum_pt").html("計" + sum).css("color", "red");
   };
   
 
@@ -190,7 +191,6 @@ var Layout = function() {
 	obj.addClass("inturn");
       else
 	obj.removeClass("inturn");
-      //obj.css("background-color", inturn ? "green" : "")
       $("#hand_" + this_pos).css("background-color", inturn ? "green" : "")
 
       .css("color", inturn ? "white" : "black"); // 要css化
@@ -199,9 +199,7 @@ var Layout = function() {
       if (jp.is_hora) {
 	$("#fuohbase").css("border-" + this_pos + "-color", "yellow");
 	obj.css("color", "black");
-	//obj.css("background-color","yellow").css("color", "black");
 	$("#hand_" + this_pos).css("background-color", "yellow");
-	
       }
 
       $(".wind_" + this_pos).css("z-index", inturn ? 0 : 1);
@@ -292,7 +290,7 @@ var Layout = function() {
       var furo = jp.tehai_furo[i];
       for (var j = 0; j < furo.length; j++) {
         var id = furo[j];
-        if(jp.typfuro[i] == ANKAN){
+        if (jp.typfuro[i] == ANKAN) {
           var attr = ((j == 1) || (j == 2)) ? imgpath(0) : imgpath(id);
         } else if(furo.length == 4) {
           var attr = 
@@ -341,7 +339,7 @@ var Layout = function() {
     for (var i = 0; i < jp.sutehai.length; i++) {
       var id = jp.sutehai[i];
       if (id == 0) continue;
-      switch(jp.sutehai_type[i]){
+      switch(jp.sutehai_type[i]) {
       case 1: 
         var attr = imgpath(id);
         attr.style += "opacity:.4"; //border:red 1px solid;";
@@ -432,12 +430,11 @@ var Layout = function() {
   };
 
   this.layout_aspect = function(obj) {
-    var strwind = ["東","南","西","北"];
-    var str_fuwo = strwind[parseInt(obj.aspect / 4)] + (obj.aspect % 4 + 1) + "-";
-    str_fuwo += (obj.honba);
-    str_fuwo += " 供" + (obj.banked);
-    str_fuwo += '<span id="sum_pt"></span>'
-    $("#aspect").html(str_fuwo);
+    var res = wind2name[parseInt(obj.aspect / 4)];
+    res += (obj.aspect % 4 + 1) + "-" + (obj.honba);
+    res += " 供" + (obj.banked);
+    res += '<span id="sum_pt"></span>'
+    $("#aspect").html(res);
   };
 
   /*
@@ -474,7 +471,6 @@ var Layout = function() {
       var res = "";
     }
 
-    var windname = ["東", "南", "西", "北"];
     var ptr = [];
     for (var pindex = 0; pindex < 4; pindex++) {
       var wind = (pindex - (jang_cond.aspect % 4) + 4) % 4;
@@ -492,7 +488,7 @@ var Layout = function() {
     for (var pindex = 0; pindex < 4; pindex++) {
       var wind = (pindex - (jang_cond.aspect % 4) + 4) % 4;
       res += (jang_cond.jp[wind].operable) ? "<tr style='background: #9fc;'>" : "<tr>";
-      res += "<td>" + windname[wind] + ":";
+      res += "<td>" + wind2name[wind] + ":";
       res += /* jang_cond.jp[wind].name.substr(0, 6) + */ "</td>";
       res += "<td>" + jang_cond.jp[wind].pt + "</td>";
       for(var i = 0; i < 3; i++) {
@@ -627,6 +623,18 @@ var JangTable = function(){
   this.aspect = 0;
   this.double_rong = false;
 
+  this.init_aspect = function() {
+    this.yama = 70;
+    this.lingshang = 4;
+    this.turn = 0;
+    this.haifu = [];
+    this.dora = [];
+    this.msgstock = [];
+    this.is_rag = false;
+    this.is_end = false;
+    this.is_haitei = false;
+  }
+
   this.sum_of_points = function() {
     try {
       var sum = 0;
@@ -658,18 +666,6 @@ var JangTable = function(){
     if (!this.is_end) return false;
     for (var i = 0; i < 4; i++) if (this.jp[i].is_hora) return false;
     return true;
-  }
-
-  this.init_aspect = function() {
-    this.yama = 70;
-    this.lingshang = 4;
-    this.turn = 0;
-    this.haifu = [];
-    this.dora = [];
-    this.msgstock = [];
-    this.is_rag = false;
-    this.is_end = false;
-    this.is_haitei = false;
   }
 
   this.discard_tile_just_now = function() {

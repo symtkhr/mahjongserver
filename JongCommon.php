@@ -29,7 +29,8 @@ if(isset($argv[1]) && $argv[1] === "unit") {
   }
   
 
-  function  cmd_debug() {
+  function  cmd_debug()
+  {
     global $jang_cond;
     while(1) {
       foreach(explode(" ", get_stdin()) as $argvj){
@@ -45,7 +46,8 @@ if(isset($argv[1]) && $argv[1] === "unit") {
 }
 
 // TempCheck
-class FinCheck {
+class FinCheck
+{
   var $mai = array();
   var $te  = array();
   var $allmai = 0;
@@ -106,7 +108,8 @@ class FinCheck {
   }
   
   // devide in ments
-  function get_ments($i){
+  function get_ments($i)
+  {
     while ($this->mai[$i] == 0){ 
       if ($i >= 33) return true;
       $i++;
@@ -127,7 +130,8 @@ class FinCheck {
   }
 }
 
-function haifu_make_secret($haifu, $wind, $washizu = false) {
+function haifu_make_secret($haifu, $wind, $washizu = false)
+{
   if ($wind == -1) return $haifu;
   if (!preg_match("/^([0-3])(DRAW|DEAL)_([0-9a-f]+)/", $haifu, $ref)) return $haifu;
   if ($ref[0] * 1 == $wind) return $haifu;
