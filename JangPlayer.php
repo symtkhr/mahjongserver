@@ -4,28 +4,33 @@ class JangPlayer {
   var $name;
   var $wind = -1;
   var $pt = 0;
-  var $tehai = array();
-  var $tehai_furo = array();
-  var $typfuro = array();
-  var $sutehai = array();
-  var $sutehai_type = array();
+  var $token;
+
+  //class: 手牌
+  public $tehai = array();   // private未遂
+  private $tehai_furo = array();
+  private $typfuro = array();
+  private $sutehai = array();
+  private $sutehai_type = array();
+
+  //class: フラグ類
   var $is_reach  = 0;
   var $is_1patsu = false; 
   var $is_tempai = false;
-  var $is_furiten = false;
+  private $is_furiten = false;
   var $is_hora = false;
   var $is_kaihua = false;
   var $is_tenho = true;
-  var $bit_naki = 0;
-  var $rsv_naki = array("type" => 0, "target" => array());
-  var $rsv_pay = array(0, 0, 0);
-  var $token;
-  var $approval;
-  var $is_houki = false;
+  public $bit_naki = 0; // private未遂
+  public $rsv_naki = array("type" => 0, "target" => array()); //private未遂
+  public $is_houki = false; // private未遂
   var $is_nagashi = true;//todo:流局時判定でもいいのでは?
-  var $is_connected = true;
-  var $is_yakunashi = false;
   var $changkong_stolen = -1;
+  //var $is_yakunashi = false;
+
+  var $rsv_pay = array(0, 0, 0);
+  var $approval;
+  var $is_connected = true;
   var $spare_time = 10;
 
   const BIT_RON = 8;
@@ -46,7 +51,7 @@ class JangPlayer {
   const HORA_FURITEN = 0xbeef;
   const HORA_VARID = 1;
 
-  function init_members($wind) {
+  public function init_members($wind) {
     $this->wind = $wind;
     $this->tehai = array();
     $this->tehai_furo = array();
@@ -67,13 +72,37 @@ class JangPlayer {
     $this->spare_time = self::DEFAULT_SPARE_TIME;
   }
 
-  function draw_tile($tile) {
+  public function init_flags_after_naki() {
+    $this->bit_naki = 0;
+    $this->rsv_naki = array("type" => 0, "target" => array());
+    $this->is_1patsu = false;
+    $this->is_tenho = false;
+    $this->changkong_stolen = -1;
+  }
+
+  public function last_discard() {
+    return end($this->sutehai);
+  }
+
+  public function draw_tile($tile) {
     if (count($this->tehai) % 3 != 1) exit("tahai or shohai");
     array_push($this->tehai, $tile);
     if (!$this->is_reach) $this->is_furiten = false;
   }
 
-  function discard($turnwind, $target, $is_call_reach) {
+  public function deal($tile) {
+    $this->tehai = $tile;
+    sort($this->tehai); 
+    $this->tempaihan();
+  }
+
+  public function tehai_sort($is_tsumo) {
+    if ($is_tsumo) $tsumohai = array_pop($this->tehai);
+    sort($this->tehai); 
+    if ($is_tsumo) array_push($this->tehai, $tsumohai);
+  }
+
+  public function discard($turnwind, $target, $is_call_reach) {
     if ($turnwind != $this->wind) return false;
 
     $tehai = $this->tehai;
@@ -117,7 +146,7 @@ class JangPlayer {
       return $cmd;
   }
 
-  function declare_reach(){
+  private function declare_reach(){
     // validiation check for reach
     if ($this->is_reach) return false;
     if (!$this->is_menzen()) return false;
@@ -128,7 +157,21 @@ class JangPlayer {
     return true;
   }
 
-  function nakihan($turnwind, $sutehai, $is_only_rong = false){
+  public function changkonghan($target, $stolen_jp)
+  {
+    $this->nakihan($stolen_jp->wind, $target, true);
+    if ($this->bit_naki & self::BIT_RON) { 
+      $this->bit_naki = self::BIT_RON;
+      //echo "<<Flag Changkong>>";
+      $stolen_jp->changkong_stolen = $target;
+      return true;
+    }
+    $this->bit_naki = 0;
+    return false;
+  }
+
+
+  public function nakihan($turnwind, $sutehai, $is_only_rong = false) {
     if ($this->wind == $turnwind) return;
     if (!$this->is_connected) return;
 
@@ -173,7 +216,7 @@ class JangPlayer {
     }
   }
 
-  function tempaihan(){
+  private function tempaihan() {
     $hands_check = new FinCheck;
     $this->is_tempai = ( $hands_check->tenpai_hantei($this->tehai) );
     if (!$this->is_tempai) {
@@ -190,13 +233,13 @@ class JangPlayer {
     }
   }
 
-  function set_reservation($naki_type, $target) {
+  private function set_reservation($naki_type, $target) {
     $this->bit_naki = 0;
     $this->rsv_naki["type"] = $naki_type;
     $this->rsv_naki["target"] = $target;
   }
 
-  function expose_tiles($nakihai) { 
+  public function expose_tiles($nakihai) { 
     $tehai = $this->tehai;
     $target = $this->rsv_naki["target"];
     $typefuro = $this->rsv_naki["type"];
@@ -217,6 +260,7 @@ class JangPlayer {
     return true;
   }
 
+  /*
   function delare_tsumo(){
     $turn = $this->wind;
     $hands_check = new FinCheck;
@@ -224,8 +268,9 @@ class JangPlayer {
     $this->is_hora = true;
     return true;
   }
+  */
 
-  function reserve_hora($is_me, $is_yakunashi){
+  public function reserve_hora($is_me, $is_yakunashi){
     $turn = $this->wind;
 
     // Tsumo
@@ -258,14 +303,14 @@ class JangPlayer {
     return self::HORA_VARID;
   }
 
-  function is_menzen() {
+  private function is_menzen() {
     foreach($this->typfuro as $typfuro) {
       if ($typfuro != self::ANKAN && $typfuro != 0) return false;
     }
     return true;
   }
 
-  function check_yaku($is_tsumo, $is_yakunashi) {
+  private function check_yaku($is_tsumo, $is_yakunashi) {
     if (!$is_yakunashi) return true;
     // 状況役:   
     if ($this->is_tenho) return true;
@@ -280,7 +325,10 @@ class JangPlayer {
     return false;
   }
 
-  function reserve_kong($target, $is_me){
+  public function reserve_kong($target, $is_me) {
+    //$target = $stolen_jp->last_discard();
+    //$is_me = ($stolen_jp->wind == $this->wind);
+
     if (!($this->bit_naki & self::BIT_KAN) && !$is_me) return false;
     
     $tehai = $this->tehai;
@@ -328,7 +376,7 @@ class JangPlayer {
     return false;
   }
 
-  function reserve_pong($disc, $q){
+  public function reserve_pong($disc, $q){
     if (!($this->bit_naki & self::BIT_PON)) return false;
     $targets = array();
     
@@ -343,7 +391,7 @@ class JangPlayer {
     return true;
   }
   
-  function reserve_chi($disc, $q){
+  public function reserve_chi($disc, $q){
     if (!($this->bit_naki & self::BIT_CHI)) return false;
     $targets = array();
     $ments = array(id2num($disc));
@@ -362,7 +410,14 @@ class JangPlayer {
     return true;
   }
 
-  function show_naki_form($for_sock = true){
+  public function pass_naki() {
+    if ($this->bit_naki == 0) return false;
+    if ($this->bit_naki & self::BIT_RON) $this->is_furiten = true;
+    $this->bit_naki = 0;
+    return true;
+  }
+
+  public function show_naki_form($for_sock = true){
     if ($this->bit_naki == 0){ return; }
     
     $menu_all = array("DECLC","DECLP","DECLK","DECLF");
@@ -387,7 +442,72 @@ class JangPlayer {
     
   }
 
-  function save_spare_time($time) {
+  private function is_kamicha($compared, $referred) {
+    return ((4 + $compared - $referred) % 4 > (4 + $this->wind - $referred) % 4);
+  }
+
+  /*
+　他栄　自栄   待つ 遮る
+    　o   o → x    x  :A (wronなら)
+    未o   o → x    o  :B (!wronかつ自==下家なら)
+               o    x  :C (wronまたは自==上家なら)
+   未x    o → x    o  :D
+　 未x　< x → x    o  :E
+   未x  > x → o    x  :F
+   未0    0 → x    x  :G
+   */
+
+  public function prior_to(JangPlayer $rival, JangPlayer $stolen, $wron) {
+    // 比較対象外
+    if ($rival->wind == $stolen->wind) return "NONE";
+    if ($rival->wind == $this->wind) return "NONE";
+
+    $my_naki = $this->rsv_naki["type"];
+
+    if ($my_naki == self::RONG) 
+    {
+      //A:二家和確定
+      if ($wron && $rival->rsv_naki["type"] == self::RONG) return "NONE";
+
+      //D:単独和了
+      if (!($rival->bit_naki & self::BIT_RON)) return "PRIOR";
+
+      //B:頭跳ね
+      if (!$wron && $this->is_kamicha($rival->wind, $stolen->wind)) return "PRIOR";
+
+      //C:二家和フラグ待ち or 上家待ち
+      return "WAIT";
+    } 
+
+    //E:自家鳴き
+    if ($rival->bit_naki < $my_naki) return "PRIOR";
+
+    //F:他家鳴き
+    if (0 < $my_naki) return "WAIT";
+
+    //G:鳴かない
+    return "NONE";
+  }
+
+  //鳴き遮り
+  public function negate_naki() {
+    $this->bit_naki = 0;
+    $this->rsv_naki["type"] = 0;
+  }
+
+  public function provide_sutehai() {
+    array_push($this->sutehai_type, 
+	       array_pop($this->sutehai_type) | JangPlayer::DISCTYPE_STOLEN);
+    $this->is_nagashi = false; 
+  }
+
+  // 通らず対策
+  public function cancel_tohraba_reach() {
+    if ($this->is_1patsu && $this->is_reach)
+      $this->is_reach = false;
+  }
+
+  public function save_spare_time($time) {
     if ($time < 0) 
       $this->spare_time = 0;
     else if (self::DEFAULT_SPARE_TIME < $time) 
@@ -396,7 +516,7 @@ class JangPlayer {
       $this->spare_time = $time;
   }
 
-  function show_decl_form($for_sock = true){
+  public function show_decl_form($for_sock = true){
     $menu = array();
     $mai = array();
     $cmd_sort = "";
@@ -443,8 +563,7 @@ class JangPlayer {
     return implode(";", $menu);
   }
   
-  ////// [[Show Situation Notice]] //////
-  function dump_stat($is_order){
+  public function dump_stat($is_order){
     $str_te = "";
     $num_te = "";
     $str_st = "";

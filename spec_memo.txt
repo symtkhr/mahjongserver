@@ -1,3 +1,130 @@
+<2/9>
+設計
+A House has arbitary amount of Tables.
+A Table has 4 Players.
+A Player has Point, Wind & Tacks.
+
+Table [|]
+Player []
+クラス：プレイヤ
+プロパティ：識別ID/名前/風/点/手牌/副露牌/捨牌/フラグ(立直・一発・聴牌・振聴・鳴き待ち)/鳴き予約
+メソッド：摸牌する/打牌する/立直する/鳴けるか判定する/鳴きを予約する/鳴きを実行する/牌譜に記録する
+
+クラス：雀卓
+プロパティ：牌壁/手番/プレイヤ/局/牌譜/(プレイ中/鳴きラグ中)
+メソッド：牌譜を解釈する/局を進める/ルールを設定する
+移行予定メソッド：和了点数を宣言する/流局点数を宣言する/点棒授受を確定する/点棒授受を得る
+移行予定メソッド：参加人数を得る/参加する/参加者の識別番号を得る
+移行予定めそっど：配牌する
+
+クラス：点棒
+プロパティ：供託
+メソッド：和了点数を宣言する/流局点数を宣言する/点棒授受を確定する
+
+クラス：牌譜
+プロパティ：牌譜
+メソッド：スライスする/長さを得る/手牌を作る/配牌を作る/単牌の操作を作る/複数牌の操作を作る/終了を作る/鳴きを作る/和了を作る
+
+クラス：牌壁
+プロパティ：山牌/王牌
+めそっど：配牌する/ドラをめくる/嶺上牌を引く/(自摸る)
+
+クラス：局
+プロパティ：局/本場/#供託#/プレイ中/流局中
+メソッド：局を進める/局を進めてよいと確認する
+
+クラス：ソケット
+プロパティ：(なし)
+メソッド：鯖起動
+
+クラス：メッセージ ← 雀荘
+プロパティ：送信バッファあり
+メソッド：次の送信バッファを得る/受信メッセージを処理する/指定の接続を断つ
+427 = 256 + 1 + 128 + 32 + 8 + 2 = 0x1ab
+
+[ソケット]
+  ↑↓  
+[メッセージ]
+   ↓
+[House]1---n[Visitor]
+    |1        A
+    |n        |
+[Table]       |
+    |1        |
+    +----4[Player]1----+---1[Point]
+    |            |     +---1[Wind]
+    +--1[Turn]---+     |
+    |            |     +---1[Hand]1-------.
+    +----1[JongLog]    |                  |
+    |                  +---1[Discard]1-.  |
+    +----1[Aspect]     +---1[Stat]     |  |
+    +                                 n|  |n
+    +----1[TileWall]1----------------n[Tile]
+
+Table->addPlayer(Player);
+JongLog->eval(Haifu);
+
+[AspectTransition]
+JongTable.php:13:  function __construct($last_aspect) 
+JongTable.php:18:  public function turn_to_next($jp_obj)
+JongTable.php:41:  private function check_renchang($jp_obj)
+JongTable.php:51:  private function check_gameover($jp_obj)  {
+JongTable.php:64:  private function check_hako($jp_obj)
+JongTable.php:72:  private function check_agari_yame($jp_obj)
+[JongLog]
+JongTable.php:101:  public function slice($from)
+JongTable.php:110:  public function length()
+JongTable.php:115:  public function make($str_haifu)
+JongTable.php:127:  public function make_hand(JangPlayer $jp)
+JongTable.php:134:  public function make_deal($wind, $tehai)
+JongTable.php:141:  public function make_op($op, $wind, $tile)
+JongTable.php:150:  public function make_ops($op, $wind, $tilearray)
+JongTable.php:157:  public function make_end()
+JongTable.php:162:  function make_steal($wind, $rsv_naki)
+JongTable.php:181:  function make_hora($wind, $hora_type)
+[PointManager]
+JongTable.php:206:  public function point_calling($playerIndex, $wind, $point)
+JongTable.php:216:  public function commit_payment()
+JongTable.php:226:  private function is_all_finishers_reserved()
+JongTable.php:235:  private function reserve_payment($player, $wind, $payments)
+JongTable.php:289:  private function reserve_kyotaku()
+JongTable.php:314:  public function return_point()
+JongTable.php:323:  public function reserve_payment_ryukyoku()
+[Table]
+JongTable.php:387:  function __construct($table_id) 
+JongTable.php:394:  function dump_stat()
+JongTable.php:404:  function init_members()
+JongTable.php:412:  public function commit_continue()
+JongTable.php:419:  public function is_inplay()
+JongTable.php:424:  private function init_aspects()
+JongTable.php:598:  function tileset($needle = false)
+JongTable.php:660:  public function deal_tiles($TSUMIKOMI = false)
+JongTable.php:702:  private function open_dora()
+JongTable.php:724:  private function discard_process($qwind, $qtarget, $is_reach = false)
+JongTable.php:743:  private function hora_process($playerIndex, $is_yakunashi)
+JongTable.php:776:  private function open_hand($playerIndex, $is_tsumo = false)
+JongTable.php:785:  private function open_ura($playerIndex)
+JongTable.php:801:  private function kong_process($playerIndex, $qtarget)
+JongTable.php:825:  private function check_changkong($target)
+JongTable.php:833:  private function draw_lingshang($naki_type)
+JongTable.php:844:  private function pong_process($playerIndex, $qtarget)
+JongTable.php:854:  private function chi_process($playerIndex, $qtarget)
+JongTable.php:864:  private function pass_process($playerIndex)
+JongTable.php:879:  private function flags_cancelled_by_naki()
+JongTable.php:885:  private function exec_naki()
+JongTable.php:916:  public function eval_command($haifu, $playerIndex = -1)
+JongTable.php:964:  function is_naki_ragging()
+JongTable.php:971:  private function turn_to_next()
+JongTable.php:985:  private function check_ryukyoku()
+JongTable.php:1006:  private function check_simultaneous($playerIndex)
+JongTable.php:1070:  function check_timeout($is_connect)
+JongTable.php:1106:  private function save_jokyo()
+
+[PlayerHandler]
+JongTable.php:608:  public function jp_size() 
+JongTable.php:617:  public function add_player($name, $id)
+JongTable.php:1129:  public function get_player_index($token)
+
 <1/27>
 ソケットクラスの見直し
 [現状]

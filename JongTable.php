@@ -4,7 +4,7 @@
 class AspectTransition {
   var $aspect = -1;
   var $honba = 0;
-  var $banked = 0; // これってここか?
+  var $banked = 0; // これってここか? → PointManager
   var $inplay = false;
   var $is_ryukyoku = false;
   private $last_aspect = 7;
@@ -112,7 +112,7 @@ class JongLog {
     return count($this->haifu);
   }
 
-  public function make($str_haifu)
+  private function make($str_haifu)
   {
     if ($this->is_loading || $this->is_unittest) {} 
     else {
@@ -133,7 +133,7 @@ class JongLog {
 
   public function make_deal($wind, $tehai)
   {
-    $str_haifu = $wind . "DEAL_";
+    $str_haifu = sprintf("%1dDEAL_", $wind);
     foreach($tehai as $id) $str_haifu .= sprintf("%02x", $id);
     $this->make($str_haifu);
   }
@@ -159,7 +159,7 @@ class JongLog {
     $this->make("END");
   }
 
-  function make_steal($wind, $rsv_naki)
+  public function make_steal($wind, $rsv_naki)
   {
     switch($rsv_naki["type"]) {
     case JangPlayer::DMK:  $op = "K"; break;
@@ -178,7 +178,7 @@ class JongLog {
     $this->make($haifu);
   }
 
-  function make_hora($wind, $hora_type)
+  public function make_hora($wind, $hora_type)
   {
     switch ($hora_type) 
     {
@@ -196,16 +196,268 @@ class JongLog {
     }
   }
 }
+
 ///////////////////////////////////////////////////////
-class JongTable {
-  //山牌クラス
-  var $yamahai = array();
-  var $wangpai = array();
+class PointBox
+{
+  private $rsv_pay;
+  private $jp;
+  public $banked;
+  private $aspect;
+
+  private function init_rsv_pay() 
+  {
+    $this->rsv_pay = (object)array("hands"=>0, "honba"=>0, "banked"=>0);
+  }
+
+  public function point_calling($jp, $point)
+  {
+    if ($this->is_all_finishers_reserved()) return true;
+    $this->reserve_payment($jp, $point);
+    if (!$this->is_all_finishers_reserved()) return false;
+    $this->reserve_kyotaku();
+    return true;
+  }
+
+  public function commit_payment()
+  {
+    foreach ($this->jp as $jp) {
+      $jp->pt += $jp->rsv_pay->hands;
+      $jp->pt += $jp->rsv_pay->honba;
+      $jp->pt += $jp->rsv_pay->banked;
+      $jp->pt->init_rsv_pay();
+    }
+  }
+
+  private function is_all_finishers_reserved()
+  {
+    foreach($this->jp as $jp) {
+      if ($jp->is_hora && ($jp->rsv_pay->hands == 0)) return false;
+    }
+    return true;
+  }
+
+  private function reserve_payment($jp, $payments)
+  {
+    $honba = $aspect->honba; //* aspect
+
+    if (DEBUG) {
+      echo "(" . $jp->wind . "declared finish!)\n";
+    }
+    if (!$jp->is_hora)
+      return alert("Not finshed!");
+
+    if (0 < $jp->rsv_pay->hands) {
+      return alert("Already got");
+    }
+
+    //foreach ($this->jp as &$jp) $jp->rsv_pay = array(0, 0, 0);
+    $jp->rsv_pay->hands = $payments[0] / 100;
+    $jp->rsv_pay->honba = $honba * 3;
+    
+    if (!$jp->is_turn()) {
+      /* case: RONG */
+      $this->jp[$this->turn]->rsv_pay->hands -= $payments[0] / 100; //* turn
+      $this->jp[$this->turn]->rsv_pay->honba -= $honba * 3;
+    }
+    else 
+    {
+      /* case: TSUMO */
+      foreach ($this->jp as $other_jp) //* jp
+      {
+        if ($other_jp->wind == $jp->wind) continue;
+        $other_jp->rsv_pay->hands = 
+          (($other_jp->wind == 0) ? -$payments[2] : -$payments[1]) / 100;
+        $other_jp->rsv_pay->honba = -$honba;
+      }
+    }
+    return;
+    /*
+    // case: common_get
+    if ($this->jp[$player]->is_kamicha())
+    {
+      $this->jp[$player]->rsv_pay[2] = $this->aspect->banked;
+      $this->aspect->banked = 0;
+      foreach ($this->jp as $i => &$jp)
+      {
+	if ($jp->is_hora) continue;
+	if ($jp->is_reach) 
+	{ 
+	  $jp->rsv_pay[2] = -10;
+	  $this->jp[$player]->rsv_pay[2] += 10;
+	}
+      }
+    }
+    return;
+    */
+  }
+
+  //上家取り
+  private function uppermost_finisher()
+  {
+    $player = -1;
+    for ($i = 0; $i < 4; $i++)
+    {
+      $player = ($this->turn + $i) % 4;
+      if ($this->jp[$player]->is_hora) break;
+    }
+    if ($player < 0) return null;
+    return $this->jp[$player];
+  }
+
+  private function reserve_kyotaku()
+  {
+    $kamicha = $this->uppermost_finisher();
+    if (!$kamicha) return alert("nobody calls hora");
+
+    $kamicha->rsv_pay->banked = $this->banked;
+    $this->banked = 0;
+
+    foreach ($this->jp as $jp)
+    {
+      if ($jp->is_hora) continue; //※ダブロン下家でも立直棒は本人に戻る
+      if ($jp->is_reach) 
+      { 
+	$jp->rsv_pay->banked = -10;
+	$kamicha->rsv_pay->banked += 10;
+      }
+    }
+  }
+
+  public function return_point()
+  {
+    $ret_array = array();
+    foreach($this->jp as $jp)
+      $ret_array = array_merge($ret_array, $jp->rsv_pay);
+    return $ret_array;
+  }
+
+  public function reserve_payment_ryukyoku()
+  {
+    foreach ($this->jp as $jp) $jp->pt->init_rsv_pay();
+    // 流し満貫精算
+    foreach ($this->jp as $i => $jp) {
+      if ($jp->is_nagashi) {
+        $pay_nagashi = true;
+        $jp->rsv_pay->hands += ($jp->wind != 0) ? 80 : 120;
+        for ($j = 0; $j < 4; $j++) {
+          if ($j == $i) continue; 
+          $this->jp[$j]->rsv_pay->hands += 
+            ($jp->wind == 0 || $this->jp[$j]->wind == 0) ? -40 : -20;
+        }
+      }
+    }
+    // 聴牌者確認
+    $win = 0;
+    foreach ($this->jp as $jp) {
+      if ($jp->is_tempai) $win++;
+      if ($jp->is_reach) {
+        $jp->rsv_pay->banked = -10;
+        $this->banked += 10;
+      }
+    }
+    // 聴牌料精算
+    if (!$pay_nagashi) {  
+      $gain = array(0, 30, 15, 10, 0);
+      foreach ($this->jp as $jp) 
+        $jp->rsv_pay->hands = 
+          ($jp->is_tempai) ? $gain[$win]: -$gain[4 - $win];
+    }
+    return $this->return_point();
+  }
+}
+
+///////////////////////////////////////////////////////
+class TileWall 
+{
+  public $yamahai = array();
+  public $wangpai = array();
   private $dora = 0;
   private $lingshang = 4;
   private $tileset_query = "";
 
-  //手番クラス
+  private function init_aspects()
+  {
+    $this->yamahai = array();
+    $this->wangpai = array();
+    $this->lingshang = 4;
+    $this->dora = 0;
+  }
+
+  private function shuffle_tiles()
+  {
+    //全メンバの変数をリセットすべき?
+    $this->init_aspects();
+    //洗牌
+    for ($i = 0; $i < 136; $i++)
+      $this->yamahai[$i] = $i + 1; 
+    
+    for ($i = 0; $i < 3000; $i++) {
+      $r1 = rand(0, 136);
+      $r2 = rand(0, 136);
+      if ($r1 > $r2)
+	list($r1, $r2) = array($r2, $r1); 
+      for ($j = 0; $j < abs($r2 - $r1); $j++) { 
+	list($this->yamahai[$r1 + $j], $this->yamahai[$j]) = 
+	  array($this->yamahai[$j], $this->yamahai[$r1 + $j]); 
+      }
+    }
+    for ($i = 0; $i < 14; $i++) 
+      $this->wangpai[$i] = array_shift($this->yamahai);
+  }
+
+  public function deal_tiles($TSUMIKOMI = false)
+  {
+    if (!$TSUMIKOMI) {
+      $this->shuffle_tiles();
+    }
+    
+    // Dealing tiles
+    foreach ($this->jp as $jp) {
+      $tile = array();
+      for ($j = 0; $j < 13; $j++) $tile[$j] = array_shift($this->yamahai);
+      
+      $jp->deal($tile);         //* jp
+      $haifu->make_deal($jp->wind, $jp->tehai);   //* haifu
+    }
+
+    $this->open_dora();
+    $tile = array_shift($this->yamahai);  // 1st Drawing
+    array_push($this->jp[$this->turn]->tehai, $tile); //* jp, turn
+    $this->haifu->make_op("DRAW", 0, $tile);          //* haifu
+  }
+
+  public function open_dora()
+  {
+    while ($this->dora - 1 < 4 - $this->lingshang) {
+      $this->haifu->make_op("DORA", -1, $this->wangpai[$this->dora]); //* haifu
+      $this->dora++;
+    }
+  }
+
+  public function draw_lingshang($jp, $naki_type) //* 引数変化
+  {
+    $target = array_shift($this->yamahai);
+    $jp->draw_tile($target);                          
+    $this->haifu->make_op("DRAW", $jp->wind, $target); //* haifu
+    $this->lingshang--;
+    $jp->is_kaihua = true;
+    if ($naki_type == JangPlayer::ANKAN) $this->open_dora();
+  }
+
+}
+
+
+///////////////////////////////////////////////////////
+class JongTable {
+  //山牌クラス
+  private $yamahai = array();
+  private $wangpai = array();
+  private $dora = 0;
+  private $lingshang = 4;
+  private $tileset_query = "";
+
+  //面子クラス
   var $turn = 0;
   var $jp = array();
   private $is_end = false;
@@ -284,7 +536,7 @@ class JongTable {
   // class PointManager
   public function commit_payment()
   {
-    foreach($this->jp as &$jp){
+    foreach($this->jp as $jp){
       for ($i = 0; $i < 3; $i++)
         $jp->pt += $jp->rsv_pay[$i];
       $jp->rsv_pay = array(0, 0, 0);
@@ -383,7 +635,7 @@ class JongTable {
   public function return_point()
   {
     $ret_array = array();
-    foreach($this->jp as &$jp)
+    foreach($this->jp as $jp)
       $ret_array = array_merge($ret_array, $jp->rsv_pay);
     return $ret_array;
   }
@@ -431,9 +683,9 @@ class JongTable {
   function tileset($needle = false)
   {
     if ($needle) {
-       return in_array($needle, explode(";", $this->tileset_query));
+      return in_array($needle, explode(";", $this->tileset_query));
     } else {
-       return $this->tileset_query;
+      return $this->tileset_query;
     }
   }
 
@@ -490,6 +742,7 @@ class JongTable {
 
   }
   */
+  // TileWall
   public function deal_tiles($TSUMIKOMI = false)
   {
     if (!$TSUMIKOMI) {
@@ -516,12 +769,11 @@ class JongTable {
 
     
     // Dealing tiles
-    foreach ($this->jp as &$jp) {
-      for ($j = 0; $j < 13; $j++)
-        $jp->tehai[$j] = array_shift($this->yamahai);
+    foreach ($this->jp as $jp) {
+      $tile = array();
+      for ($j = 0; $j < 13; $j++) $tile[$j] = array_shift($this->yamahai);
       
-      sort($jp->tehai); 
-      $jp->tempaihan();
+      $jp->deal($tile);
       $this->haifu->make_deal($jp->wind, $jp->tehai);
     }
 
@@ -533,6 +785,7 @@ class JongTable {
     $this->save_jokyo();
   }
 
+  //class: TileWall
   private function open_dora()
   {
     while ($this->dora - 1 < 4 - $this->lingshang) {
@@ -555,25 +808,27 @@ class JongTable {
   }
   */
 
+  //class: 捨牌
   private function discard_process($qwind, $qtarget, $is_reach = false)
   {
     if ($this->is_naki_ragging()) return alert("waiting for rag");
     $jp =& $this->jp[$this->turn];
     $target = hexdec($qtarget);
     $op_rev = $jp->discard($qwind, $target, 
-                           $is_reach && count($this->yamahai) >= 4);
+                           $is_reach && (4 <= count($this->yamahai)));
     if (!$op_rev) return alert(":invalid target");
     $this->haifu->make_op($op_rev, $qwind, $target);
-        
+
     if ($jp->is_kaihua) {
       $jp->is_kaihua = false;
       $this->open_dora();
     }
-    foreach ($this->jp as &$other_jp)
+    foreach ($this->jp as $other_jp)
       $other_jp->nakihan($jp->wind, $target, count($this->yamahai) <= 0);
     $this->turn_to_next();
   }
 
+  //class: 捨牌 || 手牌
   private function hora_process($playerIndex, $is_yakunashi)
   {
     $jp =& $this->jp[$playerIndex];
@@ -598,8 +853,7 @@ class JongTable {
 	$this->haifu->make_hora($jp->wind, $hora_type);
       }
       if ($this->check_simultaneous($playerIndex)) return;
-      $nakihai = end($this->jp[$this->turn]->sutehai);
-      if (!$this->exec_naki($nakihai)) $this->turn_to_next(); // come here when goron
+      if (!$this->exec_naki()) $this->turn_to_next(); // come here when goron
     }
     
     if ($this->is_end) {
@@ -608,19 +862,17 @@ class JongTable {
     }
   }
 
+  //手牌
   private function open_hand($playerIndex, $is_tsumo = false)
   {
     $jp = $this->jp[$playerIndex];
-
-    if ($is_tsumo) $tsumohai = array_pop($jp->tehai);
-    sort($jp->tehai); 
-    if ($is_tsumo) array_push($jp->tehai, $tsumohai);
-
+    $jp->tehai_sort($is_tsumo);
     $this->open_ura($playerIndex);
     $this->haifu->make_hand($jp);
     $this->is_end = true;
   }
 
+  //TileWall
   private function open_ura($playerIndex)
   {
     $jp = $this->jp[$playerIndex];
@@ -637,6 +889,7 @@ class JongTable {
     }
   }
 
+  //捨牌 || 手牌
   private function kong_process($playerIndex, $qtarget)
   {
     $jp =& $this->jp[$playerIndex];
@@ -654,32 +907,23 @@ class JongTable {
       $this->draw_lingshang($naki_type);
     } else { 
     // Daimingkong
-      $nakihai = end($this->jp[$this->turn]->sutehai);
-      if (!$jp->reserve_kong($nakihai, false)) return alert("Invalid kong");
+      if (!$jp->reserve_kong($this->jp[$this->turn]->last_discard(), false))
+	return alert("Invalid kong");
       if ($this->check_simultaneous($playerIndex)) return;
-      if (!$this->exec_naki($nakihai)) $this->turn_to_next();
+      if (!$this->exec_naki()) $this->turn_to_next();
     }
   }
 
+  //class: 捨牌
   private function check_changkong($target)
   {
     $is_wait_changkong = false;
-
-    $turnwind = $this->jp[$this->turn]->wind; // player who called kong 
-    foreach ($this->jp as &$jp) $jp->nakihan($turnwind, $target, true);
-    foreach ($this->jp as &$jp) {
-      if ($jp->bit_naki & JangPlayer::BIT_RON) { 
-        $jp->bit_naki = JangPlayer::BIT_RON;
-        //echo "<<Flag Changkong>>";
-        $is_wait_changkong = true;
-        $this->jp[$this->turn]->changkong_stolen = $target;
-      } else {
-        $jp->bit_naki = 0;
-      }
-    }
+    foreach ($this->jp as $jp)
+      $is_wait_changkong |= $jp->changkonghan($target, $this->jp[$this->turn]);
     return ($is_wait_changkong);
   }
 
+  //class: TileWall
   private function draw_lingshang($naki_type)
   {
     $jp =& $this->jp[$this->turn];
@@ -691,36 +935,36 @@ class JongTable {
     if ($naki_type == JangPlayer::ANKAN) $this->open_dora();
   }
 
+  //class: 捨牌
   private function pong_process($playerIndex, $qtarget)
   {
     if ($playerIndex == $this->turn) return;
-    $nakihai = end($this->jp[$this->turn]->sutehai);
     $jp =& $this->jp[$playerIndex];
-    if (!$jp->reserve_pong($nakihai, $qtarget)) return alert("Invalid pong");
+    if (!$jp->reserve_pong($this->jp[$this->turn]->last_discard(), $qtarget)) 
+      return alert("Invalid pong");
     if ($this->check_simultaneous($playerIndex)) return;
-    if (!$this->exec_naki($nakihai)) $this->turn_to_next();
+    if (!$this->exec_naki()) $this->turn_to_next();
   }
 
+  //class: 捨牌
   private function chi_process($playerIndex, $qtarget)
   {
     if ($playerIndex == $this->turn) return;
-    $nakihai = end($this->jp[$this->turn]->sutehai);
     $jp =& $this->jp[$playerIndex];
-    if (!$jp->reserve_chi($nakihai, $qtarget)) return alert("Invalid chi");
+    if (!$jp->reserve_chi($this->jp[$this->turn]->last_discard(), $qtarget)) 
+      return alert("Invalid chi");
     if ($this->check_simultaneous($playerIndex)) return;
-    if (!$this->exec_naki($nakihai)) $this->turn_to_next();
+    if (!$this->exec_naki()) $this->turn_to_next();
   }
 
+  //class: 捨牌
   private function pass_process($playerIndex)
   {
     if ($playerIndex == $this->turn) return alert("Invalid pass");
     $jp =& $this->jp[$playerIndex];
-    if ($jp->bit_naki == 0) return alert("Invalid pass");
-    if ($jp->bit_naki & JangPlayer::BIT_RON) $jp->is_furiten = true;
-    $jp->bit_naki = 0;
+    if (!$jp->pass_naki()) return alert("Invalid pass");
     if ($this->check_simultaneous($playerIndex)) return;
-    $nakihai = end($this->jp[$this->turn]->sutehai);
-    if ($this->exec_naki($nakihai)) return;
+    if ($this->exec_naki()) return;
     if ($this->jp[$this->turn]->changkong_stolen < 0) {
       $this->turn_to_next();
     } else {
@@ -729,19 +973,15 @@ class JongTable {
     }
   }
 
+  //class: 捨牌
   private function flags_cancelled_by_naki()
   {
     foreach ($this->jp as $jp)
-    {
-      $jp->bit_naki = 0;
-      $jp->rsv_naki = array("type" => 0, "target" => array());
-      $jp->is_1patsu = false;
-      $jp->is_tenho = false;
-      $jp->changkong_stolen = -1;
-    }
+      $jp->init_flags_after_naki();
   }
 
-  private function exec_naki($nakihai)
+  //class: 捨牌
+  private function exec_naki()
   {
     $stolen_jp =& $this->jp[$this->turn];
 
@@ -750,34 +990,29 @@ class JongTable {
     var_dump($this->jp[3]->rsv_naki);
     echo "==============\n";
 
-    foreach ($this->jp as $i => &$jp) {
+    foreach ($this->jp as $i => $jp) {
       $naki_type = $jp->rsv_naki["type"];
-      //$haifu = $jp->make_rsv_haifu();
       if ($naki_type == 0) continue;
-      $jp->expose_tiles($nakihai); // declaration_commit()
+      $jp->expose_tiles($stolen_jp->last_discard());
       $this->haifu->make_steal($jp->wind, $jp->rsv_naki);
 
       if ($naki_type == JangPlayer::RONG) {
         $jp->is_hora = true;
-        if ($stolen_jp->is_1patsu && $stolen_jp->is_reach)
-          $stolen_jp->is_reach = false;  // 通らず対策
-        $this->open_hand($i);
+        $stolen_jp->cancel_tohraba_reach();
+	$this->open_hand($i);
         continue;
-        
-      } else {
-        
-        array_push($stolen_jp->sutehai_type, 
-                   array_pop($stolen_jp->sutehai_type) | JangPlayer::DISCTYPE_STOLEN);
-        $stolen_jp->is_nagashi = false; 
-        $this->turn = $i;
-        $this->flags_cancelled_by_naki();
-        if ($naki_type == JangPlayer::DMK) $this->draw_lingshang($naki_type);
-        return true;
       }
+
+      $stolen_jp->provide_sutehai();
+      $this->turn = $i;
+      $this->flags_cancelled_by_naki();
+      if ($naki_type == JangPlayer::DMK) $this->draw_lingshang($naki_type);
+      return true;
     }
     return ($this->is_end);
   }
 
+  //class: JongLog?
   public function eval_command($haifu, $playerIndex = -1)
   {
     if ($this->is_end) return alert("already end");
@@ -826,6 +1061,7 @@ class JongTable {
     $this->save_jokyo();
   }
 
+  //class:捨牌
   function is_naki_ragging()
   {
     foreach($this->jp as $jp)
@@ -833,29 +1069,28 @@ class JongTable {
     return false;
   }
 
+  //class: Turn
   private function turn_to_next()
   {
-    $JpInstance =& $this->jp;
-    for ($i = 0; $i < 4; $i++) if ($JpInstance[$i]->bit_naki > 0) return;
-    if ($this->check_ryukyoku()) return;
+    if ($this->is_naki_ragging() || $this->check_ryukyoku()) return;
 
     $this->turn = ($this->turn + 1) % 4;
     $this->pause_since = microtime(true);
     $target = array_shift($this->yamahai);
-    $JpInstance[$this->turn]->draw_tile($target);
-    $this->haifu->make_op("DRAW", $JpInstance[$this->turn]->wind, $target);
+    $this->jp[$this->turn]->draw_tile($target);
+    $this->haifu->make_op("DRAW", $this->jp[$this->turn]->wind, $target);
     //echo "connection check\n";
-    if ($JpInstance[$this->turn]->is_connected) return;
+    if ($this->jp[$this->turn]->is_connected) return;
     $this->check_timeout(false);
-      
   }
 
+  //class: Turn
   private function check_ryukyoku()
   {
-    if (count($this->yamahai) > 0) return false;
+    if (0 < count($this->yamahai)) return false;
 
-    for ($i = 0; $i < 4; $i++) {
-      if ($this->jp[$i]->is_tempai) $this->open_hand($i);
+    foreach ($this->jp as $playerIndex => $jp) {
+      if ($jp->is_tempai) $this->open_hand($playerIndex);
     }
     $this->aspect->is_ryukyoku = true;
     $this->haifu->make_end();
@@ -871,43 +1106,68 @@ class JongTable {
   }
   */
 
+  //class: 捨牌
   private function check_simultaneous($playerIndex)
   {
-    $naki_type = $this->jp[$playerIndex]->rsv_naki["type"];
+    //$naki_type = $this->jp[$playerIndex]->rsv_naki["type"];
     $nakare = $this->turn;
-      
     if ($nakare == $playerIndex) return false;
       
-    $ret = false;
+    $is_waiting = false;
       
-    foreach ($this->jp as $i => $other_jp) {
+    foreach ($this->jp as $rival_jp) {
+      switch($this->jp[$playerIndex]->prior_to($rival_jp, 
+					       $this->jp[$this->turn], 
+					       $this->tileset("wron"))) 
+      {
+      case "PRIOR":
+	$rival_jp->negate_naki();
+	continue;
+      case "WAIT":
+	$is_waiting = true;
+	continue;
+      case "NONE":
+	continue;
+      }
+    }
+
+      /*
+    foreach ($this->jp as $i => $rival_jp) {
       if ($i == $nakare || $i == $playerIndex) continue;
       if ($naki_type == JangPlayer::RONG) 
       {
 	if ($this->tileset("wron") && 
-	    $other_jp->rsv_naki["type"] == JangPlayer::RONG)
+	    $rival_jp->rsv_naki["type"] == JangPlayer::RONG)
+	  //二家和確定
 	  continue;
-        if ($other_jp->bit_naki & JangPlayer::BIT_RON) {
+        if ($rival_jp->bit_naki & JangPlayer::BIT_RON) {
 	  if ($this->tileset("wron")) {
-	    $ret = true;
+	    //二家和フラグ待ち
+	    $is_waiting = true;
 	    continue;
-	  } 
+	  }
 	  else if ((4 + $i - $nakare) % 4 < (4 + $playerIndex - $nakare) % 4) 
 	  {
-            //if ($other_jp->is_kamicha(頭跳ね))
-            $ret = true;
+	    //上家待ち
+	    $is_waiting = true;
             continue;
           }
+	  //和了確定(二家和 or 頭跳ね)
         }
-      } else if ($naki_type < $other_jp->bit_naki) {
-        $ret = true; 
+	//単独和了確定
+      } else if ($naki_type < $rival_jp->bit_naki) {
+	//優先他家待ち
+        $is_waiting = true; 
         continue;
       }
       if ($naki_type == 0) continue;
-      $other_jp->bit_naki = 0;
-      $other_jp->rsv_naki["type"] = 0;
+
+      $rival_jp->bit_naki = 0;
+      $rival_jp->rsv_naki["type"] = 0;
+
     }
-    return $ret;
+      */
+    return $is_waiting;
   }
 
   // class: timer::
@@ -930,8 +1190,8 @@ class JongTable {
 
     // wait for ragging
     if ($this->is_naki_ragging()) {
-
-      for ($i = 0; $i < 4; $i++) $this->jp[$i]->bit_naki = 0;
+      
+      foreach ($this->jp as $jp) $jp->pass_naki();
       $this->turn_to_next();
       return true;
 
@@ -949,19 +1209,14 @@ class JongTable {
   // todo:継承クラス化 SpeakingJongTable extends JongTable
   private function save_jokyo()
   {
-    $JpInstance = $this->jp;
-    $is_ragging = false;
-
     $fp = fopen("jokyo.dat","w");
-    for ($i = 0; $i < 4; $i++)
-      fputs($fp, sprintf("%1dTOKEN_%04x\n", $i, $JpInstance[$i]->token));
-    for ($i = 0; $i < 4; $i++)
-      if ($JpInstance[$i]->bit_naki > 0) $is_ragging = true;
-    if ($is_ragging){
-      for ($i = 0; $i < 4; $i++){
-        $fout = sprintf("%1dRSRV%1d_", $i, $JpInstance[$i]->rsv_naki["type"]);
-        if ($JpInstance[$i]->rsv_naki["target"] !== null)
-          foreach($JpInstance[$i]->rsv_naki["target"] as $target)
+    foreach ($this->jp as $i => $jp)
+      fputs($fp, sprintf("%1dTOKEN_%04x\n", $i, $jp->token));
+    if ($this->is_naki_ragging()) {
+      foreach ($this->jp as $i => $jp) {
+        $fout = sprintf("%1dRSRV%1d_", $i, $jp->rsv_naki["type"]);
+        if ($jp->rsv_naki["target"] !== null)
+          foreach($jp->rsv_naki["target"] as $target)
             $fout .= sprintf("%02x", $target);
         $fout .= "\n";
         fputs($fp, $fout);

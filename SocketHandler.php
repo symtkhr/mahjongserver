@@ -512,6 +512,7 @@ class JongHouse
     $this->stock_buff($rmsg, $this->all_tokens($jang_cond)); 
   }
 
+  //class:aspect
   private function approval_process($msg) 
   {
     $jang_cond = $this->belonging_table($msg->id);
@@ -594,6 +595,7 @@ class JongHouse
       }
     }
     
+    //現状表示(デバッグ用)
     $jang_cond->dump_stat();
     
     // 和了時
