@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja" dir="ltr" class="client-js ve-not-available">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script type="text/javascript" src="jMah_v130.js"></script>
+<script type="text/javascript" src="junk_table.js"></script>
+<script type="text/javascript" src="junk_player.js"></script>
+<script type="text/javascript" src="junk_room.js"></script>
+<link rel="stylesheet" type="text/css" href="default.css">
+<link rel="stylesheet" type="text/css" href="haifu_seq.css">
+
+<title>牌譜レシーバ</title>
+</head>
+<body style="padding:0; margin:0;">
+  <div id="jang_table">
+    <div id="hand_top" class="wind_top">
+      <div id="furo_top0">露t1</div>
+      <div id="furo_top1">露t2</div>
+      <div id="furo_top2">露t3</div>
+      <div id="furo_top3">露t4</div>
+      <div id="inhand_top">
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </div>
+    </div>
+    <div id="hand_left" class="wind_left">
+      <div id="inhand_left">
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+	<br>
+	<img class="yoko">
+      </div>
+      <div id="furo_left0">露L1</div>
+      <div id="furo_left1">露L2</div>
+      <div id="furo_left2">露L3</div>
+      <div id="furo_left3">露L4</div>
+    </div>
+    <div id="hand_bottom" class="wind_bottom">
+      <div id="furo_bottom0">露B1</div>
+      <div id="furo_bottom1">露B2</div>
+      <div id="furo_bottom2">露B3</div>
+      <div id="furo_bottom3">露B4</div>
+      <div id="inhand_bottom">
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </div>
+    </div>
+    <div id="hand_right" class="wind_right">
+      <div id="furo_right0">露R1</div>
+      <div id="furo_right1">露R2</div>
+      <div id="furo_right2">露R3</div>
+      <div id="furo_right3">露R4</div>
+      <div id="inhand_right">
+	<img class="yoko">
+	<br>
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </div>
+    </div>
+    
+    <div id="call_top" class="fukidashi"></div>
+    <div id="call_left" class="fukidashi"></div>
+    <div id="call_bottom" class="fukidashi"></div>
+    <div id="call_right" class="fukidashi"></div>
+    
+    <div id="discard_top0"><span>
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+    </span></div>
+    
+    <div id="discard_top1"><span>
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+    </span></div>
+    
+    <div id="discard_top2"><span>
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+    </span></div>
+    
+    
+    <div id="discard_left0">
+      <span>
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
+    </div>
+    <div id="discard_left1">
+      <span>
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
+    </div>
+    <div id="discard_left2">
+      <span>
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
+    </div>
+    
+    <div id="discard_bottom0">
+      <span>
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </span>
+    </div>
+    <div id="discard_bottom1">
+      <span>
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </span>
+    </div>
+    <div id="discard_bottom2">
+      <span>
+	<img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+      </span>
+    </div>
+    
+    <div id="discard_right0"><span class="bottom_align">
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
+    </div>
+    
+    <div id="discard_right1"><span class="bottom_align">
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
+    </div>
+    
+    <div id="discard_right2"><span class="bottom_align">
+	<img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko"><br><img class="yoko">
+      </span>
+    </div>
+    
+    <div id="fuoh">
+      <div id="fuohbase"></div>
+      <div class="wind_top" 
+	   style="position:aboslute; top:0; left:0; right:0; 
+		  text-align:center; z-index:1; font-color:red;">
+	<span class="name">------</span><br>
+	<span class="pt">000</span>
+	<span class="ch">東</span>
+      </div>
+      <div style="position:absolute; top:36px; right:0;left:0; bottom:36px;
+		  width:50%; text-align:left; float:left; 
+		  word-wrap:break-word" class="wind_left">
+	  <span class="ch">南</span><br>
+	  <span class="name">-------</span><br>
+	  <span class="pt">-000</span>
+      </div>
+      <div style="position:absolute; bottom:36px; right:0;left:0; bottom:36px;
+		  width:50%; text-align:right; margin-left:auto; 
+		  word-wrap:break-word" class="wind_right">
+	  <span class="pt">-000</span><br>
+	  <span class="name">-------</span><br>
+	  <span class="ch">北</span>
+      </div>
+      <div class="wind_bottom" 
+	   style="position:absolute; bottom:0; left:10px; right:10px; 
+		  text-align:center;">
+	<span class="ch">西</span>
+	<span class="pt">-000</span><br>
+	<span class="name">-------</span>
+      </div>
+      <div id="reach_top"></div>
+      <div id="reach_left"></div>
+      <div id="reach_bottom"></div>
+      <div id="reach_right"></div>
+      <div id="abandon_top"></div>
+      <div id="abandon_left"></div>
+      <div id="abandon_bottom"></div>
+      <div id="abandon_right"></div>
+      
+    </div>
+    <div id="wangpai">
+      <span id="deck">残69</span>
+      <img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate"><img class="tate">
+    </div>
+    <div id="point_table">
+      <div id='point_calc' class='payment'>[半荘開始]</div>
+      <div id='point_calc0' class='payment'>[和了0]<br>役<br>役<br>点数</div>
+      <div id='point_calc1' class='payment'>[和了1]<br>役<br>役<br>点数</div>
+      <div id='point_calc2' class='payment'>[和了2]<br>役<br>役<br>点数</div>
+      <div id='point_calc3' class='payment'>[和了3]<br>役<br>役<br>点数</div>
+      <div id='point_agenda' class='payment'>[OK]ボタンをおしてください。
+	<table><tbody><tr><td></td><td></td><td>和了</td><td>本場</td><td>供託</td><td style="width:1em"></td><td style="width:4ex"></td></tr><tr style="background: #9fc;"><td>東:</td><td>-10</td><td>+0</td><td>+0</td><td>+0</td><td>=</td><th>-10</th></tr><tr><td>南:</td><td>-20</td><td>+0</td><td>+0</td><td>+0</td><td>=</td><th>-20</th></tr><tr><td>西:</td><td>30</td><td style="color:blue">+52</td><td style="color:blue">+12</td><td style="color:blue">+20</td><td>=</td><th>114</th></tr><tr><td>北:</td><td>0</td><td style="color:red">-52</td><td style="color:red">-12</td><td>+0</td><td>=</td><th>-64</th></tr></tbody></table>
+      </div>
+    </div>
+    <div id="reservation" class="payment"></div>
+  </div>
+  <!--div style="position:absolute; top:25px; left:25px; font-size:10pt;"-->
+
+  <div id="operation">
+    <div class="transition">
+      <button id="approval" class="op">OK</button>
+      <button id="show_table" class="op">卓表示</button>
+    </div>
+
+    <div style="position:absolute; top:0; left:0; width:190px;">
+      <button id="move_l" class="op">&lt;&lt;</button>
+      <div id="rc" class="op"></div>
+      <button id="move_r" class="op">&gt;&gt;</button>
+    </div>
+
+    <div id="ops_steal">
+      <button id="DECL0" class="ops decl">パス<br>(O)</button>
+      <button id="DECLC" class="ops decl">吃<br>(C)</button>
+      <button id="DECLP" class="ops decl">碰<br>(P)</button>
+      <button id="DECLK" class="ops decl">槓<br>(K)</button>
+      <button id="DECLF" class="ops decl">和了<br>(H)</button>
+    </div>
+
+    <div style="width:170px; white-space:nowrap; font-size:11pt;
+		position:absolute; left:0; bottom:0; ">
+      <span id="aspect">東1-1 供託00</span><br>
+      <span id="rule">喰赤透頭東</span>
+    </div>
+
+    <div style="position:absolute; bottom:0; right:0;">
+      <label class="opc"><input type="checkbox" id="unsteal">鳴きなし (N)</label>
+      <label class="opc"><input type="checkbox" id="unrong">ロンなし</label>
+      <label class="opc"><input type="checkbox" id="reach">立直 (R)</label>
+    </div>
+
+    <div id="count">10</div>
+    <div id="message"></div>
+    <!--
+  手前：
+  <label><input type=radio value=0 name="yourDirection">東家</label>
+  <label><input type=radio value=1 name="yourDirection">南家</label>
+  <label><input type=radio value=2 name="yourDirection" checked>西家</label>
+  <label><input type=radio value=3 name="yourDirection">北家</label>
+-->
+  </div>
+  <div style="clear:both;"></div>
+  <input type="button" id="open_rule" value="ルール説明">
+
+  <div id="rule_detail" style="clear:both; display:none;">
+    <h2>[ルール]</h2>
+    
+    <span class="bold">太字</span>は特に一般的でないと思われるもの。
+    
+    <h3>鳴き</h3>
+    <ul>
+      <li>喰い替え 可
+      <li>河底牌は鳴けない, 海底牌は槓できない
+      <li>槓ドラ: 暗槓で即めくり, 明槓で打牌後めくりまたは嶺上開花後めくり
+      <li><span class="bold">槓は何回発生しても続行</span><br>
+	(5回め以降の槓は嶺上牌を海底から引き, 槓ドラを増やさない)
+      <li><span class="bold">ポンチー直後の槓 可</span>
+      <li><span class="bold">立直後の暗槓 不可</span>
+    </ul>
+    
+    <h3>和了</h3>
+    <ul>
+      <li>後付け あり
+      <li><span class="bold">役なし和了・振聴ロン・不聴立直はその場で和了放棄通知</span>
+	(ボタンを誤って押さないように注意)
+      <li>暗槓の搶槓ロン 常になし
+    </ul>
+    
+    <h3>宣言</h3>
+    <ul>
+      <li>借金立直 あり
+      <li><span class="bold">途中流局 すべてなし</span> (四風連打・九種九牌・三家和・四人立直・四槓算了)
+    </ul>
+    
+    <h3>局遷移</h3>
+    <ul>
+      <li>東南戦 <span class="bold">西入なし</span>
+      <li>0点開始 50点返し -250点未満で箱割れ
+      <li>不聴親流れ, 和了やめ聴牌やめ あり
+    </ul>
+    
+    <h3>役</h3>
+    <div id="yakulist"></div>
+    <h3>他</h3>
+    <ul>
+      <li>王牌は14枚残し
+      <li>包なし
+      <li>2翻しばり なし
+      <li>流し満貫: あり。<br>
+	非和了扱い(供託は取得できない, 1本場追加で親聴牌なら連荘)。
+	複数者成立は個別計算。
+    </ul>
+  </div>
+  
+  <hr>
+  Junk Room v.0.80 on 2015-01-01
+  <div style="display:none;">
+    <hr>
+    <h2>[デバッグ窓]</h2>
+    <div>
+      <textarea id="sel_haifu_edit"></textarea>
+    </div>
+    
+    <pre id="sel_haifu">
+    </pre>
+    <div id="alert_mes"></div>
+    <div id="step"></div>
+    <div style="clear:both;"></div>
+  </div>
+</body></html>

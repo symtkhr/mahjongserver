@@ -1,0 +1,1003 @@
+<2022/11/20>
+client構成
+
+-- junk_room.js
+
+SocketHandler - 鯖のソケット処理(constructorでソケット生成)
+・get_stats() - 鯖に状態取得を要求する(接続開始時)
+
+・parse_msg() - 鯖からのメッセージを処理する
+・handle_haifu(msg)    - 鯖からのhaifuメッセージを処理する(1.5sおきに描画)
+・jang_table_set(obj)  - 鯖からのtableメッセージを処理する
+・finished_ranking()   - 鯖からのfinishメッセージを処理する(半荘終了表示)
+・jang_player_set(obj) - 鯖からのplayerメッセージを処理する
+  ・send_msgstock() - メッセージ送付({msg:player,q:calc}受信時の点数計算返答のみに使用?)
+
+・layout_set(msg)   - 鯖からのlayoutメッセージを処理する
+  ・approval_ok()   - 鯖に確認ボタン押下イベントを送る
+  ・turning_operation(obj) - 手番を通知する
+    ・calling_turn(obj) - 鳴き操作を要求する
+      ・auto_pass(op)     - 自動鳴きキャンセル
+      ・declare_sender()  - 宣言を送る
+        ・jp_operable()     - 摸打したプレイヤ
+        ・pass_process(msg)    - 無鳴きメッセージを送る
+        ・hora_process(msg)    - 和了メッセージを送る
+        ・chipong_process(msg) - 吃碰メッセージを送る
+        ・kong_process(msg)    - 槓メッセージを送る
+    ・discard_turn(obj) - 打牌操作を要求する
+      ・auto_discard(op)  - 自動自摸切り(立直中)
+      ・discard_sender()  - 選択牌(なければ自摸牌)を送る
+    ・ring_your_turn()  - 操作要求音を鳴らす
+    ・startCount(event,sec,bool) - 制限時間カウンタを開始する
+    ・count_stop() - 上記の停止
+
+SocketHandler.onmessage_test() - デバッグ用
+SocketHandler.unit_test()      - デバッグ用
+
+show_rule_yaku()     - ルール説明ページ用
+hi_tag(id)           - 点数計算の牌表示用(不要?)
+
+-- junk_table.js
+
+インスタンス: jang_disp
+Layout.init_layout()
+Layout.update_table_info()        - 卓央表示(playerコマンド受信時)
+Layout.update_table_info_inplay() - 卓央表示(手番プレイヤ)
+Layout.update_hand(qplayer,bool)  - 手牌表示(bool:末尾牌を離して表示する)
+Layout.update_discard(qplayer)    - 河表示
+Layout.dump_wangpai()             - 王牌表示
+
+Layout.update_call_info(qplayer,op) - 吹き出し表示(op=宣言)
+Layout.set_call_info(call,qplayer)  - 吹き出し表示(流局時の聴牌表示のみ?)
+Layout.discard_motion(qplayer,op,qtarget) - (実装未遂・未使用)
+Layout.steal_motion(qplayer,op,stolen)    - (実装未遂・未使用)
+
+Layout.show_operation(op) - 操作ボタンの表示(宣言系)
+Layout.showtable_button() - 操作ボタンの表示(終了時の点数表示ON/OFF)
+Layout.click_inhand(hi)        - 牌のクリックイベント
+Layout.click_arrow_button(dom) - 矢印ボタンのクリックイベント
+
+Layout.layout_payment(msg)          - 点数授受を表示する
+Layout.show_handcalc(CalcObj,point) - 点数計算結果を表示する
+Layout.dump_stat(haifu) - 状況展開(再開用)
+
+インスタンス: jang_cond
+JangTable.init_aspect() - 牌山などを配牌直後の状態にする(不使用)
+JangTable.sum_of_points() - 点棒の合計を得る
+JangTable.apply_tile(tilesets)  - 鯖からの配牌情報tilesetsを展開する
+JangTable.eval_command(haifu) - 鯖からの牌譜haifuを処理する
+JangTable.make_haifu(str_haifu) - 牌譜を記録する
+JangTable.is_ryukyoku() - 流局状態か否かを返す
+JangTable.discard_tile_just_now() - 直前に切られた牌を返す
+JangTable.check_extra()
+JangTable.change_position() - 4人に東南西北を割り付ける
+JangTable.is_red(id)   - 牌idが赤牌か否かを返す
+JangTable.is_black(id) - 牌idが黒牌か透明牌かを返す
+
+(点数計算用)
+JangTable.finish_target(jp) - プレイヤjpの和了牌を返す
+JangTable.translate_to_handset(jp) - プレイヤjpの手牌をHandSetオブジェクトで返す
+JangTable.red_length(jp) - プレイヤjpの持つ赤牌の数を返す
+JangTable.dora_length(mai,doradisp) - ドラ枚数を返す(引数:手牌の各牌枚数mai,ドラ表示牌doradisp)
+JangTable.translate_to_reach(jp) - プレイヤjpの立直・一発の有無を返す
+JangTable.translate_to_tsumo(jp) - プレイヤjpの自摸など和了状況を返す
+JangTable.calc_payment(wind, is_display) - 和了点数を返す(引数:プレイヤwind,表示ありis_display)
+
+
+
+<2/9>
+設計
+A House has arbitary amount of Tables.
+A Table has 4 Players.
+A Player has Point, Wind & Tacks.
+
+Table [|]
+Player []
+クラス：プレイヤ
+プロパティ：識別ID/名前/風/点/手牌/副露牌/捨牌/フラグ(立直・一発・聴牌・振聴・鳴き待ち)/鳴き予約
+メソッド：摸牌する/打牌する/立直する/鳴けるか判定する/鳴きを予約する/鳴きを実行する/牌譜に記録する
+
+クラス：雀卓
+プロパティ：牌壁/手番/プレイヤ/局/牌譜/(プレイ中/鳴きラグ中)
+メソッド：牌譜を解釈する/局を進める/ルールを設定する
+移行予定メソッド：和了点数を宣言する/流局点数を宣言する/点棒授受を確定する/点棒授受を得る
+移行予定メソッド：参加人数を得る/参加する/参加者の識別番号を得る
+移行予定めそっど：配牌する
+
+クラス：点棒
+プロパティ：供託
+メソッド：和了点数を宣言する/流局点数を宣言する/点棒授受を確定する
+
+クラス：牌譜
+プロパティ：牌譜
+メソッド：スライスする/長さを得る/手牌を作る/配牌を作る/単牌の操作を作る/複数牌の操作を作る/終了を作る/鳴きを作る/和了を作る
+
+クラス：牌壁
+プロパティ：山牌/王牌
+めそっど：配牌する/ドラをめくる/嶺上牌を引く/(自摸る)
+
+クラス：局
+プロパティ：局/本場/#供託#/プレイ中/流局中
+メソッド：局を進める/局を進めてよいと確認する
+
+クラス：ソケット
+プロパティ：(なし)
+メソッド：鯖起動
+
+クラス：メッセージ ← 雀荘
+プロパティ：送信バッファあり
+メソッド：次の送信バッファを得る/受信メッセージを処理する/指定の接続を断つ
+427 = 256 + 1 + 128 + 32 + 8 + 2 = 0x1ab
+
+[ソケット]
+  ↑↓  
+[メッセージ]
+   ↓
+[House]1---n[Visitor]
+    |1        A
+    |n        |
+[Table]       |
+    |1        |
+    +----4[Player]1----+---1[Point]
+    |            |     +---1[Wind]
+    +--1[Turn]---+     |
+    |            |     +---1[Hand]1-------.
+    +----1[JongLog]    |                  |
+    |                  +---1[Discard]1-.  |
+    +----1[Aspect]     +---1[Stat]     |  |
+    +                                 n|  |n
+    +----1[TileWall]1----------------n[Tile]
+
+Table->addPlayer(Player);
+JongLog->eval(Haifu);
+
+[AspectTransition]
+JongTable.php:13:  function __construct($last_aspect) 
+JongTable.php:18:  public function turn_to_next($jp_obj)
+JongTable.php:41:  private function check_renchang($jp_obj)
+JongTable.php:51:  private function check_gameover($jp_obj)  {
+JongTable.php:64:  private function check_hako($jp_obj)
+JongTable.php:72:  private function check_agari_yame($jp_obj)
+[JongLog]
+JongTable.php:101:  public function slice($from)
+JongTable.php:110:  public function length()
+JongTable.php:115:  public function make($str_haifu)
+JongTable.php:127:  public function make_hand(JangPlayer $jp)
+JongTable.php:134:  public function make_deal($wind, $tehai)
+JongTable.php:141:  public function make_op($op, $wind, $tile)
+JongTable.php:150:  public function make_ops($op, $wind, $tilearray)
+JongTable.php:157:  public function make_end()
+JongTable.php:162:  function make_steal($wind, $rsv_naki)
+JongTable.php:181:  function make_hora($wind, $hora_type)
+[PointManager]
+JongTable.php:206:  public function point_calling($playerIndex, $wind, $point)
+JongTable.php:216:  public function commit_payment()
+JongTable.php:226:  private function is_all_finishers_reserved()
+JongTable.php:235:  private function reserve_payment($player, $wind, $payments)
+JongTable.php:289:  private function reserve_kyotaku()
+JongTable.php:314:  public function return_point()
+JongTable.php:323:  public function reserve_payment_ryukyoku()
+[Table]
+JongTable.php:387:  function __construct($table_id) 
+JongTable.php:394:  function dump_stat()
+JongTable.php:404:  function init_members()
+JongTable.php:412:  public function commit_continue()
+JongTable.php:419:  public function is_inplay()
+JongTable.php:424:  private function init_aspects()
+JongTable.php:598:  function tileset($needle = false)
+JongTable.php:660:  public function deal_tiles($TSUMIKOMI = false)
+JongTable.php:702:  private function open_dora()
+JongTable.php:724:  private function discard_process($qwind, $qtarget, $is_reach = false)
+JongTable.php:743:  private function hora_process($playerIndex, $is_yakunashi)
+JongTable.php:776:  private function open_hand($playerIndex, $is_tsumo = false)
+JongTable.php:785:  private function open_ura($playerIndex)
+JongTable.php:801:  private function kong_process($playerIndex, $qtarget)
+JongTable.php:825:  private function check_changkong($target)
+JongTable.php:833:  private function draw_lingshang($naki_type)
+JongTable.php:844:  private function pong_process($playerIndex, $qtarget)
+JongTable.php:854:  private function chi_process($playerIndex, $qtarget)
+JongTable.php:864:  private function pass_process($playerIndex)
+JongTable.php:879:  private function flags_cancelled_by_naki()
+JongTable.php:885:  private function exec_naki()
+JongTable.php:916:  public function eval_command($haifu, $playerIndex = -1)
+JongTable.php:964:  function is_naki_ragging()
+JongTable.php:971:  private function turn_to_next()
+JongTable.php:985:  private function check_ryukyoku()
+JongTable.php:1006:  private function check_simultaneous($playerIndex)
+JongTable.php:1070:  function check_timeout($is_connect)
+JongTable.php:1106:  private function save_jokyo()
+
+[PlayerHandler]
+JongTable.php:608:  public function jp_size() 
+JongTable.php:617:  public function add_player($name, $id)
+JongTable.php:1129:  public function get_player_index($token)
+
+<1/27>
+ソケットクラスの見直し
+[現状]
+class SocketHandler
+  private function init_members() 
+  private function init_server() 
+  public function start_server() 
+  private function check_all_timers_flag()
+  private function check_new_connected_client(&$chgclients) 
+  private function check_incoming_data($sock) 
+  private function check_disconnected_client($sock) 
+  private function unmask($text) 
+  private function perform_handshaking($receved_header, $client_conn, $host, $port)
+  private function handle_incoming_data($msg, $sock)
+  private function mask($text)
+  public function send_message($obj, $id = -1)
+
+class JongHouse
+  function __construct($sock) 
+  public function srv_sockrecv_handler($msg, $sock) 
+  public function disconnect_user($sock)
+  private function login_process($msg, $sock)
+  private function unreserve_process($msg)
+  private function reserve_process($msg)
+  private function haifu_process($msg) 
+  private function history_process($msg, $sock) 
+  private function calc_process($msg)
+  private function approval_process($msg) 
+  private function send_updated_haifu($pre_size, $playerIndex, $jang_cond) 
+  private function belonging_table($uid)
+
+[理想]
+class SocketListenServer
+  private function init_members() 
+  private function init_server() 
+  public function start_server() 
+  private function check_new_connected_client(&$chgclients) 
+  private function check_disconnected_client($sock) 
+  private function perform_handshaking($receved_header, $client_conn, $host, $port)
+
+class SocketHandler
+  private function unmask($text) 
+  private function mask($text)
+  public function send_message($obj, $id = -1)
+  private function check_incoming_data($sock) 
+
+
+<12/28>
+和了手表示と点数計算の再考
+[現状->問題点]
+蔵c→:   {q:haifu, haifu:"cDECLF_0"}
+蔵d→:   {q:haifu, haifu:"dDECLF_0"}
+→蔵a-d: {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx;dHAND:xxxxx;END", id:xx}
+→蔵a-d: {type:player, q:calc, wind:c, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵a-d: {type:player, q:calc, wind:d, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+蔵c→:   {q:calc, wind:xx, p:[x,x,x]}
+蔵d→:   {q:calc, wind:xx, p:[x,x,x]}
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+
+->鯖は和了者でないソケットについてpaymentの応答をしない。(途中復活時にOKが押せない)
+->鯖がWロンに対して後出しで上書きしてしまう。
+
+[改善策]
+rsv返しをするとか
+多数決制の導入とか何か考える。
+
+→蔵a-d: {type:player, q:calc, wind:c, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵a-d: {type:player, q:calc, wind:d, 
+	  is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+蔵a-d→:   {q:calc, wind:c, p:[x,x,x]}
+蔵a-d→:   {q:calc, wind:d, p:[x,x,x]}
+(srv: is_finであるプレイヤ全員のrsv_ptがあるかどうかチェックし,
+      揃ってから以下のパケットを投げる)
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+
+
+<12/20>
+inhandと矢印キー再考
+[現状->問題点] 
+摸打番が来たときにimgにinhandクラスの追加
+-> (a) 1回自摸番がくれば恒久的にinhandクラスが入った状態になる
+inhandクリックリスナの追加
+左右キーで前後オブジェクトの参照
+前後オブジェクトがinhandでなければ先頭or末尾へ
+-> (b) 隠しimgにもinhandが追加されてしまい,選択可能となる。
+-> (c) 前後オブジェクトが改行などの場合もこの先頭末尾処理が入る。
+自動自摸切りの場合は末尾のinhandオブジェクトを参照する
+-> (d) 隠しimgが参照されていると局が進まない。
+
+[改善策]
+inhandクラスは描画の段階でoperableユーザに対しては常に入っているようにする。
+-> (a)を改善せず仕様とする。いつ入れる?
+描画の段階で隠しimgからinhandを外す。
+-> (b)(d)の改善。
+左右キーで前後オブジェクトの参照ではなく、メンバ変数を元に #xhand_xx で参照する。
+-> (c)の改善。メンバ変数はどうやって参照する? というか上二つが改善すれば不要?
+
+<12/18>
+卓予約のシーケンス検討
+
+user:予約押す
+cli: srvにreserve要求を投げる
+srv:ユーザのstatusをRESERVEに変える, 
+ 卓の他の予約者が存在するか確認し更新する ->
+ 卓の人数を確認する ->
+ ユーザのstatusを変える
+ cliに入室要求を投げる
+
+<12/16>
+謎のどら増えばぐ?
+
+type:haifu/haifu:1DEAL_080b1226354a67696b70767a7b;2DEAL_00000000000000000000000000;3DEAL_00000000000000000000000000;0DEAL_00000000000000000000000000;xDORA_09;0DRAW_00;0DISC_7c;1DRAW_0a;1DISCT_0a;2DRAW_00;2DISCT_86;3DRAW_00;3DISCT_05;0DRAW_00;0DISCT_53;1DRAW_5b;1DISCT_5b;2DRAW_00;2DISCT_0e;3DRAW_00;3DISCT_56;3DRAW_00;3DISCT_17;xDORA_24;
+
+type:haifu/haifu:1DEAL_00000000000000000000000000;2DEAL_181923252a2c30313334456272;3DEAL_00000000000000000000000000;0DEAL_00000000000000000000000000;xDORA_09;0DRAW_00;0DISC_7c;1DRAW_00;1DISCT_0a;2DRAW_86;2DISCT_86;3DRAW_00;3DISCT_05;0DRAW_00;0DISCT_53;1DRAW_00;1DISCT_5b;2DRAW_0e;2DISCT_0e;3DRAW_00;3DISCT_56;3DRAW_00;3DISCT_17;xDORA_24;
+
+type:haifu/haifu:1DEAL_00000000000000000000000000;2DEAL_00000000000000000000000000;3DEAL_06152728292b2d3e46555e616a;0DEAL_00000000000000000000000000;xDORA_09;0DRAW_00;0DISC_7c;1DRAW_00;1DISCT_0a;2DRAW_00;2DISCT_86;3DRAW_05;3DISCT_05;0DRAW_00;0DISCT_53;1DRAW_00;1DISCT_5b;2DRAW_00;2DISCT_0e;3DRAW_56;3DISCT_56;3DRAW_17;3DISCT_17;xDORA_24;0DR
+
+type:haifu/haifu:1DEAL_00000000000000000000000000;2DEAL_00000000000000000000000000;3DEAL_00000000000000000000000000;0DEAL_0f1a1f393b505a5d6d6f7c8188;xDORA_09;0DRAW_4f;0DISC_7c;1DRAW_00;1DISCT_0a;2DRAW_00;2DISCT_86;3DRAW_00;3DISCT_05;0DRAW_53;0DISCT_53;1DRAW_00;1DISCT_5b;2DRAW_00;2DISCT_0e;3DRAW_00;3DISCT_56;3DRAW_00;3DISCT_17;xDORA_24;0DRAW_14;
+
+<12/03>
+3DEAL_090b0f1217272e50545e617880
+0DEAL_0a0d1a1f2a2b3c42435d6b7479
+1DEAL_2531373b404c5153696a767a7d
+2DEAL_02030e162329334b4d576f777b
+xDORA_68
+0DRAW_62
+0DISC_42
+1DRAW_67
+1DISC_76
+2DRAW_1e
+2DISC_77
+3DRAW_47
+3DISC_78
+0DRAW_1c
+0DISC_79
+1DRAW_28
+1DISC_7a
+2DRAW_7e
+2DISCT_7e
+3DRAW_22
+3DISC_80
+0DRAW_20
+0DISC_74
+1DRAW_36
+1DISC_7d
+2DRAW_46
+2DISC_7b
+3DRAW_86
+3DISCT_86
+0DRAW_24
+0DISC_6b
+1DECLP_696a
+1DISC_4c
+2DRAW_52
+2DISC_6f
+3DRAW_1b
+3DISC_47
+0DRAW_88
+0DISCT_88
+1DRAW_2f
+1DISC_67
+2DRAW_45
+2DISC_23
+3DRAW_30
+3DISCT_30
+0DRAW_4e
+0DISCT_4e
+1DRAW_71
+1DISCT_71
+2DRAW_6d
+2DISCT_6d
+3DRAW_13
+3DISC_22
+0DRAW_5a
+0DISC_1f
+1DRAW_7f
+1DISCT_7f
+2DRAW_3e
+2DISCT_3e
+3DRAW_73
+3DISCT_73
+0DRAW_60
+0DISC_5d
+1DRAW_75
+1DISCT_75
+2DRAW_18
+2DISCT_18
+3DRAW_5c
+3DISC_0b
+0DRAW_65
+0DISCT_65
+1DRAW_84
+1DISCT_84
+2DRAW_56
+2DISC_4b
+3DRAW_48
+3DISCT_48
+0DRAW_21
+0DISCT_21
+1DRAW_82
+1DISCT_82
+2DRAW_34
+2DISCT_34
+3DRAW_35
+3DISCT_35
+0DRAW_04
+0DISCT_04
+1DRAW_5b
+1DISCT_5b
+2DRAW_6c
+2DISCT_6c
+3DRAW_66
+3DISC_5c
+0DRAW_19
+0DISC_2b
+1DRAW_1d
+1DISCT_1d
+2DRAW_2c
+2DISCT_2c
+3DRAW_07
+3DISC_2e
+0DRAW_3d
+0DISCR_2a
+1DRAW_7c
+1DISCT_7c
+2DRAW_5f
+2DISCT_5f
+3DRAW_59
+3DISC_27
+1DECLP_2528
+1DECLF0_bad
+1HAND_3136373b4051532f
+END
+この牌譜でなぜDECLF0できるの?
+
+<11/27>
+handle_haifu()処理中にhandle_haifu()されるとこける。
+Table.haifu[]がおかしくなる。
+
+case "haifu":
+* msg.haifu を JangTable.haifu に push する。
+* handle_haifu() して, this.motion.then(イベントメソッド)する。
+* motion_start() して, this.in_motion の是非でmotionを開始する/this.motion.then()する。
+
+case "layout":
+* msg.layout のイベントメソッドを this.motion[] に pushする。
+* motion_start() して, this.in_motion の是非でmotionを開始する/this.motion.する。
+
+case "approval":
+case "disconnect":
+case "table":
+case "player":
+即時(layoutと競合しないか?)
+
+
+<11/23>
+公開テスト
+
+●未遂チケット(優先度高)
+・副露牌選択のキー操作
+・接続断したユーザの復活時に赤消し
+*srv:立直中の暗槓
+*srv:ぽんちー直後のかん不可
+*srv:途中流局: 四開かん > 四家立直 > 九種九牌 > 四風連打 → 終了後は無勝負やり直し
+*srv:借金立直不可
+*srv:喰い替え不可
+
+・どら増え問題?
+・ゼロサムしない問題? → ゼロさむしなくなったタイミングで赤表示
+
+・srv:自摸切りbot → 済み.ただし自巡中に落ちた場合は進まない。
+*cli:和了時の#hand_xxxに[ツモ][ロン]表示
+・ロビィルームでのソケットエラー表示
+
+・cli:PC版の横ボタン
+
+○たぶん済み
+・cli:"おまちください"を消したい
+・南3で半荘終了する問題?
+・鳴きラグ時に無関係な宣言キーを押すとアラート吐いたりしてやばい
+・cli:搶槓ロンで振聴錯和した場合に捨牌がこける
+・cli:左遷移ボタンきかねえ → 済み
+・cli:カウントダウンきつくね?
+・cli:連打処理がおかしい
+・srv:東風戦できない→済み
+・文字列行高さ→なぜか解消
+・cli:ルール表示→済み
+・cli:ボタン配置[鳴きなしが上でもやばい]→済み
+・cli:OKぼたんきかねえ→対策済み。ただしsrv側のソケットに難あり(別チケットに移管)
+*srv:不正なuserIDでアクセスするとget_player_index()でエラー吐いて止まる　→ 一応対策済み
+*cli:二家和対応 → ひとりぶんしか適用されない, 裏どらの非共有 → 済み
+・NextOKボタンが反応しない時がある -> 解決。イベントリスナの多重登録 -> 再発
+・そもそもOKボタンが出ない時がある
+-> 和了者でないCLI
+   受 {type:"player" q:"calc"}
+   送 {q:"calc", p:point, wind:wind}
+   srv 和了者でないので応答しない
+   という設計になっているため。rsv返しをするとか多数決制の導入とか何か考える。
+*cli:鳴きフラグ中の他家和了時にカウントダウンが止まらない
+・cli:自摸和了のときに上家が供託を受け取るバグ
+
+●未遂チケット(優先度中)
+*cli:自摸和了時にターン者のキーイベントが残ったまま 
+・srv:和了時にlayout:paymentが4本とんでくる。各家が放るcalcにすべて反応するため。
+・cli:鳴きラグは打牌直後に欲しいよね?
+・cli:Deferredなど動的表示
+
+*srv/cli:メンバの値を自由に変えられるインタフェイス
+*cli:振り込み者の色付け
+*cli:流局時聴牌を見やすくする。色付けとか。→ layout_payment
+*srv/cli:切断処理# -> 摸牌した後に落ちた場合の処理(timeoutで処理?)
+-> 全卓の check_timeout()を1秒置きにたたく? -> 何か怪しい
+-> disconnectイベント時に強制進行させてしまうとか。
+*cli:搶槓のみでの和了->point = undefined で返るため、まあ動作に問題ないが要注意。
+->搶槓のラグについて赤囲み
+
+●未遂チケット(優先度低)
+*cli:選択肢複数時の自槓ボタン->青枠が出るが押すと赤枠になり切れる。
+*cli:自摸切り,自動和了
+*cli:自摸牌をあらかじめ選択しておく
+*srv:2翻縛
+*srv:おーぷん
+
+●完了
+*cli:立直・錯和ふきだしの表示ウェイトがほしい → 入れた
+*cli:配牌中の"おまちください"表示
+*srv:二家和対応 → 鯖側済み
+・予備カウントダウン → ほぼ済み
+・卓種の表示(喰断,牌種,東南とか)
+・キー操作
+-> ターン中でないときにキー操作すると多牌でこける
+-> "R":立直, "N":鳴きなし, "CPKO":槓,石並,吃,パス
+-> 短い手牌で矢印キーがhidden牌にフォーカスしてしまう(済み)
+*srv:不正なタイミングで"DECL0"を発行すると多牌/少牌扱いされて止まる → おそらく済み
+*cli:錯和がわかりにくい → 済み
+・加槓ボタンが反応しないときがある → 済み
+・追い加槓時のソート漏れ → 済み
+・点数一覧リストが二度書き → 済み?
+・荒牌時の聴牌表示が1枚ソートされていない問題 → ラス1にmarginあり。→ 済み。
+・tempaiが表示されない時がある -> 解決。srvサイドで連想配列をarray化
+・ロビーの作成 → 済み
+・srv:ログイン制御# -> 卓の数 * 4 をログインユーザ数が超えた場合の処理
+  -> 済み。ぱんくするまでは追加する
+
+・鷲巣雀の黒牌表現 → svg化にして背景を黒にするのが良いかも.(白の識別は?)
+                  → gifのまま明度操作で十分
+・操作時の音出し → 済み
+・cli:立直中の自動自摸切り → 立直流局時に無限ループしちゃってる... → 済み
+・cli:「聴牌」ふきだし表示 → できたけどなんか粗い
+・cli:鳴きラグの捨牌に矢印とか点滅とか入れる。→ とりあえず赤枠にしてみた。
+・cli:開局時の表示が前局のを引きずる
+*srv:自摸和了
+・srv/cli:役なし自摸後の詰みバグ	→ HAND;END;してしまった模様
+*cli:自槓ボタン押せず
+->選択してから押せばよい(わかりにく...)
+->なぜそうなっているのか?
+->selective_declaration()による(.ex_selectedなオブジェクトがあれば投げてしまう)。
+*cli:自摸切り牌->cli:DISCT/DISCTR/DISCTR0/DISCR0の対応
+*cli:dump_stat()表示の見直し全般
+  -> call:牌譜を1つ遡ったときの動作が他家ならそれも表示
+  -> 例:A打(立直)→B摸/A打→B吃/A槓→D栄/A誤栄→C摸
+  -> 例外:A槓→A摸 は 両方表示?
+*srv/cli:牌選択: 赤#・透明#
+
+<11/16>
+[ルール]
+<鳴き>
+*喰い替え 可
+海底牌は鳴けない、槓できない
+*ポンチー直後の槓 可
+槓ドラ: 暗槓で即めくり, 明槓で打牌後めくりまたは嶺上開花後めくり
+
+<和了>
+後付け あり
+二家和・三家和: 頭跳ねオンリー
+*役なし和了・振聴ロンはその場で和了放棄通知 (ボタンを誤って押さないように注意)
+暗槓の搶槓ロン 常になし
+
+<宣言>
+*不聴立直はその場で和了放棄通知 (チェックを誤って押さないように注意)
+借金立直 あり
+*立直後暗槓: 不可
+*途中流局 (四風連打・九種九牌・三家和・四人立直・四槓算了) すべてなし
+*槓は何回発生しても続行。5回め以降の槓は嶺上牌を海底から引き, 槓ドラを増やさない。
+
+<局遷移>
+東南戦 西入なし
+*0点開始 50点返し -250点未満で箱割れ
+不聴親流れ, 和了やめ聴牌やめ あり
+
+<役>
+
+<他>
+王牌は14枚残し
+赤ドラなし
+包なし
+2翻しばり なし
+流し満貫: あり。和了扱いではない()。複数者成立は個別計算。
+
+
+<11/14>
+役なし和了の対応
+蔵: DECLF宣言時に 嶺上/天和系 以外の役を計算 → 役なしならDECLF0_0を送付
+鯖: DECLF0_0 が来たら, 状況役ちぇっく → 該当なしなら和了放棄
+//ただし現状では牌底のみ(蔵側で解決)・搶槓のみが和了できないと思われ
+
+<11/9>
+テストケース後付けしてみる
+
+なぜかドラが増えた?
+type:haifu/haifu:3DEAL_00000000000000000000000000;0DEAL_03070c143648545c5e60616671;1DEAL_00000000000000000000000000;2DEAL_00000000000000000000000000;xDORA_2b;0DRAW_62;0DISC_71;1DRAW_00;1DISC_76;2DRAW_00;2DISC_7a;3DRAW_00;3DISC_42;0DRAW_28;0DISC_28;1DRAW_00;1DISC_6a;2DRAW_00;2DISC_83;3DRAW_00;3DISC_70;0DRAW_72;0DISC_72;1DRAW_00;1DISC_06;2DRAW_00;2DISC_74;3DRAW_00;3DISC_05;3DRAW_00;3DISC_87;xDORA_2c;0DRAW_68;0DISC_48;1DRAW_00;1DISC_45;2DRAW_00;2DISC_82;3DRAW_00;3DISC_21;0DRAW_65;0DISC_14;1DRAW_00;1DISC_22;2DRAW_00;2DISC_7c;3DRAW_00;3DISC_19;0DRAW_7b;0DISC_7b;1DRAW_00;1DISC_10;2DRAW_00;2DISC_4b;3DRAW_00;3DISC_64;0DRAW_25;0DISC_25;1DRAW_00;1DISC_4a;2DRAW_00;2DISC_79;3DRAW_00;3DISC_01;0DRAW_0a;0DISC_0a;1DRAW_00;1DISC_47;2DRAW_00;2DISC_0b;3DRAW_00;3DISC_40;0DRAW_52;0DISCR_36;1DRAW_00;1DISC_1e;2DRAW_00;2DISC_2a;3DRAW_00;3DISC_2f;0DRAW_04;0DISC_04;1DRAW_00;1DISC_86;2DRAW_00;2DISC_23;3DRAW_00;3DISC_7f;0DRAW_6e;0DISC_6e;1DRAW_00;1DISC_7d;2DRAW_00;2DISC_46;3DRAW_00;3DISC_27;0DRAW_24;0DISC_24;1DRAW_00;1DISCR_32;2DRAW_00;2DISC_49;3DRAW_00;3DISC_33;0DRAW_85;0DISC_85;1DRAW_00;1DISC_6f;2DRAW_00;2DISC_37;3DRAW_00;3DISC_2e;1DECLF_0;1DORA_4d1f;1HAND_13181c31353d3f4143444e5355;END/
+
+
+<11/7>
+表示制御設計が弱い。
+
+●ログイン
+蔵a→:   {q:login, name:####}
+●開戦
+→蔵a-d: {type:table,  q:renew, aspect:xx, honba:xx, banked:xx, 
+	 tile_set:"transp;red" }
+→蔵a-d: {type:player, q:renew, wind:xx, name:###, pt:xx, operable:t/f, id:xx}
+●配牌
+→蔵a:   {type:haifu,  haifu:"aDEAL_xxxxx;...;aDRAW_xx" }
+●打牌+自摸
+蔵a→:    {q:haifu, haifu:bDISC_xx}
+→蔵a-d:  {type:haifu, haifu:"aDISC_xx;bDRAW_xx"}
+→蔵b:    {type:layout, op:DISC;DECLF;DECLK, time:xx}
+→蔵a,c,d:{type:layout, op:null}
+●打牌+ラグ
+蔵b→:   {q:haifu, haifu:bDISC_xx}
+→蔵d:   {type:layout, op:DECLC;DECLP, time:xx}
+→蔵a-c: {type:layout, op:null}
+●切断
+→蔵a-d: {type:player, q:update, wind:xx, is_connected:t/f}
+●和了放棄
+→蔵a-d: {type:player, q:update, wind:xx, is_houki:t/f}
+●和了
+蔵c→:   {q:haifu, haifu:"cDECLF_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx", id:xx}
+→蔵c:   {type:player, q:calc, wind:xx, 
+	 is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵c:   {type:table, q:update, wind:xx, is_end:true}
+蔵c→:   {q:calc, wind:xx, p:[x,x,x]}
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+●役なし和了
+蔵c→:   {q:haifu, haifu:"cDECLF0_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF0_0;cHAND_xxxxxxx;dDRAW_00", id:xx}
+→蔵a-d: {type:player, q:update, wind:c, is_houki:t/f}
+●振聴栄
+蔵c→:   {q:haifu, haifu:"cDECLF0_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF0_0;cHAND_xxxxxxx;dDRAW_00", id:xx}
+→蔵a-d: {type:player, q:update, wind:c, is_houki:t/f}
+●不聴立直
+蔵c→:   {q:haifu, haifu:"cDISCR_xx"}
+→蔵c:   {type:haifu, haifu:"cDISCR0_0;cHAND_xxxxxxx;dDRAW_00", id:xx}
+→蔵a-d: {type:player, q:update, wind:c, is_houki:t/f}
+●荒牌流局
+蔵c→:   {q:haifu, haifu:"cDISC_xx"}
+→蔵c:   {type:haifu, haifu:"cDISC_xx;cHAND:xxxxxxx", id:xx}
+→蔵c:   {type:player, q:update, is_reach, is_tempai} // 不要かも
+→蔵c:   {type:table, q:update, wind:xx, is_end:true}
+→蔵a-d: {type:layout, op:payment, next:xx, point:[x,x,x,x...]}
+●流し満貫
+●終局
+蔵c→:   {q:haifu, haifu:"cDECLF_0"}
+→蔵c:   {type:haifu, haifu:"cDECLF_0;cHAND:xxxxxxx", id:xx}
+→蔵a-d: {type:player, q:calc, wind:xx, 
+	 is_reach, is_1patsu, is_kaihua, is_tenho, changkong:xx}
+→蔵a-d:   {type:table, q:update, wind:xx, is_end:true}
+蔵c→:   {q:calc, wind:xx, p:[x,x,x]}
+→蔵a-d: {type:layout, op:payment, next:end, point:[x,x,x,x...]}
+
+データ構造が決まればロジックは自ずと決まる
+
+<11/6>
+テスト環境がほしい。。
+
+<11/4-5>
+*cli:立直宣言牌を鳴かれるときつい#
+*cli:流局時にリロードをすると詰む#
+*srv:ロン和了/嶺上自摸のばあいも最終自摸牌が最後につく#
+*cli:かんで待ちが変わると嶺上開花できない#
+*srv:槓フラグでボタンが表示されない#
+*srv:搶槓制御->二家和のときにスルーが後発だと両者とも上がれない#
+*srv:搶槓制御->和了後のカウントダウンが止まらない#
+
+<10/30>
+クライアント側再設計
+JSONでオブジェクトもらう?
+投げるデータ: {class:"player"/"table", q:"関数名", arg:値}
+
+<10/21-25>
+タイマ実装完了
+
+●以下、済み(ただしテストコードが要る)：
+*srv:要確認>配牌聴牌で栄和可能か?#
+*srv:うらどら・かんどら＃
+*srv:自摸和のとき理牌しない＃
+*srv:終巡制御＃(#立直できない, #聴牌料授受, #加暗かんできない, #鳴けないただしロンは可)
+*srv:親和了後に局遷移しない場合がある＃
+*srv:局遷移てすと：
+	#1子栄和→東2-0へ/#2子自摸和→東2-0へ
+	#3親栄和→東1-1へ/#4親自摸和→東1-1へ
+	5不聴流局→東2-0へ/6聴牌流局→東2-0へ
+*srv:流れ供託・通らば立直で振り込んだときの供託#
+*srv/cli:振聴#
+*srv:終局制御(切れない,宣言できない)*
+*srv/cli:ラグ中のUI表示#, 自摸和後のUI#
+*cli:画面表示・ソケット送付モジュールの要整理#
+*cli:聴牌から一向聴に戻したときに表示が解消されない→聴牌表示の削除#
+*cli:立直中に自摸牌以外をクリック不可に#
+*cli:天和・地和・人和(*)#
+*srv/cli:錯和の和了放棄# (役なし栄・振聴栄*・不聴立直*) → 鳴きフラグなどのスルー*
+*srv:二家和制御/頭跳ね → 頭跳ね縛り
+*srv:W立直 #
+
+*srv:立直中の暗槓の禁止 *
+*cli:立直棒と和了放棄の表示#
+*cli:左右ボタンがばぐっている#
+*cli:他人のターンで他人の牌が#、鳴きラグで自分の手牌が選択できちゃう#
+*cli:選択:鳴きなし#,ロンなし#
+*cli:鳴いた次局で立直ボタンが出ない#、立直かけた次の局で立直チェックされてる#
+
+*srv/cli:流し満貫表示 #
+*cli:OKボタンでかくする#
+*cli:宣言を見やすくする。局遷移後に宣言が見えなくなるバグの修正。#
+*cli:左右プレイヤの名前の重なり #
+*cli:右プレイヤの捨牌が上詰めになるもんだい#、捨て牌が18枚しか#
+*srv/cli:終了制御：和了やめ*, 箱割れ*, 南4終了*, その後のインタフェイス#
+
+*cli:カウントダウンどうする?
+*cli:ログイン後のwaiting表示/approval表示*
+*cli:切断表示*, onerror, ondisconnect
+*cli:立直チェック時の色付け
+
+<10/14>
+点数計算実装完了
+
+<10/12>
+クライアントの画面設計再構成
+点数計算時の動作詳細
+[和了の場合]
+cli {h:"DECLF"}
+srv {haifu:"xDECLF;xHAND_xxxxxx;DORA:xxxx;END"} // 単ロン時
+srv {haifu:"xDECLF;xHAND_xxxxxx;haifu:"xDECLF;xHAND_xxxxxx;DORA:xxxx;END"}//Wロン時
+cli_jq:和了形とどらを画面表示
+cli {q:"calc",p:"xx_xx_xx"} 
+// ENDがきたら自動で返す(jsで手役のみ計算。暫定措置)
+srv {type:"approval",point: [p0_hand,p0_hon,p0_com,p1_hand..., p3_com], next:3_1 }
+// 計算結果に本場と供託を加味する。Wロンの場合は別途考慮。
+cli_jq 点計算・授受・次局を画面表示
+cli {sb:"approval",ans:true}
+
+[流局の場合のソケット部]
+cli {h:"DISC_xx"}
+srv {haifu:"xDISC_xx;xHAND_xxxxx;END"}
+srv {type:"approval",point: [p0_hand,p0_hon(=0),p0_com,p1_hand..., p3_com], next:3_1 }
+cli {sb:"approval",ans:true}
+
+鯖からもらえる情報が少ないような気がしないでもない。
+
+<10/3>
+下記デバッグ完了。
+ツモったときにq=Calcで全員マイナスされる。
+
+<9/30>
+テストパターンは東1局でのみ成功するものだったため、各局でやり直し。
+
+<9/21>
+サーバの局遷移実装完了。
+クライアント側をテストする上でほしいもの。
+サーバ可動途中でdebug_mode_s()に入れたり抜けたりできるやつ。
+
+<9/11>
+実装開始。
+
+<9/10>
+データ構造検討完了。
+島版jspaceを参照しながら2時間程度悩む。
+
+<9/8>
+要整理: 以下の使分けと相互変換
+$this->jpの配列index, 
+$this->jp->wind, 
+$this->turn 
+
+<9/5>
+srv_sockrecv_handler():
+全体動作
+case PHASE_INIT:
+cli {sb: "init", }
+
+case PHASE_GAME:
+srv {wind:x, name:"xxxx", point:<int>, is_yourself:<bool>}
+srv {haifu:"xDEAL_xxxx", }
+cli {h:"xDISC_xx"}
+srv {haifu:"xDISC_xx;xDRAW_xx", }
+ :   :
+cli {h:"DECLF"}
+srv {haifu:"xDECLF;xHAND_xxxxxx"}
+
+case PHASE_PAYMENT:
+cli {sb:"calc",p:"xx_xx_xx"}
+srv {type:"approval",p:"xx_xx_xx"}
+cli {sb:"approval",ans:true}
+
+case PHASE_CONTINUE:
+srv {type:"approval",next:"xx_xx"}
+cli {sb:"approval",ans:true}
+
+
+
+<9/4>
+
+
+<9/3>
+discard()の第一引数要る?
+check_timeout()つくってみたけどとりあえず動作保留
+スマホの画面設計いいなあ:卓表示320*320の下に確定ボタン320*160くらい
+[今週予定]局遷移制御促進
+現時点でDECLF_0が通った場合、鯖ではexpose_tiles()がコールされ、単一牌副露と同じ扱い.
+Client側の表示はごまかしている。
+和了者確定の場合、
+
+srv:"%uHAND_{%02x}*13"の牌譜送付
+cli:和了者の点数計算,{sb:pay, p:"52_13_26"}などを送付(供託含まず)
+srv:点数を振り分けて全員に表示
+cli:全員が承認を送付
+(srv:連荘伺い)
+(cli:全員が承認を送付)
+srv:局遷移
+
+
+<9/2>
+結局
+WIND_0
+0PT_fa
+0NAME_tomoki
+的なことにする。
+
+再掲
+
+[クラス構成]
+クラス：プレイヤ
+プロパティ：識別ID/名前/風/点/手牌/副露牌/捨牌/フラグ(立直・一発・聴牌・振聴・鳴き待ち)/鳴き予約
+メソッド：摸牌する/打牌する/立直する/鳴けるか判定する/鳴きを予約する/鳴きを実行する/牌譜に記録する
+
+クラス：雀卓
+プロパティ：山牌/手番/プレイヤ
+メソッド：配牌する/手番を回す/同時鳴きを制御する/牌譜を読む/クライアントの入力を受け付ける
+
+公開メソッド：ソケットハンドラ
+
+課題：
+雀卓にもプレイヤにも時間制限で駆動するメソッドがない。
+基本クライアントdrivenな感じ
+現行の構成だとsocket drivenかも。。
+→ JongTable->timer() を追加する。socketから毎ループコールして時間切れなら強制進行
+→ JongPlayer->bit_nakiとJongTable->turnで判定
+
+<8/29>
+・プレイヤ情報配布プロトコル
+[0-3]INFO_$name_$pt_$is_me
+
+>>メンバjp[]要求仕様
+*摸打の順に並べる
+*局遷移時はwindのみを変更する
+
+要確認：
+cli側では"0DEAL_xxxx"などの0は四風/インデクスのいずれを表すのか?
+
+<8/27>
+・デバッグ環境権等
+あらかじめ動作中のJongTableインスタンスを画面表示するGUI
+
+ログイン時の動作
+srv 起動
+srv testcase1.php.c
+srv meibo, existing_player, jang_cond->jpをいじっておく
+user ページ開(DEBUG用のクエリ)
+srv-cli 接続開始open
+cli 送付 { name:名前 type:debug id:DEBUG用}
+srv 送付 { type:debug id:JongPlayer->token[4] }
+cli 画面遷移
+cli 送付 { id:ID type:history }
+//srv 名簿参照 existing_playerまたはJP追加
+
+srv haifu.datに溜める → やってた...
+
+<8/26>
+要修正：
+・例のテスト項目のクリア 
+・残り枚数バグ
+要追加：
+・デバッグ環境
+・点数およびプレイヤ情報などのプロトコル追加(kashim要参照)
+・局遷移
+・時間制限
+・クリック拡大
+・点計算
+・流局プロトコル:DRAW
+・(点数・局遷移・)異議あり機能
+・錯和(振聴栄・不聴立直)発声時はその場で和了放棄
+
+・未確認 or 未実装：
+副露中の立直(ができないこと) →済み
+暗槓後の立直 →済み
+立直中の暗槓 →常に可能,可否条件について調べてみるとこのように複雑過ぎるので保留
+単一の大明槓、暗槓、加槓 →済み
+自摸和了
+振聴
+同時発声
+→全員スルーのときに無限ループが発生する
+- 吃槓栄(東：2m3m持ち、南：1m1m1m持ち、西：2m3m持ちの両面聴牌、北：1m切り)
+-栄のスルー
+- 二家和/三家和
+槍槓
+→単一の栄は確認済み。ただし暗槓でも常に可能
+栄スルーしたときにりんしゃんしないバグあり
+槍槓の二家和・三家和
+終巡制御
+
+<8/24>
+雀荘・ソケットのクラス化
+
+[クラス構成]
+クラス：プレイヤ
+プロパティ：識別ID/名前/風/点/手牌/副露牌/捨牌/フラグ(立直・一発・聴牌・振聴・鳴き待ち)/鳴き予約
+メソッド：摸牌する/打牌する/立直する/鳴けるか判定する/鳴きを予約する/鳴きを実行する/牌譜に記録する
+
+クラス：雀卓
+プロパティ：山牌/手番/プレイヤ
+メソッド：配牌する/手番を回す/同時鳴きを制御する/牌譜を読む/クライアントの入力を受け付ける
+
+クラス：ソケット
+プロパティ：接続ソケット
+メソッド：起動/送付/ハンドシェイク接続/メッセージ生成
+
+クラス：雀荘
+プロパティ：入室者/雀卓/ソケット
+メソッド：面子の追加/面子の削除
+
+<8/20>
+ログイン時の動作
+user ページ開
+srv-cli 接続開始
+user 名前入れ
+cli 送付 { name:名前 type:login }
+srv 名簿作成
+srv 送付 { id:ID }
+cli 接続断
+cli 画面遷移
+cli 送付 { id:ID type:history }
+srv 名簿参照 existing_playerまたはJP追加
+
+
+When the clientA sends:
+{ sb: "init", h:"", size:0 }
+the server returns to clientA by
+{ haifu: "0DEAL_xxxxxx;1DEAL_xxxx..." }
+
+When the clientA sends:
+{ h:"", size:15 }
+the server returns to clientA by
+{ haifu: "0DEAL_xxxxx; ... ;3DRAW_xx" }
+
+When the clientA sends:
+{ h:"3DISC_xx", size:15 }
+the server return to all by
+{ haifu:"3DISC_xx" }
+the server return to clientB by
+{ haifu:"0DRAW_xx" }
+the server return to clientA,C,D by
+{ haifu:"0DRAW_00" }
+
+CliA送 srv返toCliA toCliB toCliC toCliD 
+初  配  配  配  配
+    配  配  配  配
+    配  配  配  配
+    配  配  配  配
+    摸x 摸0 摸0 摸0          
+打  打  打  打  打
+    摸0 摸x 摸0 摸0          
+吃  吃  吃  吃  吃 
+
